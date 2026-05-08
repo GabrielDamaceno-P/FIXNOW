@@ -1,0 +1,49 @@
+.fn-stars {
+  --fn-star-on: #ff9e09;
+  --fn-star-off: #dce3ef;
+  --fn-star-hover: #ffc14f;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.fn-stars .fn-star-btn {
+  border: 0;
+  background: transparent;
+  padding: 0.18rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--fn-star-off);
+  transition: color 0.16s ease, transform 0.16s ease, filter 0.16s ease;
+}
+
+.fn-stars .fn-star-btn svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: block;
+}
+
+.fn-stars .fn-star-btn:hover,
+.fn-stars .fn-star-btn:focus-visible {
+  color: var(--fn-star-hover);
+  transform: translateY(-2px) scale(1.02);
+  filter: drop-shadow(0 7px 12px rgba(255, 161, 18, 0.32));
+  outline: none;
+}
+
+.fn-stars .fn-star-btn.fn-star-on {
+  color: var(--fn-star-on);
+  filter: drop-shadow(0 7px 12px rgba(255, 161, 18, 0.26));
+}
+
+.fn-stars-wrap {
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+  border: 1px solid #e8edf7;
+}
+
+.fn-star-legend {
+  font-size: 0.92rem;
+  color: #667085;
+}
