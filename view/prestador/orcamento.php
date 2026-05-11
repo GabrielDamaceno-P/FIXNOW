@@ -123,26 +123,26 @@ $tecnicoFoto      = $_SESSION['tecnico_foto'] ?? '';
               <thead class="table-primary"><tr><th>#</th><th>Chamado</th><th>Cliente</th><th>Valor</th><th>Status</th><th>Motivo</th><th></th></tr></thead>
               <tbody>
               <?php foreach ($meusOrcamentos as $o): ?>
-                <?php $badge = $o['status'] === 'Aceito' ? 'success' : ($o['status'] === 'Recusado' ? 'danger' : 'warning text-dark'); ?>
+                <?php $badge = $o->status === 'Aceito' ? 'success' : ($o->status === 'Recusado' ? 'danger' : 'warning text-dark'); ?>
                 <tr>
-                  <td><?php echo (int)$o['id']; ?></td>
-                  <td>#<?php echo (int)$o['chamadoId']; ?></td>
-                  <td><?php echo htmlspecialchars($o['clienteNome'] ?? ''); ?></td>
-                  <td>R$ <?php echo number_format((float)$o['valor'], 2, ',', '.'); ?></td>
-                  <td><span class="badge bg-<?php echo $badge; ?>"><?php echo $o['status']; ?></span></td>
+                  <td><?php echo $o->id; ?></td>
+                  <td>#<?php echo $o->chamadoId; ?></td>
+                  <td><?php echo htmlspecialchars($o->clienteNome ?? ''); ?></td>
+                  <td>R$ <?php echo number_format($o->valor, 2, ',', '.'); ?></td>
+                  <td><span class="badge bg-<?php echo $badge; ?>"><?php echo $o->status; ?></span></td>
                   <td>
-                    <?php if ($o['status'] === 'Recusado' && !empty($o['motivoRecusa'])): ?>
-                      <span class="small text-muted" title="<?php echo htmlspecialchars($o['motivoRecusa']); ?>">
-                        <?php echo htmlspecialchars(mb_strimwidth($o['motivoRecusa'], 0, 35, '...')); ?>
+                    <?php if ($o->status === 'Recusado' && !empty($o->motivoRecusa)): ?>
+                      <span class="small text-muted" title="<?php echo htmlspecialchars($o->motivoRecusa); ?>">
+                        <?php echo htmlspecialchars(mb_strimwidth($o->motivoRecusa, 0, 35, '...')); ?>
                       </span>
                     <?php else: ?>—<?php endif; ?>
                   </td>
                   <td class="d-flex gap-1">
-                    <a href="../chat.php?chamado=<?php echo (int)$o['chamadoId']; ?>" class="btn btn-sm btn-outline-primary">💬</a>
-                    <?php if ($o['status'] === 'Pendente'): ?>
+                    <a href="../chat.php?chamado=<?php echo $o->chamadoId; ?>" class="btn btn-sm btn-outline-primary">💬</a>
+                    <?php if ($o->status === 'Pendente'): ?>
                       <form method="post" class="d-inline" onsubmit="return confirm('Cancelar?')">
                         <input type="hidden" name="acao" value="cancelar">
-                        <input type="hidden" name="orcamento_id" value="<?php echo (int)$o['id']; ?>">
+                        <input type="hidden" name="orcamento_id" value="<?php echo $o->id; ?>">
                         <button class="btn btn-sm btn-outline-danger">Cancelar</button>
                       </form>
                     <?php endif; ?>

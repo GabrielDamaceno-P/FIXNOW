@@ -2,14 +2,14 @@
 
 require_once __DIR__ . '/../model/dao/ServicoDAO.php';
 require_once __DIR__ . '/../model/dao/CategoriaDAO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../model/dto/ServicoDTO.php';
 
 class ServicosControl
 {
-    private ServicoDAO   $servicoDAO;
-    private CategoriaDAO $categoriaDAO;
-    private PDO          $pdo;
+    private ServicoDAO    $servicoDAO;
+    private CategoriaDAO  $categoriaDAO;
+    private NotificacaoDAO $notifDAO;
 
     public int    $tecnicoId  = 0;
     public int    $naoLidas   = 0;
@@ -22,7 +22,7 @@ class ServicosControl
     {
         $this->servicoDAO   = new ServicoDAO();
         $this->categoriaDAO = new CategoriaDAO();
-        $this->pdo          = Conexao::getConexao();
+        $this->notifDAO     = new NotificacaoDAO();
     }
 
     public function verificarSessao(): void
@@ -31,15 +31,6 @@ class ServicosControl
             header('Location: ../login.php'); exit;
         }
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
-    }
-
-    private function carregarNaoLidas(): void
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM notificacao WHERE tecnico_id = ? AND tipo_destinatario = 'prestador' AND lida = 0"
-        );
-        $stmt->execute([$this->tecnicoId]);
-        $this->naoLidas = (int)$stmt->fetchColumn();
     }
 
     public function processar(): void
@@ -52,7 +43,7 @@ class ServicosControl
 
         $this->servicos   = $this->servicoDAO->listarPorTecnico($this->tecnicoId);
         $this->categorias = $this->categoriaDAO->listarAtivas();
-        $this->carregarNaoLidas();
+        $this->naoLidas   = $this->notifDAO->contarNaoLidasTecnico($this->tecnicoId);
     }
 
     private function processarPost(): void

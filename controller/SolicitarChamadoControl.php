@@ -243,15 +243,22 @@ class SolicitarChamadoControl
             return;
         }
 
+        $latServico = isset($_POST['lat_servico']) && $_POST['lat_servico'] !== ''
+            ? (float)$_POST['lat_servico'] : null;
+        $lngServico = isset($_POST['lng_servico']) && $_POST['lng_servico'] !== ''
+            ? (float)$_POST['lng_servico'] : null;
+
         $chamadoId = $this->chamadoDAO->inserir([
-            'cliente_id'              => $this->clienteId,
-            'tecnico_id'              => $tecnicoId,
-            'categoria'               => $categoria,
-            'descricao'               => $descricao,
-            'fotos'                   => $fotos,
-            'endereco_servico'        => $endereco,
-            'data_agendamento'        => $dataAgend,
-            'prest_feminino' => $exigeMulher,
+            'cliente_id'       => $this->clienteId,
+            'tecnico_id'       => $tecnicoId,
+            'categoria'        => $categoria,
+            'descricao'        => $descricao,
+            'fotos'            => $fotos,
+            'endereco_servico' => $endereco,
+            'lat_servico'      => $latServico,
+            'lng_servico'      => $lngServico,
+            'data_agendamento' => $dataAgend,
+            'prest_feminino'   => $exigeMulher,
         ]);
 
         if ($tecnicoId) {

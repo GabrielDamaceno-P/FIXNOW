@@ -64,7 +64,6 @@ class NotificacoesControl
             default     => $this->notifDAO->listarPorCliente($this->usuarioId, 60),
         };
 
-        $naoLidas = array_filter($this->notificacoes, fn($n) => !(int)$n['lida']);
-        $this->naoLidas = count($naoLidas);
+        $this->naoLidas = count(array_filter($this->notificacoes, fn($n) => !$n->lida));
     }
 }

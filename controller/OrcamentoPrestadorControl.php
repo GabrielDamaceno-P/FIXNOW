@@ -2,15 +2,17 @@
 
 require_once __DIR__ . '/../model/dao/OrcamentoDAO.php';
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../model/dto/OrcamentoDTO.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class OrcamentoPrestadorControl
 {
-    private OrcamentoDAO $orcamentoDAO;
-    private ChamadoDAO   $chamadoDAO;
-    private PDO          $pdo;
+    private OrcamentoDAO   $orcamentoDAO;
+    private ChamadoDAO     $chamadoDAO;
+    private NotificacaoDAO $notifDAO;
+    private PDO            $pdo;
 
     public int    $tecnicoId          = 0;
     public int    $naoLidas           = 0;
@@ -24,6 +26,7 @@ class OrcamentoPrestadorControl
     {
         $this->orcamentoDAO = new OrcamentoDAO();
         $this->chamadoDAO   = new ChamadoDAO();
+        $this->notifDAO     = new NotificacaoDAO();
         $this->pdo          = Conexao::getConexao();
     }
 
@@ -35,20 +38,11 @@ class OrcamentoPrestadorControl
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
     }
 
-    private function carregarNaoLidas(): void
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM notificacao WHERE tecnico_id = ? AND tipo_destinatario = 'prestador' AND lida = 0"
-        );
-        $stmt->execute([$this->tecnicoId]);
-        $this->naoLidas = (int)$stmt->fetchColumn();
-    }
-
     public function processar(): void
     {
         $this->verificarSessao();
         $this->chamadoSelecionado = isset($_GET['chamado']) ? (int)$_GET['chamado'] : 0;
-        $this->carregarNaoLidas();
+        $this->naoLidas = $this->notifDAO->contarNaoLidasTecnico($this->tecnicoId);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processarPost();
@@ -57,8 +51,7 @@ class OrcamentoPrestadorControl
         $genero = $_SESSION['tecnico_genero'] ?? 'Masculino';
         $this->chamadosDisponiveis = $this->chamadoDAO->listarDisponiveisPorCategoria($this->tecnicoId, $genero);
 
-        $orcamentos = $this->orcamentoDAO->listarPorTecnico($this->tecnicoId);
-        $this->meusOrcamentos = array_map(fn($o) => (array)$o, $orcamentos);
+        $this->meusOrcamentos = $this->orcamentoDAO->listarPorTecnico($this->tecnicoId);
     }
 
     private function processarPost(): void

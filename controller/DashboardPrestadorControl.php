@@ -4,6 +4,8 @@ require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/OrcamentoDAO.php';
 require_once __DIR__ . '/../model/dao/PagamentoDAO.php';
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
+require_once __DIR__ . '/../model/dao/TecnicoDAO.php';
+require_once __DIR__ . '/../model/dao/ServicoDAO.php';
 require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
@@ -13,6 +15,8 @@ class DashboardPrestadorControl
     private OrcamentoDAO   $orcamentoDAO;
     private PagamentoDAO   $pagamentoDAO;
     private NotificacaoDAO $notifDAO;
+    private TecnicoDAO     $tecnicoDAO;
+    private ServicoDAO     $servicoDAO;
     private PDO            $pdo;
 
     public int    $tecnicoId           = 0;
@@ -35,6 +39,8 @@ class DashboardPrestadorControl
         $this->orcamentoDAO = new OrcamentoDAO();
         $this->pagamentoDAO = new PagamentoDAO();
         $this->notifDAO     = new NotificacaoDAO();
+        $this->tecnicoDAO   = new TecnicoDAO();
+        $this->servicoDAO   = new ServicoDAO();
         $this->pdo          = Conexao::getConexao();
     }
 
@@ -69,17 +75,15 @@ class DashboardPrestadorControl
     {
         $genero = $_SESSION['tecnico_genero'] ?? '';
         if ($genero === '') {
-            $stmt = $this->pdo->prepare("SELECT genero FROM tecnico WHERE id = ?");
-            $stmt->execute([$this->tecnicoId]);
-            $genero = (string)$stmt->fetchColumn();
-            if ($genero === '') $genero = 'Masculino';
+            $dto    = $this->tecnicoDAO->buscarPorId($this->tecnicoId);
+            $genero = $dto?->genero ?: 'Masculino';
             $_SESSION['tecnico_genero'] = $genero;
+            $this->isDestaque = (bool)($dto?->destaque ?? false);
+        } else {
+            $dto = $this->tecnicoDAO->buscarPorId($this->tecnicoId);
+            $this->isDestaque = (bool)($dto?->destaque ?? false);
         }
         $this->genero = $genero;
-
-        $stmt = $this->pdo->prepare("SELECT destaque FROM tecnico WHERE id = ?");
-        $stmt->execute([$this->tecnicoId]);
-        $this->isDestaque = (bool)$stmt->fetchColumn();
     }
 
     private function processarPost(): void
@@ -297,16 +301,6 @@ class DashboardPrestadorControl
         $this->emAndamento         = $this->chamadoDAO->listarEmAndamentoPorTecnico($this->tecnicoId);
         $this->historico           = $this->chamadoDAO->listarHistoricoPorTecnico($this->tecnicoId);
         $this->notificacoes        = $this->notifDAO->listarPorTecnico($this->tecnicoId, 10);
-
-        // categorias de serviço do técnico
-        $stmt = $this->pdo->prepare("
-            SELECT DISTINCT cat.nome
-            FROM servico s
-            INNER JOIN categoria cat ON cat.id = s.categoria_id
-            WHERE s.tecnico_id = ? AND s.ativo = 1
-            ORDER BY cat.nome
-        ");
-        $stmt->execute([$this->tecnicoId]);
-        $this->categoriasServico = array_column($stmt->fetchAll(), 'nome');
+        $this->categoriasServico   = $this->servicoDAO->listarNomesCategoriasDoTecnico($this->tecnicoId);
     }
 }

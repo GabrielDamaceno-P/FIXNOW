@@ -24,28 +24,21 @@ class RastreamentoChamadoControl
         $this->clienteId = (int)$_SESSION['cliente_id'];
         $chamadoId = (int)($_GET['chamado'] ?? 0);
 
-        if ($chamadoId > 0) {
-            $stmt = $this->pdo->prepare('
+        $cols = '
                 SELECT c.id, c.status, c.categoria, c.descricao, c.foto_path,
+                       c.em_deslocamento, c.tecnico_lat, c.tecnico_lng,
+                       c.endereco_servico, c.lat_servico, c.lng_servico,
                        cl.nome AS cliente_nome, cl.foto_perfil AS cliente_foto,
                        t.nome AS tecnico_nome, t.foto_perfil AS tecnico_foto
                 FROM chamado c
                 INNER JOIN cliente cl ON cl.id = c.cliente_id
-                LEFT  JOIN tecnico  t ON t.id  = c.tecnico_id
-                WHERE c.id = ? AND c.cliente_id = ?
-            ');
+                LEFT  JOIN tecnico  t ON t.id  = c.tecnico_id';
+
+        if ($chamadoId > 0) {
+            $stmt = $this->pdo->prepare($cols . ' WHERE c.id = ? AND c.cliente_id = ?');
             $stmt->execute([$chamadoId, $this->clienteId]);
         } else {
-            $stmt = $this->pdo->prepare('
-                SELECT c.id, c.status, c.categoria, c.descricao, c.foto_path,
-                       cl.nome AS cliente_nome, cl.foto_perfil AS cliente_foto,
-                       t.nome AS tecnico_nome, t.foto_perfil AS tecnico_foto
-                FROM chamado c
-                INNER JOIN cliente cl ON cl.id = c.cliente_id
-                LEFT  JOIN tecnico  t ON t.id  = c.tecnico_id
-                WHERE c.cliente_id = ?
-                ORDER BY c.criado_em DESC LIMIT 1
-            ');
+            $stmt = $this->pdo->prepare($cols . ' WHERE c.cliente_id = ? ORDER BY c.criado_em DESC LIMIT 1');
             $stmt->execute([$this->clienteId]);
         }
 

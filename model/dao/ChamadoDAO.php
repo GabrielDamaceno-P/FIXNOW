@@ -135,12 +135,13 @@ class ChamadoDAO
         $stmt = $this->pdo->prepare('
             INSERT INTO chamado
               (cliente_id, tecnico_id, categoria, descricao, endereco_servico,
-               data_agendamento, prest_feminino)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+               lat_servico, lng_servico, data_agendamento, prest_feminino)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['cliente_id'], $data['tecnico_id'] ?? null, $data['categoria'],
             $data['descricao'], $data['endereco_servico'],
+            $data['lat_servico'] ?? null, $data['lng_servico'] ?? null,
             $data['data_agendamento'] ?? null, $data['prest_feminino'] ?? 0,
         ]);
         $chamadoId = (int)$this->pdo->lastInsertId();
@@ -259,6 +260,35 @@ class ChamadoDAO
         ");
         $stmt->execute([$tecnicoId, $tecnicoId]);
         return $stmt->fetch() ?: ['em_andamento' => 0, 'concluidos' => 0, 'disponiveis' => 0];
+    }
+
+    /**
+     * Histórico resumido para a view de perfil — retorna array simples com outra_parte.
+     * @return array
+     */
+    public function listarHistoricoResumido(string $tipo, int $id, int $limit = 30): array
+    {
+        if ($tipo === 'prestador') {
+            $stmt = $this->pdo->prepare('
+                SELECT c.id, c.status, c.categoria, c.criado_em,
+                       cl.nome AS outra_parte
+                FROM chamado c
+                INNER JOIN cliente cl ON cl.id = c.cliente_id
+                WHERE c.tecnico_id = ?
+                ORDER BY c.criado_em DESC LIMIT ' . $limit
+            );
+        } else {
+            $stmt = $this->pdo->prepare('
+                SELECT c.id, c.status, c.categoria, c.criado_em,
+                       COALESCE(t.nome, \'A definir\') AS outra_parte
+                FROM chamado c
+                LEFT JOIN tecnico t ON t.id = c.tecnico_id
+                WHERE c.cliente_id = ?
+                ORDER BY c.criado_em DESC LIMIT ' . $limit
+            );
+        }
+        $stmt->execute([$id]);
+        return $stmt->fetchAll();
     }
 
     public function estatisticasGerais(): array

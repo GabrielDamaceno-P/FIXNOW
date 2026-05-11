@@ -1,13 +1,15 @@
 <?php
 
 require_once __DIR__ . '/../model/dao/PortfolioDAO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/ServicoDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class PortfolioControl
 {
-    private PortfolioDAO $portfolioDAO;
-    private PDO          $pdo;
+    private PortfolioDAO   $portfolioDAO;
+    private ServicoDAO     $servicoDAO;
+    private NotificacaoDAO $notifDAO;
 
     public int    $tecnicoId  = 0;
     public int    $naoLidas   = 0;
@@ -19,7 +21,8 @@ class PortfolioControl
     public function __construct()
     {
         $this->portfolioDAO = new PortfolioDAO();
-        $this->pdo          = Conexao::getConexao();
+        $this->servicoDAO   = new ServicoDAO();
+        $this->notifDAO     = new NotificacaoDAO();
     }
 
     public function verificarSessao(): void
@@ -30,15 +33,6 @@ class PortfolioControl
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
     }
 
-    private function carregarNaoLidas(): void
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM notificacao WHERE tecnico_id = ? AND tipo_destinatario = 'prestador' AND lida = 0"
-        );
-        $stmt->execute([$this->tecnicoId]);
-        $this->naoLidas = (int)$stmt->fetchColumn();
-    }
-
     public function processar(): void
     {
         $this->verificarSessao();
@@ -47,20 +41,9 @@ class PortfolioControl
             $this->processarPost();
         }
 
-        $this->fotos = $this->portfolioDAO->listarPorTecnico($this->tecnicoId);
-
-        // Categorias dos serviços ativos do prestador
-        $stmt = $this->pdo->prepare("
-            SELECT DISTINCT cat.id, COALESCE(cat.nome, s.nome) AS nome
-            FROM servico s
-            LEFT JOIN categoria cat ON cat.id = s.categoria_id
-            WHERE s.tecnico_id = ? AND s.ativo = 1
-            ORDER BY nome
-        ");
-        $stmt->execute([$this->tecnicoId]);
-        $this->categorias = $stmt->fetchAll();
-
-        $this->carregarNaoLidas();
+        $this->fotos      = $this->portfolioDAO->listarPorTecnico($this->tecnicoId);
+        $this->categorias = $this->servicoDAO->listarCategoriasDoTecnico($this->tecnicoId);
+        $this->naoLidas   = $this->notifDAO->contarNaoLidasTecnico($this->tecnicoId);
     }
 
     private function processarPost(): void

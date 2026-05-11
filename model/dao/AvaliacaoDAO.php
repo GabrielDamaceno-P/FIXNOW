@@ -55,6 +55,21 @@ class AvaliacaoDAO
         return array_map([AvaliacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
+    /** @return AvaliacaoDTO[] */
+    public function listarPorCliente(int $clienteId, int $limit = 30): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, t.nome AS tecnico_nome
+            FROM avaliacao a
+            INNER JOIN tecnico t ON t.id = a.tecnico_id
+            WHERE a.cliente_id = ?
+            ORDER BY a.criado_em DESC
+            LIMIT {$limit}
+        ");
+        $stmt->execute([$clienteId]);
+        return array_map([AvaliacaoDTO::class, 'fromArray'], $stmt->fetchAll());
+    }
+
     public function depoimentoAleatorio(): ?AvaliacaoDTO
     {
         $stmt = $this->pdo->query("

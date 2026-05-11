@@ -3,6 +3,8 @@
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/OrcamentoDAO.php';
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
+require_once __DIR__ . '/../model/dao/AvaliacaoDAO.php';
+require_once __DIR__ . '/../model/dto/AvaliacaoDTO.php';
 require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
@@ -11,6 +13,7 @@ class DashboardClienteControl
     private ChamadoDAO    $chamadoDAO;
     private OrcamentoDAO  $orcamentoDAO;
     private NotificacaoDAO $notifDAO;
+    private AvaliacaoDAO  $avaliacaoDAO;
     private PDO           $pdo;
 
     public int    $clienteId         = 0;
@@ -33,6 +36,7 @@ class DashboardClienteControl
         $this->chamadoDAO   = new ChamadoDAO();
         $this->orcamentoDAO = new OrcamentoDAO();
         $this->notifDAO     = new NotificacaoDAO();
+        $this->avaliacaoDAO = new AvaliacaoDAO();
         $this->pdo          = Conexao::getConexao();
     }
 
@@ -200,35 +204,32 @@ class DashboardClienteControl
             }
 
         } elseif (isset($_POST['avaliar_chamado_id'], $_POST['nota_avaliacao'])) {
-            $cid       = (int)$_POST['avaliar_chamado_id'];
-            $nota      = (int)$_POST['nota_avaliacao'];
+            $cid        = (int)$_POST['avaliar_chamado_id'];
+            $nota       = (int)$_POST['nota_avaliacao'];
             $comentario = trim($_POST['comentario_avaliacao'] ?? '');
             if ($nota < 1 || $nota > 5) {
                 $this->erro = 'Informe uma nota válida entre 1 e 5.';
             } elseif (mb_strlen($comentario) > 255) {
                 $this->erro = 'O comentário deve ter no máximo 255 caracteres.';
             } else {
-                $stmtC = $this->pdo->prepare("SELECT c.id, c.status, c.tecnico_id, t.nome AS tecnico_nome FROM chamado c LEFT JOIN tecnico t ON t.id=c.tecnico_id WHERE c.id=? AND c.cliente_id=? LIMIT 1");
-                $stmtC->execute([$cid, $this->clienteId]);
-                $ch = $stmtC->fetch();
-                if (!$ch) {
+                $chamado = $this->chamadoDAO->buscarPorId($cid);
+                if (!$chamado || $chamado->clienteId !== $this->clienteId) {
                     $this->erro = 'Chamado não encontrado.';
-                } elseif ($ch['status'] !== 'Concluído') {
+                } elseif ($chamado->status !== 'Concluído') {
                     $this->erro = 'A avaliação só pode ser feita após a conclusão do serviço.';
-                } elseif (empty($ch['tecnico_id'])) {
+                } elseif (empty($chamado->tecnicoId)) {
                     $this->erro = 'Não existe prestador associado a este chamado.';
+                } elseif ($this->avaliacaoDAO->jaAvaliou($cid)) {
+                    $this->erro = 'Este chamado já foi avaliado.';
                 } else {
-                    $stmtE = $this->pdo->prepare("SELECT id FROM avaliacao WHERE chamado_id=? LIMIT 1");
-                    $stmtE->execute([$cid]);
-                    if ($stmtE->fetch()) {
-                        $this->erro = 'Este chamado já foi avaliado.';
-                    } else {
-                        $this->pdo->prepare("INSERT INTO avaliacao (chamado_id, cliente_id, tecnico_id, nota, comentario) VALUES (?,?,?,?,?)")
-                            ->execute([$cid, $this->clienteId, (int)$ch['tecnico_id'], $nota, $comentario ?: null]);
-                        $this->pdo->prepare("UPDATE tecnico t SET t.avaliacao_media = (SELECT COALESCE(AVG(a.nota),0) FROM avaliacao a WHERE a.tecnico_id = t.id) WHERE t.id=?")
-                            ->execute([(int)$ch['tecnico_id']]);
-                        header('Location: dashboardCliente.php?avaliacao_ok=1'); exit;
-                    }
+                    $av = new AvaliacaoDTO();
+                    $av->chamadoId  = $cid;
+                    $av->clienteId  = $this->clienteId;
+                    $av->tecnicoId  = $chamado->tecnicoId;
+                    $av->nota       = $nota;
+                    $av->comentario = $comentario ?: null;
+                    $this->avaliacaoDAO->inserir($av);
+                    header('Location: dashboardCliente.php?avaliacao_ok=1'); exit;
                 }
             }
         }
@@ -236,25 +237,8 @@ class DashboardClienteControl
 
     private function carregarDados(): void
     {
-        // Chamados com pagamento e avaliação
-        $stmt = $this->pdo->prepare("
-            SELECT c.*, t.nome AS tecnico_nome,
-                   p.id AS pagamento_id, p.status AS pag_status, p.valor AS pag_valor, p.metodo AS pag_metodo,
-                   a.nota AS avaliacao_nota
-            FROM chamado c
-            LEFT JOIN tecnico t  ON t.id = c.tecnico_id
-            LEFT JOIN pagamento p ON p.chamado_id = c.id
-            LEFT JOIN avaliacao a ON a.chamado_id = c.id AND a.cliente_id = ?
-            WHERE c.cliente_id = ?
-            ORDER BY c.criado_em DESC
-        ");
-        $stmt->execute([$this->clienteId, $this->clienteId]);
-        $this->chamados = array_map([ChamadoDTO::class, 'fromArray'], $stmt->fetchAll());
-
-        // Stats
-        $stmtS = $this->pdo->prepare("SELECT COUNT(*) AS total_chamados, SUM(CASE WHEN status='Concluído' THEN 1 ELSE 0 END) AS concluidos FROM chamado WHERE cliente_id=?");
-        $stmtS->execute([$this->clienteId]);
-        $this->stats = $stmtS->fetch() ?: ['total_chamados' => 0, 'concluidos' => 0];
+        $this->chamados            = $this->chamadoDAO->listarPorCliente($this->clienteId);
+        $this->stats               = $this->chamadoDAO->estatisticasCliente($this->clienteId);
 
         // Orçamentos pendentes
         $stmtO = $this->pdo->prepare("
@@ -269,10 +253,8 @@ class DashboardClienteControl
         $this->orcamentosPendentes = $stmtO->fetchAll();
 
         // Notificações não lidas
-        $stmtN = $this->pdo->prepare("SELECT * FROM notificacao WHERE cliente_id=? AND tipo_destinatario='cliente' AND lida=0 ORDER BY criado_em DESC LIMIT 10");
-        $stmtN->execute([$this->clienteId]);
-        $this->notificacoes = $stmtN->fetchAll();
-        $this->naoLidas = count($this->notificacoes);
+        $this->notificacoes = $this->notifDAO->listarPorCliente($this->clienteId, 10);
+        $this->naoLidas     = $this->notifDAO->contarNaoLidasCliente($this->clienteId);
 
         // Gênero do cliente
         $rowCli = $this->pdo->prepare("SELECT genero FROM cliente WHERE id=? LIMIT 1");

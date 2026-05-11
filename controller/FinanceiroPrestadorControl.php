@@ -1,12 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/PagamentoDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 
 class FinanceiroPrestadorControl
 {
-    private PDO $pdo;
+    private PagamentoDAO   $pagamentoDAO;
+    private NotificacaoDAO $notifDAO;
 
-    const TAXA = 0.20;
+    public const TAXA = 0.20;
 
     public int    $tecnicoId      = 0;
     public int    $naoLidas       = 0;
@@ -24,7 +26,8 @@ class FinanceiroPrestadorControl
 
     public function __construct()
     {
-        $this->pdo = Conexao::getConexao();
+        $this->pagamentoDAO = new PagamentoDAO();
+        $this->notifDAO     = new NotificacaoDAO();
     }
 
     public function verificarSessao(): void
@@ -35,15 +38,6 @@ class FinanceiroPrestadorControl
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
     }
 
-    private function carregarNaoLidas(): void
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM notificacao WHERE tecnico_id = ? AND tipo_destinatario = 'prestador' AND lida = 0"
-        );
-        $stmt->execute([$this->tecnicoId]);
-        $this->naoLidas = (int)$stmt->fetchColumn();
-    }
-
     public function processar(): void
     {
         $this->verificarSessao();
@@ -51,25 +45,14 @@ class FinanceiroPrestadorControl
         $this->filtroAno = (int)($_GET['ano'] ?? date('Y'));
 
         $this->carregarResumo();
-        $this->carregarMensal();
-        $this->carregarDetalhes();
-        $this->carregarNaoLidas();
+        $this->mensal   = $this->pagamentoDAO->mensalPorTecnico($this->tecnicoId);
+        $this->detalhes = $this->pagamentoDAO->detalhesPorTecnico($this->tecnicoId, $this->filtroMes, $this->filtroAno);
+        $this->naoLidas = $this->notifDAO->contarNaoLidasTecnico($this->tecnicoId);
     }
 
     private function carregarResumo(): void
     {
-        $stmt = $this->pdo->prepare("
-            SELECT
-              COUNT(DISTINCT c.id) AS total_servicos,
-              COALESCE(SUM(CASE WHEN p.status = 'Pago'      THEN p.valor ELSE 0 END), 0) AS bruto_recebido,
-              COALESCE(SUM(CASE WHEN p.status = 'Pendente'  THEN p.valor ELSE 0 END), 0) AS bruto_pendente,
-              COALESCE(SUM(CASE WHEN p.status = 'Estornado' THEN p.valor ELSE 0 END), 0) AS total_estornado
-            FROM chamado c
-            LEFT JOIN pagamento p ON p.chamado_id = c.id
-            WHERE c.tecnico_id = ? AND c.status IN ('Concluído','Negado')
-        ");
-        $stmt->execute([$this->tecnicoId]);
-        $resumo = $stmt->fetch();
+        $resumo = $this->pagamentoDAO->resumoCompleto($this->tecnicoId);
 
         $this->totalServicos   = (int)($resumo['total_servicos']  ?? 0);
         $this->brutoRecebido   = (float)($resumo['bruto_recebido']  ?? 0);
@@ -78,51 +61,5 @@ class FinanceiroPrestadorControl
         $this->liquidoRecebido = $this->brutoRecebido  * (1 - self::TAXA);
         $this->liquidoPendente = $this->brutoPendente  * (1 - self::TAXA);
         $this->taxaTotal       = $this->brutoRecebido  * self::TAXA;
-    }
-
-    private function carregarMensal(): void
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT
-              DATE_FORMAT(p.pago_em, '%Y-%m')  AS mes_ano,
-              DATE_FORMAT(p.pago_em, '%m/%Y')  AS mes_label,
-              COUNT(*) AS qtd,
-              SUM(p.valor) AS bruto
-            FROM pagamento p
-            INNER JOIN chamado c ON c.id = p.chamado_id
-            WHERE c.tecnico_id = ? AND p.status = 'Pago'
-            GROUP BY mes_ano, mes_label
-            ORDER BY mes_ano DESC
-            LIMIT 12
-        ");
-        $stmt->execute([$this->tecnicoId]);
-        $this->mensal = $stmt->fetchAll();
-    }
-
-    private function carregarDetalhes(): void
-    {
-        $where  = "AND YEAR(COALESCE(p.pago_em, c.atualizado_em)) = ?";
-        $params = [$this->tecnicoId, $this->filtroAno];
-
-        if ($this->filtroMes !== '') {
-            $where  = "AND MONTH(COALESCE(p.pago_em, c.atualizado_em)) = ? AND YEAR(COALESCE(p.pago_em, c.atualizado_em)) = ?";
-            $params = [$this->tecnicoId, (int)$this->filtroMes, $this->filtroAno];
-        }
-
-        $stmt = $this->pdo->prepare("
-            SELECT c.id AS chamado_id, c.descricao, c.categoria, c.preco_sugerido,
-                   cl.nome AS cliente_nome,
-                   p.id AS pag_id, p.valor AS pag_valor, p.status AS pag_status,
-                   p.metodo, p.pago_em,
-                   c.atualizado_em AS concluido_em
-            FROM chamado c
-            INNER JOIN cliente cl ON cl.id = c.cliente_id
-            LEFT JOIN pagamento p ON p.chamado_id = c.id
-            WHERE c.tecnico_id = ? AND c.status = 'Concluído'
-            {$where}
-            ORDER BY c.atualizado_em DESC
-        ");
-        $stmt->execute($params);
-        $this->detalhes = $stmt->fetchAll();
     }
 }

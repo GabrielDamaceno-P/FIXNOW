@@ -77,17 +77,17 @@ $dashLink = match($usuarioTipo) {
   <?php else: ?>
     <div class="list-group shadow-sm">
     <?php foreach ($notificacoes as $n): ?>
-      <?php $lida = (int)$n['lida']; ?>
+      <?php $lida = $n->lida; ?>
       <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start <?php echo $lida ? '' : 'list-group-item-warning'; ?>">
         <div>
-          <p class="mb-1"><?php echo htmlspecialchars($n['mensagem']); ?></p>
-          <small class="text-muted"><?php echo date('d/m/Y H:i', strtotime($n['criado_em'])); ?></small>
-          <?php if ($n['chamado_id']): ?>
-            <a href="chat.php?chamado=<?php echo (int)$n['chamado_id']; ?>" class="ms-2 small">💬 Ver chamado</a>
+          <p class="mb-1"><?php echo htmlspecialchars($n->mensagem); ?></p>
+          <small class="text-muted"><?php echo date('d/m/Y H:i', strtotime($n->criadoEm)); ?></small>
+          <?php if ($n->chamadoId): ?>
+            <a href="chat.php?chamado=<?php echo $n->chamadoId; ?>" class="ms-2 small">💬 Ver chamado</a>
           <?php endif; ?>
         </div>
         <?php if (!$lida): ?>
-          <a href="notificacoes.php?lida=<?php echo (int)$n['id']; ?>" class="btn btn-sm btn-outline-secondary ms-2 text-nowrap">Marcar lida</a>
+          <a href="notificacoes.php?lida=<?php echo $n->id; ?>" class="btn btn-sm btn-outline-secondary ms-2 text-nowrap">Marcar lida</a>
         <?php else: ?>
           <span class="badge bg-secondary ms-2">Lida</span>
         <?php endif; ?>

@@ -42,8 +42,9 @@ $nomeCli     = $ctrl->clienteNome;
     <div class="alert alert-warning">Nenhum chamado encontrado para rastreamento.</div>
   <?php else: ?>
     <div class="alert alert-info">
-      <?php echo htmlspecialchars($nomeTec); ?> está a <strong><span id="eta-dinamico">12 minutos</span></strong> do local.
-      Status atual: <strong><?php echo htmlspecialchars($chamado['status']); ?></strong>.
+      <?php echo htmlspecialchars($nomeTec); ?> —
+      ETA: <strong><span id="eta-dinamico"><?php echo !empty($chamado['em_deslocamento']) ? 'calculando...' : '—'; ?></span></strong>.
+      Status do chamado: <strong><?php echo htmlspecialchars($chamado['status']); ?></strong>.
     </div>
 
     <div class="card shadow-sm border-0 mb-3">
@@ -75,12 +76,17 @@ $nomeCli     = $ctrl->clienteNome;
     </div>
 
     <div id="map"
-      data-cliente-lat="-23.5505"
-      data-cliente-lng="-46.6333"
-      data-tecnico-lat="-23.5440"
-      data-tecnico-lng="-46.6260"
+      data-chamado-id="<?php echo (int)$chamado['id']; ?>"
+      data-lat-servico="<?php echo $chamado['lat_servico'] !== null ? htmlspecialchars($chamado['lat_servico'], ENT_QUOTES) : ''; ?>"
+      data-lng-servico="<?php echo $chamado['lng_servico'] !== null ? htmlspecialchars($chamado['lng_servico'], ENT_QUOTES) : ''; ?>"
+      data-endereco-servico="<?php echo htmlspecialchars($chamado['endereco_servico'] ?? '', ENT_QUOTES); ?>"
       data-tecnico-nome="<?php echo htmlspecialchars($nomeTec, ENT_QUOTES); ?>">
     </div>
+    <?php if (empty($chamado['em_deslocamento'])): ?>
+    <p class="text-muted small text-center mt-2" id="rastreamento-status">Aguardando prestador iniciar deslocamento...</p>
+    <?php else: ?>
+    <p class="text-success small text-center mt-2" id="rastreamento-status">Prestador a caminho!</p>
+    <?php endif; ?>
   <?php endif; ?>
 </main>
 

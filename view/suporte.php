@@ -110,7 +110,7 @@ function prioridadeBadge(string $p): string {
               <div class="col-6">
                 <label class="form-label">Categoria</label>
                 <select name="categoria" class="form-select form-select-sm">
-                  <?php foreach (SuporteControl::CATEGORIAS as $c): ?>
+                  <?php foreach (SuporteDAO::CATEGORIAS as $c): ?>
                     <option value="<?= $c ?>"><?= $c ?></option>
                   <?php endforeach; ?>
                 </select>
@@ -118,7 +118,7 @@ function prioridadeBadge(string $p): string {
               <div class="col-6">
                 <label class="form-label">Prioridade</label>
                 <select name="prioridade" class="form-select form-select-sm">
-                  <?php foreach (SuporteControl::PRIORIDADES as $p): ?>
+                  <?php foreach (SuporteDAO::PRIORIDADES as $p): ?>
                     <option value="<?= $p ?>" <?= $p === 'Normal' ? 'selected' : '' ?>><?= $p ?></option>
                   <?php endforeach; ?>
                 </select>
@@ -145,28 +145,28 @@ function prioridadeBadge(string $p): string {
           <?php else: ?>
             <div class="accordion" id="accordionTickets">
               <?php foreach ($tickets as $tk):
-                $status   = $tk['status'] ?? 'Aberto';
-                $prio     = $tk['prioridade'] ?? 'Normal';
-                $categ    = $tk['categoria']  ?? 'Outro';
+                $status   = $tk->status;
+                $prio     = $tk->prioridade;
+                $categ    = $tk->categoria;
                 $badgeSt  = $status === 'Aberto' ? 'danger' : ($status === 'Em Andamento' ? 'warning text-dark' : 'success');
                 $badgePr  = prioridadeBadge($prio);
                 $fechado  = $status === 'Fechado';
-                $msgs     = $tk['mensagens'] ?? [];
+                $msgs     = $tk->mensagens;
               ?>
                 <div class="accordion-item mb-2 border">
                   <h2 class="accordion-header">
                     <button class="accordion-button collapsed py-2" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#ticket<?= (int)$tk['id'] ?>">
+                            data-bs-toggle="collapse" data-bs-target="#ticket<?= $tk->id ?>">
                       <div class="d-flex align-items-center gap-2 flex-wrap w-100 me-3">
                         <span class="badge bg-<?= $badgeSt ?>"><?= htmlspecialchars($status) ?></span>
                         <span class="badge bg-<?= $badgePr ?>"><?= htmlspecialchars($prio) ?></span>
                         <span class="badge bg-light text-dark border"><?= htmlspecialchars($categ) ?></span>
-                        <span class="fw-semibold small">#<?= (int)$tk['id'] ?> — <?= htmlspecialchars(mb_strimwidth($tk['assunto'], 0, 50, '...')) ?></span>
-                        <span class="ms-auto small text-muted"><?= date('d/m/Y', strtotime($tk['criado_em'])) ?></span>
+                        <span class="fw-semibold small">#<?= $tk->id ?> — <?= htmlspecialchars(mb_strimwidth($tk->assunto, 0, 50, '...')) ?></span>
+                        <span class="ms-auto small text-muted"><?= date('d/m/Y', strtotime($tk->criadoEm)) ?></span>
                       </div>
                     </button>
                   </h2>
-                  <div id="ticket<?= (int)$tk['id'] ?>" class="accordion-collapse collapse">
+                  <div id="ticket<?= $tk->id ?>" class="accordion-collapse collapse">
                     <div class="accordion-body pt-2">
 
                       <!-- Thread de mensagens -->
@@ -175,14 +175,14 @@ function prioridadeBadge(string $p): string {
                           <p class="text-muted small mb-0">Sem mensagens.</p>
                         <?php else: ?>
                           <?php foreach ($msgs as $m):
-                            $isUser = $m['autor_tipo'] !== 'admin';
+                            $isUser = $m->autorTipo !== 'admin';
                           ?>
                             <div>
                               <div class="bubble <?= $isUser ? 'bubble-user' : 'bubble-admin' ?>">
-                                <?= nl2br(htmlspecialchars($m['mensagem'])) ?>
+                                <?= nl2br(htmlspecialchars($m->mensagem)) ?>
                               </div>
                               <div class="bubble-meta <?= $isUser ? 'text-end' : '' ?>">
-                                <?= $isUser ? 'Você' : 'Suporte Fix Now' ?> · <?= date('d/m H:i', strtotime($m['criado_em'])) ?>
+                                <?= $isUser ? 'Você' : 'Suporte Fix Now' ?> · <?= date('d/m H:i', strtotime($m->criadoEm)) ?>
                               </div>
                             </div>
                           <?php endforeach; ?>
@@ -193,7 +193,7 @@ function prioridadeBadge(string $p): string {
                       <?php if (!$fechado): ?>
                         <form method="post" class="d-flex gap-2">
                           <input type="hidden" name="acao" value="mensagem">
-                          <input type="hidden" name="suporte_id" value="<?= (int)$tk['id'] ?>">
+                          <input type="hidden" name="suporte_id" value="<?= $tk->id ?>">
                           <textarea name="mensagem" class="form-control form-control-sm" rows="2"
                             placeholder="Adicionar mensagem..." required style="resize:none;"></textarea>
                           <button class="btn btn-warning btn-sm fw-semibold" style="white-space:nowrap;">Enviar</button>

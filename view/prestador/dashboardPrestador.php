@@ -18,7 +18,7 @@ $mensagem          = $ctrl->mensagem;
 $erro              = $ctrl->erro;
 $isDestaque        = $ctrl->isDestaque;
 $categoriasServico = $ctrl->categoriasServico;
-$naoLidas          = count(array_filter($notificacoes, fn($n) => !(int)$n['lida']));
+$naoLidas          = count(array_filter($notificacoes, fn($n) => !$n->lida));
 $paginaAtiva       = 'chamados';
 ?>
 <!DOCTYPE html>
@@ -292,6 +292,13 @@ $paginaAtiva       = 'chamados';
                       <button type="submit" class="btn btn-sm btn-outline-primary">Salvar</button>
                     </form>
                     <a href="../chat.php?chamado=<?php echo (int)$c['id']; ?>" class="btn btn-sm btn-outline-primary">💬 Chat</a>
+                    <?php if (($c['status'] ?? '') === 'Em Andamento'): ?>
+                    <button type="button"
+                      class="btn btn-sm btn-warning btn-a-caminho"
+                      data-chamado-id="<?php echo (int)$c['id']; ?>">
+                      📍 A caminho
+                    </button>
+                    <?php endif; ?>
                   </div>
                 </td>
               </tr>
@@ -417,5 +424,60 @@ $paginaAtiva       = 'chamados';
 <script src="../../assets/js/forms-helpers.js"></script>
 <script src="../../assets/js/foto-lightbox.js"></script>
 <script src="../../assets/js/dashboard-prestador.js"></script>
+<script>
+(function () {
+  const btns = document.querySelectorAll('.btn-a-caminho');
+  if (!btns.length) return;
+
+  const watches = {};
+
+  btns.forEach(function (btn) {
+    const chamadoId = parseInt(btn.dataset.chamadoId, 10);
+
+    btn.addEventListener('click', function () {
+      if (watches[chamadoId]) {
+        navigator.geolocation.clearWatch(watches[chamadoId]);
+        delete watches[chamadoId];
+        fetch('../../api/rastreamento.php?chamado=' + chamadoId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'acao=parar',
+        });
+        btn.textContent = '📍 A caminho';
+        btn.classList.replace('btn-danger', 'btn-warning');
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        alert('Seu dispositivo não suporta GPS.');
+        return;
+      }
+
+      btn.textContent = '⏳ Obtendo GPS...';
+      btn.disabled = true;
+
+      watches[chamadoId] = navigator.geolocation.watchPosition(
+        function (pos) {
+          btn.textContent = '🔴 Parar compartilhamento';
+          btn.classList.replace('btn-warning', 'btn-danger');
+          btn.disabled = false;
+
+          fetch('../../api/rastreamento.php?chamado=' + chamadoId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'acao=posicao&lat=' + pos.coords.latitude + '&lng=' + pos.coords.longitude,
+          });
+        },
+        function () {
+          btn.textContent = '📍 A caminho';
+          btn.disabled = false;
+          alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      );
+    });
+  });
+})();
+</script>
 </body>
 </html>

@@ -68,4 +68,32 @@ class ServicoDAO
         $stmt->execute([$id, $tecnicoId]);
         return $stmt->rowCount() > 0;
     }
+
+    /** Nomes das categorias dos serviços ativos do técnico */
+    public function listarCategoriasDoTecnico(int $tecnicoId): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT DISTINCT cat.id, COALESCE(cat.nome, s.nome) AS nome
+            FROM servico s
+            LEFT JOIN categoria cat ON cat.id = s.categoria_id
+            WHERE s.tecnico_id = ? AND s.ativo = 1
+            ORDER BY nome
+        ");
+        $stmt->execute([$tecnicoId]);
+        return $stmt->fetchAll();
+    }
+
+    /** Nomes (string) das categorias ativas do técnico */
+    public function listarNomesCategoriasDoTecnico(int $tecnicoId): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT DISTINCT cat.nome
+            FROM servico s
+            INNER JOIN categoria cat ON cat.id = s.categoria_id
+            WHERE s.tecnico_id = ? AND s.ativo = 1
+            ORDER BY cat.nome
+        ");
+        $stmt->execute([$tecnicoId]);
+        return array_column($stmt->fetchAll(), 'nome');
+    }
 }

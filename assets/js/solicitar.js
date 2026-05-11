@@ -51,17 +51,15 @@
     atualizar();
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    if (wrapPrestadoras && chkPrestadoras) {
-      const genero = (document.body.dataset.clienteGenero || '').trim();
-      if (genero !== 'Feminino') {
-        wrapPrestadoras.classList.add('d-none');
-        chkPrestadoras.checked = false;
-        chkPrestadoras.disabled = true;
-      }
+  if (wrapPrestadoras && chkPrestadoras) {
+    const genero = (document.body.dataset.clienteGenero || '').trim();
+    if (genero !== 'Feminino') {
+      wrapPrestadoras.classList.add('d-none');
+      chkPrestadoras.checked = false;
+      chkPrestadoras.disabled = true;
     }
+  }
 
-    bindFotoPreview();
-    bindContadorDescricao();
-  });
+  bindFotoPreview();
+  bindContadorDescricao();
 })();

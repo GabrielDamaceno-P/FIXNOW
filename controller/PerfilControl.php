@@ -2,30 +2,33 @@
 
 require_once __DIR__ . '/../model/dao/ClienteDAO.php';
 require_once __DIR__ . '/../model/dao/TecnicoDAO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
+require_once __DIR__ . '/../model/dao/AvaliacaoDAO.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class PerfilControl
 {
-    private ClienteDAO $clienteDAO;
-    private TecnicoDAO $tecnicoDAO;
-    private PDO        $pdo;
+    private ClienteDAO   $clienteDAO;
+    private TecnicoDAO   $tecnicoDAO;
+    private ChamadoDAO   $chamadoDAO;
+    private AvaliacaoDAO $avaliacaoDAO;
 
-    public string $usuarioTipo  = '';
-    public int    $usuarioId    = 0;
-    public array  $usuario      = [];
-    public array  $historico    = [];
-    public array  $avaliacoes   = [];
-    public string $cpfMascara   = '';
-    public string $titulo       = '';
-    public string $mensagem     = '';
-    public string $erro         = '';
+    public string  $usuarioTipo  = '';
+    public int     $usuarioId    = 0;
+    public ?object $usuario      = null;
+    public array   $historico    = [];
+    public array   $avaliacoes   = [];
+    public string  $cpfMascara   = '';
+    public string  $titulo       = '';
+    public string  $mensagem     = '';
+    public string  $erro         = '';
 
     public function __construct()
     {
-        $this->clienteDAO = new ClienteDAO();
-        $this->tecnicoDAO = new TecnicoDAO();
-        $this->pdo        = Conexao::getConexao();
+        $this->clienteDAO   = new ClienteDAO();
+        $this->tecnicoDAO   = new TecnicoDAO();
+        $this->chamadoDAO   = new ChamadoDAO();
+        $this->avaliacaoDAO = new AvaliacaoDAO();
     }
 
     public function verificarSessao(): void
@@ -54,8 +57,10 @@ class PerfilControl
         }
 
         $this->carregarUsuario();
-        $this->carregarHistorico();
-        $this->carregarAvaliacoes();
+        $this->historico  = $this->chamadoDAO->listarHistoricoResumido($this->usuarioTipo, $this->usuarioId);
+        $this->avaliacoes = $this->usuarioTipo === 'prestador'
+            ? $this->avaliacaoDAO->listarPorTecnico($this->usuarioId)
+            : $this->avaliacaoDAO->listarPorCliente($this->usuarioId);
     }
 
     private function carregarUsuario(): void
@@ -63,74 +68,22 @@ class PerfilControl
         if ($this->usuarioTipo === 'prestador') {
             $dto = $this->tecnicoDAO->buscarPorId($this->usuarioId);
             if ($dto) {
-                $this->usuario = (array)$dto;
+                $this->usuario = $dto;
                 $cpf = $dto->cpf ?? '';
-                if ($cpf && strlen($cpf) === 11) {
-                    $this->cpfMascara = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
-                } else {
-                    $this->cpfMascara = $cpf;
-                }
+                $this->cpfMascara = $cpf && strlen($cpf) === 11
+                    ? substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2)
+                    : $cpf;
             }
         } else {
             $dto = $this->clienteDAO->buscarPorId($this->usuarioId);
             if ($dto) {
-                $this->usuario = (array)$dto;
+                $this->usuario = $dto;
                 $cpf = $dto->cpf ?? '';
-                if ($cpf && strlen($cpf) === 11) {
-                    $this->cpfMascara = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
-                } else {
-                    $this->cpfMascara = $cpf;
-                }
+                $this->cpfMascara = $cpf && strlen($cpf) === 11
+                    ? substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2)
+                    : $cpf;
             }
         }
-    }
-
-    private function carregarHistorico(): void
-    {
-        if ($this->usuarioTipo === 'prestador') {
-            $stmt = $this->pdo->prepare('
-                SELECT c.id, c.status, c.categoria, c.criado_em, cl.nome AS outra_parte
-                FROM chamado c
-                INNER JOIN cliente cl ON cl.id = c.cliente_id
-                WHERE c.tecnico_id = ?
-                ORDER BY c.criado_em DESC LIMIT 30
-            ');
-        } else {
-            $stmt = $this->pdo->prepare('
-                SELECT c.id, c.status, c.categoria, c.criado_em, COALESCE(t.nome, \'A definir\') AS outra_parte
-                FROM chamado c
-                LEFT JOIN tecnico t ON t.id = c.tecnico_id
-                WHERE c.cliente_id = ?
-                ORDER BY c.criado_em DESC LIMIT 30
-            ');
-        }
-        $stmt->execute([$this->usuarioId]);
-        $this->historico = $stmt->fetchAll();
-    }
-
-    private function carregarAvaliacoes(): void
-    {
-        if ($this->usuarioTipo === 'prestador') {
-            $stmt = $this->pdo->prepare('
-                SELECT a.nota, a.comentario, a.criado_em, cl.nome AS outra_parte, c.id AS chamado_id
-                FROM avaliacao a
-                INNER JOIN cliente cl ON cl.id = a.cliente_id
-                INNER JOIN chamado c ON c.id = a.chamado_id
-                WHERE a.tecnico_id = ?
-                ORDER BY a.criado_em DESC LIMIT 30
-            ');
-        } else {
-            $stmt = $this->pdo->prepare('
-                SELECT a.nota, a.comentario, a.criado_em, t.nome AS outra_parte, c.id AS chamado_id
-                FROM avaliacao a
-                INNER JOIN tecnico t ON t.id = a.tecnico_id
-                INNER JOIN chamado c ON c.id = a.chamado_id
-                WHERE a.cliente_id = ?
-                ORDER BY a.criado_em DESC LIMIT 30
-            ');
-        }
-        $stmt->execute([$this->usuarioId]);
-        $this->avaliacoes = $stmt->fetchAll();
     }
 
     private function atualizarDados(): void

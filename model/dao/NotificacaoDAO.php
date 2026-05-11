@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/Conexao.php';
+require_once __DIR__ . '/../dto/NotificacaoDTO.php';
 
 class NotificacaoDAO
 {
@@ -11,6 +12,7 @@ class NotificacaoDAO
         $this->pdo = Conexao::getConexao();
     }
 
+    /** @return NotificacaoDTO[] */
     public function listarPorCliente(int $clienteId, int $limit = 60): array
     {
         $stmt = $this->pdo->prepare("
@@ -19,9 +21,10 @@ class NotificacaoDAO
             ORDER BY criado_em DESC LIMIT {$limit}
         ");
         $stmt->execute([$clienteId]);
-        return $stmt->fetchAll();
+        return array_map([NotificacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
+    /** @return NotificacaoDTO[] */
     public function listarPorTecnico(int $tecnicoId, int $limit = 60): array
     {
         $stmt = $this->pdo->prepare("
@@ -30,15 +33,19 @@ class NotificacaoDAO
             ORDER BY criado_em DESC LIMIT {$limit}
         ");
         $stmt->execute([$tecnicoId]);
-        return $stmt->fetchAll();
+        return array_map([NotificacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
+    /** @return NotificacaoDTO[] */
     public function listarAdmin(int $limit = 60): array
     {
-        return $this->pdo->query("
-            SELECT * FROM notificacao WHERE tipo_destinatario='admin'
-            ORDER BY criado_em DESC LIMIT {$limit}
-        ")->fetchAll();
+        return array_map(
+            [NotificacaoDTO::class, 'fromArray'],
+            $this->pdo->query("
+                SELECT * FROM notificacao WHERE tipo_destinatario='admin'
+                ORDER BY criado_em DESC LIMIT {$limit}
+            ")->fetchAll()
+        );
     }
 
     public function marcarLidaCliente(int $id, int $clienteId): void

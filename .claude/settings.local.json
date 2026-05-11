@@ -4,7 +4,14 @@
       "Bash(grep -r 'session_start\\\\|session_regenerate_id\\\\|$_SESSION' /c/xampp/htdocs/Projeto_fixnow/projeto_fixnow/view '--include=*.php')",
       "Bash(xargs grep *)",
       "Bash(python3 -c ' *)",
-      "Bash(php -r \"echo password_hash\\('senha123', PASSWORD_DEFAULT\\);\")"
+      "Bash(php -r \"echo password_hash\\('senha123', PASSWORD_DEFAULT\\);\")",
+      "Bash(grep -n '$n\\\\[' c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/view/prestador/dashboardPrestador.php)",
+      "Bash(grep -rn '$tk\\\\['\\\\''\\\\|$m\\\\['\\\\''\\\\|$n\\\\['\\\\''' c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/view/)",
+      "Bash(grep -n '$this->pdo' c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/controller/ServicosControl.php c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/controller/PortfolioControl.php c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/controller/ChatControl.php c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/controller/FinanceiroPrestadorControl.php)",
+      "Bash(grep -n '$o\\\\['\\\\''\\\\|$orc\\\\['\\\\''' c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/view/prestador/orcamento.php)",
+      "Bash(grep -rn '\\(array\\)$dto\\\\|\\(array\\)$o\\\\b' c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/controller/)",
+      "Bash(chamado)",
+      "Bash(grep -n \"CREATE TABLE.*chamado\\\\|`chamado`\" \"c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/database.sql\")"
     ]
   }
 }

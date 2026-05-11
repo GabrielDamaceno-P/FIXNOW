@@ -306,7 +306,9 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
             </td>
             <td><?php echo date('d/m/Y H:i', strtotime($c->criadoEm)); ?></td>
             <td class="d-flex flex-wrap gap-1">
-              <a class="btn btn-sm btn-outline-primary" href="rastreamento.php?chamado=<?php echo $c->id; ?>">Rastrear</a>
+              <?php if ($c->status === 'Em Andamento'): ?>
+              <a class="btn btn-sm btn-outline-warning" href="rastreamento.php?chamado=<?php echo $c->id; ?>">📍 Rastrear</a>
+              <?php endif; ?>
               <?php if ($c->status === 'Pendente' && empty($c->tecnicoId)): ?>
                 <button type="button" class="btn btn-sm btn-outline-secondary"
                   data-bs-toggle="modal" data-bs-target="#modalAlterarChamado"

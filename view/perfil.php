@@ -14,9 +14,11 @@ $mensagem    = $ctrl->mensagem;
 $erro        = $ctrl->erro;
 $usuarioTipo = $ctrl->usuarioTipo;
 
+if (!$usuario) { header('Location: ' . ($usuarioTipo === 'prestador' ? 'prestador/dashboardPrestador.php' : 'dashboardCliente.php')); exit; }
+
 $dashLink = $usuarioTipo === 'prestador' ? 'prestador/dashboardPrestador.php' : 'dashboardCliente.php';
 $sairLink = $usuarioTipo === 'prestador' ? '../logout.php?entidade=prestador' : '../logout.php';
-$fotoUrl  = $usuario['fotoPerfil'] ?? '';
+$fotoUrl  = $usuario->fotoPerfil ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -45,14 +47,14 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
             <?php if ($fotoUrl): ?>
               <img src="../<?php echo htmlspecialchars($fotoUrl); ?>" alt="" width="32" height="32" class="rounded-circle border border-2 border-white border-opacity-50" style="object-fit:cover">
             <?php else: ?>
-              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning text-dark fw-bold flex-shrink-0" style="width:32px;height:32px;font-size:.85rem"><?php echo htmlspecialchars(mb_strtoupper(mb_substr($usuario['nome'] ?? '', 0, 1))); ?></span>
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning text-dark fw-bold flex-shrink-0" style="width:32px;height:32px;font-size:.85rem"><?php echo htmlspecialchars(mb_strtoupper(mb_substr($usuario->nome ?? '', 0, 1))); ?></span>
             <?php endif; ?>
-            <span class="d-none d-lg-inline text-truncate" style="max-width:120px"><?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></span>
+            <span class="d-none d-lg-inline text-truncate" style="max-width:120px"><?php echo htmlspecialchars($usuario->nome ?? ''); ?></span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="min-width:180px">
             <li class="px-3 py-2 border-bottom">
               <small class="text-muted d-block" style="font-size:.7rem">Logado como</small>
-              <strong class="d-block text-truncate" style="font-size:.85rem"><?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></strong>
+              <strong class="d-block text-truncate" style="font-size:.85rem"><?php echo htmlspecialchars($usuario->nome ?? ''); ?></strong>
             </li>
             <li><hr class="dropdown-divider my-1"></li>
             <li><a class="dropdown-item py-2 text-danger" href="<?php echo $sairLink; ?>"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
@@ -84,8 +86,8 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
               <span class="text-muted small">Sem foto</span>
             </div>
           <?php endif; ?>
-          <h5 class="mb-0"><?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></h5>
-          <p class="text-muted small mb-0"><?php echo htmlspecialchars($usuario['email'] ?? ''); ?></p>
+          <h5 class="mb-0"><?php echo htmlspecialchars($usuario->nome ?? ''); ?></h5>
+          <p class="text-muted small mb-0"><?php echo htmlspecialchars($usuario->email ?? ''); ?></p>
         </div>
       </div>
     </div>
@@ -101,11 +103,11 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
             <input type="hidden" name="acao" value="atualizar">
             <div class="col-md-6">
               <label class="form-label">Nome</label>
-              <input type="text" name="nome" class="form-control" required value="<?php echo htmlspecialchars($usuario['nome'] ?? ''); ?>">
+              <input type="text" name="nome" class="form-control" required value="<?php echo htmlspecialchars($usuario->nome ?? ''); ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Telefone</label>
-              <input type="text" name="telefone" class="form-control" required value="<?php echo htmlspecialchars($usuario['telefone'] ?? ''); ?>">
+              <input type="text" name="telefone" class="form-control" required value="<?php echo htmlspecialchars($usuario->telefone ?? ''); ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">CPF</label>
@@ -119,7 +121,7 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
                   $gopts = $usuarioTipo === 'prestador'
                       ? ['Feminino', 'Masculino', 'Outro']
                       : ['Feminino', 'Masculino', 'Outro', 'Prefiro não informar'];
-                  $gAtual = $usuario['genero'] ?? '';
+                  $gAtual = $usuario->genero ?? '';
                   foreach ($gopts as $g):
                 ?>
                   <option value="<?php echo $g; ?>" <?php echo $gAtual === $g ? 'selected' : ''; ?>><?php echo $g; ?></option>
@@ -129,16 +131,16 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
             <?php if ($usuarioTipo === 'prestador'): ?>
             <div class="col-12">
               <label class="form-label">Especialidade</label>
-              <input type="text" name="especialidade" class="form-control" value="<?php echo htmlspecialchars($usuario['especialidade'] ?? ''); ?>">
+              <input type="text" name="especialidade" class="form-control" value="<?php echo htmlspecialchars($usuario->especialidade ?? ''); ?>">
             </div>
             <?php else: ?>
             <div class="col-12">
               <label class="form-label">Endereço</label>
-              <input type="text" name="endereco" class="form-control" value="<?php echo htmlspecialchars($usuario['endereco'] ?? ''); ?>">
+              <input type="text" name="endereco" class="form-control" value="<?php echo htmlspecialchars($usuario->endereco ?? ''); ?>">
             </div>
             <div class="col-md-4">
               <label class="form-label">CEP</label>
-              <input type="text" name="cep" class="form-control" value="<?php echo htmlspecialchars($usuario['cep'] ?? ''); ?>">
+              <input type="text" name="cep" class="form-control" value="<?php echo htmlspecialchars($usuario->cep ?? ''); ?>">
             </div>
             <?php endif; ?>
             <div class="col-12">
@@ -214,15 +216,17 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
             <p class="text-muted mb-0">Nenhuma avaliação registrada.</p>
           <?php else: ?>
             <ul class="list-group list-group-flush">
-              <?php foreach ($avaliacoes as $a): ?>
+              <?php foreach ($avaliacoes as $a):
+                $outraParte = $usuarioTipo === 'prestador' ? $a->clienteNome : $a->tecnicoNome;
+              ?>
                 <li class="list-group-item px-0">
-                  <strong><?php echo (int)$a['nota']; ?>/5</strong>
-                  — Chamado #<?php echo (int)$a['chamado_id']; ?>
-                  <span class="text-muted small">(<?php echo htmlspecialchars($a['outra_parte'] ?? ''); ?>)</span>
-                  <?php if (!empty($a['comentario'])): ?>
-                    <div class="small text-muted"><?php echo htmlspecialchars($a['comentario']); ?></div>
+                  <strong><?php echo $a->nota; ?>/5</strong>
+                  — Chamado #<?php echo $a->chamadoId; ?>
+                  <span class="text-muted small">(<?php echo htmlspecialchars($outraParte ?? ''); ?>)</span>
+                  <?php if (!empty($a->comentario)): ?>
+                    <div class="small text-muted"><?php echo htmlspecialchars($a->comentario); ?></div>
                   <?php endif; ?>
-                  <div class="small text-muted"><?php echo date('d/m/Y H:i', strtotime($a['criado_em'])); ?></div>
+                  <div class="small text-muted"><?php echo date('d/m/Y H:i', strtotime($a->criadoEm)); ?></div>
                 </li>
               <?php endforeach; ?>
             </ul>

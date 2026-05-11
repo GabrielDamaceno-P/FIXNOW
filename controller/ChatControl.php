@@ -2,14 +2,16 @@
 
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/MensagemDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class ChatControl
 {
-    private ChamadoDAO  $chamadoDAO;
-    private MensagemDAO $mensagemDAO;
-    private PDO         $pdo;
+    private ChamadoDAO    $chamadoDAO;
+    private MensagemDAO   $mensagemDAO;
+    private NotificacaoDAO $notifDAO;
+    private PDO           $pdo;
 
     public int    $usuarioId       = 0;
     public string $usuarioTipo     = '';
@@ -27,6 +29,7 @@ class ChatControl
     {
         $this->chamadoDAO  = new ChamadoDAO();
         $this->mensagemDAO = new MensagemDAO();
+        $this->notifDAO    = new NotificacaoDAO();
         $this->pdo         = Conexao::getConexao();
     }
 
@@ -105,25 +108,10 @@ class ChatControl
             $this->mensagens = $this->mensagemDAO->listarPorChamado($this->chamadoId);
         }
 
-        $this->carregarNaoLidas();
-    }
-
-    private function carregarNaoLidas(): void
-    {
-        try {
-            if ($this->usuarioTipo === 'prestador') {
-                $stmt = $this->pdo->prepare(
-                    "SELECT COUNT(*) FROM notificacao WHERE tecnico_id = ? AND tipo_destinatario = 'prestador' AND lida = 0"
-                );
-            } else {
-                $stmt = $this->pdo->prepare(
-                    "SELECT COUNT(*) FROM notificacao WHERE cliente_id = ? AND tipo_destinatario = 'cliente' AND lida = 0"
-                );
-            }
-            $stmt->execute([$this->usuarioId]);
-            $this->naoLidas = (int)$stmt->fetchColumn();
-        } catch (PDOException $e) {
-            $this->naoLidas = 0;
+        if ($this->usuarioTipo === 'prestador') {
+            $this->naoLidas = $this->notifDAO->contarNaoLidasTecnico($this->usuarioId);
+        } else {
+            $this->naoLidas = $this->notifDAO->contarNaoLidasCliente($this->usuarioId);
         }
     }
 }
