@@ -274,7 +274,7 @@ $stats = $stmtStats->fetch();
         <li class="nav-item"><a class="nav-link" href="#como-funciona">Como funciona</a></li>
         <li class="nav-item"><a class="nav-link" href="#acessos-rapidos">Acessos</a></li>
         <li class="nav-item"><a class="nav-link" href="login.php">Entrar</a></li>
-        <li class="nav-item"><a class="btn btn-sm btn-warning ms-lg-1 px-3 fw-semibold" href="cliente/solicitar.php">Pedir serviço</a></li>
+        <li class="nav-item"><a class="btn btn-sm btn-warning ms-lg-1 px-3 fw-semibold" href="view/cliente/solicitar.php">Pedir serviço</a></li>
       </ul>
     </div>
   </div>
@@ -290,8 +290,8 @@ $stats = $stmtStats->fetch();
           Conectamos você a técnicos verificados em Suporte TI, Elétrica, Hidráulica, Pintura e Marcenaria.
         </p>
         <div class="d-flex flex-wrap gap-2 mt-4">
-          <a href="cliente/cadastro.php" class="btn btn-warning btn-lg fw-semibold px-4">Criar conta grátis</a>
-          <a href="cliente/solicitar.php" class="btn btn-outline-light btn-lg px-4">Pedir serviço agora</a>
+          <a href="view/cadastrarCliente.php" class="btn btn-warning btn-lg fw-semibold px-4">Criar conta grátis</a>
+          <a href="view/cliente/solicitar.php" class="btn btn-outline-light btn-lg px-4">Pedir serviço agora</a>
         </div>
         <div class="d-flex flex-wrap gap-3 mt-4" style="font-size:.83rem;color:rgba(255,255,255,.7);">
           <span>✅ Sem taxa de cadastro</span>
@@ -428,7 +428,7 @@ $stats = $stmtStats->fetch();
       </div>
     </div>
     <div class="text-center mt-4">
-      <a href="cliente/solicitar.php" class="btn btn-warning btn-lg fw-semibold px-5">Começar agora</a>
+      <a href="view/cliente/solicitar.php" class="btn btn-warning btn-lg fw-semibold px-5">Começar agora</a>
     </div>
   </div>
 </section>
@@ -489,7 +489,7 @@ $stats = $stmtStats->fetch();
     </div>
     <div class="row g-3 g-lg-4">
       <div class="col-md-6 col-lg-3">
-        <a class="link-rapido h-100" href="cliente/cadastro.php">
+        <a class="link-rapido h-100" href="view/cadastrarCliente.php">
           <div class="icone-rapido">👤</div>
           <div>
             <h6 class="mb-1 fw-bold">Sou Cliente</h6>
@@ -519,7 +519,7 @@ $stats = $stmtStats->fetch();
         </a>
       </div>
       <div class="col-md-6 col-lg-3">
-        <a class="link-rapido h-100" href="cliente/solicitar.php">
+        <a class="link-rapido h-100" href="view/cliente/solicitar.php">
           <div class="icone-rapido">🚀</div>
           <div>
             <h6 class="mb-1 fw-bold">Pedir serviço</h6>
