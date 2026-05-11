@@ -54,27 +54,33 @@ function prioridadeBadge(string $p): string {
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <?php if ($usuarioFoto): ?>
-      <span class="fn-user-badge me-2">
-        <img src="../<?= htmlspecialchars($usuarioFoto) ?>" alt="" width="44" height="44">
-        <span><?= htmlspecialchars($usuarioNome) ?></span>
-      </span>
-    <?php elseif ($usuarioNome): ?>
-      <span class="fn-user-badge me-2">
-        <span class="fallback"><?= htmlspecialchars(mb_substr($usuarioNome, 0, 1)) ?></span>
-        <span><?= htmlspecialchars($usuarioNome) ?></span>
-      </span>
-    <?php endif; ?>
     <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="<?= $dashLink ?>">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link active" href="suporte.php">Suporte</a></li>
-        <?php if ($usuarioTipo !== 'admin'): ?>
-          <li class="nav-item"><a class="nav-link" href="perfil.php">Perfil</a></li>
-        <?php endif; ?>
-        <li class="nav-item"><a class="nav-link" href="<?= $sairLink ?>">Sair</a></li>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#suporteMenu" aria-controls="suporteMenu" aria-expanded="false" aria-label="Menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="suporteMenu">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="<?= $dashLink ?>"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="suporte.php"><i class="bi bi-headset me-1"></i>Suporte</a></li>
+      </ul>
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-1" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+            <?php if ($usuarioFoto): ?>
+              <img src="../<?= htmlspecialchars($usuarioFoto) ?>" alt="" width="32" height="32" class="rounded-circle border border-2 border-white border-opacity-50" style="object-fit:cover">
+            <?php else: ?>
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning text-dark fw-bold flex-shrink-0" style="width:32px;height:32px;font-size:.85rem"><?= htmlspecialchars(mb_strtoupper(mb_substr($usuarioNome ?? '', 0, 1))) ?></span>
+            <?php endif; ?>
+            <span class="d-none d-lg-inline text-truncate" style="max-width:120px"><?= htmlspecialchars($usuarioNome ?? '') ?></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="min-width:180px">
+            <?php if ($usuarioTipo !== 'admin'): ?>
+            <li><a class="dropdown-item py-2" href="perfil.php"><i class="bi bi-person me-2 text-primary"></i>Perfil</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <?php endif; ?>
+            <li><a class="dropdown-item py-2 text-danger" href="<?= $sairLink ?>"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+          </ul>
+        </li>
       </ul>
     </div>
   </div>
@@ -208,9 +214,7 @@ function prioridadeBadge(string $p): string {
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?= date('Y') ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
 <script>

@@ -23,8 +23,10 @@ class DashboardClienteControl
     public array  $servicos          = [];
     public array  $categorias        = [];
     public ?array $depoimento        = null;
-    public string $filtroCategoria   = '';
-    public int    $naoLidas          = 0;
+    public string $filtroCategoria      = '';
+    public bool   $filtroPrestadoraMulher = false;
+    public string $clienteGenero       = '';
+    public int    $naoLidas            = 0;
 
     public function __construct()
     {
@@ -272,10 +274,27 @@ class DashboardClienteControl
         $this->notificacoes = $stmtN->fetchAll();
         $this->naoLidas = count($this->notificacoes);
 
-        // Filtro categoria
-        $this->filtroCategoria = trim($_GET['categoria'] ?? '');
-        $whereCateg = $this->filtroCategoria !== '' ? 'AND c.nome = ?' : '';
-        $paramsCat  = $this->filtroCategoria !== '' ? [$this->filtroCategoria] : [];
+        // Gênero do cliente
+        $rowCli = $this->pdo->prepare("SELECT genero FROM cliente WHERE id=? LIMIT 1");
+        $rowCli->execute([$this->clienteId]);
+        $this->clienteGenero = (string)($rowCli->fetchColumn() ?? '');
+
+        // Filtros
+        $this->filtroCategoria       = trim($_GET['categoria'] ?? '');
+        $this->filtroPrestadoraMulher = isset($_GET['so_mulher']) && $this->clienteGenero === 'Feminino';
+
+        $where  = ['s.ativo = 1'];
+        $params = [];
+
+        if ($this->filtroCategoria !== '') {
+            $where[]  = 'c.nome = ?';
+            $params[] = $this->filtroCategoria;
+        }
+        if ($this->filtroPrestadoraMulher) {
+            $where[]  = "t.genero = 'Feminino'";
+        }
+
+        $whereSQL = implode(' AND ', $where);
 
         // Serviços / prestadores
         $stmtSv = $this->pdo->prepare("
@@ -286,10 +305,10 @@ class DashboardClienteControl
             FROM servico s
             JOIN tecnico t ON t.id = s.tecnico_id AND t.ativo = 1 AND t.status_cadastro = 'Aprovado'
             LEFT JOIN categoria c ON c.id = s.categoria_id
-            WHERE s.ativo = 1 $whereCateg
+            WHERE $whereSQL
             ORDER BY t.destaque DESC, t.avaliacao_media DESC, s.nome ASC
         ");
-        $stmtSv->execute($paramsCat);
+        $stmtSv->execute($params);
         $rows = $stmtSv->fetchAll();
 
         // Agrupa por prestador: um card por prestador com lista de serviços

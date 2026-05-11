@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../../controller/DashboardPrestadorControl.php';
 
@@ -30,40 +30,9 @@ $paginaAtiva       = 'chamados';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
-<body data-live-update-interval="8000">
+<body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-  <div class="container">
-    <span class="fn-user-badge me-2">
-      <?php if ($tecnicoFoto): ?>
-        <img src="../../<?php echo htmlspecialchars($tecnicoFoto); ?>" alt="Foto" width="44" height="44">
-      <?php else: ?>
-        <span class="fallback"><?php echo htmlspecialchars(mb_substr($tecnicoNome, 0, 1)); ?></span>
-      <?php endif; ?>
-      <span><?php echo htmlspecialchars($tecnicoNome); ?></span>
-    </span>
-    <a class="navbar-brand fw-bold" href="../../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#prestMenu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="prestMenu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'chamados' ? 'active' : ''; ?>" href="dashboardPrestador.php">Chamados</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'calendario' ? 'active' : ''; ?>" href="calendario.php">Calendário</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'orcamentos' ? 'active' : ''; ?>" href="orcamento.php">Orçamentos</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'servicos' ? 'active' : ''; ?>" href="servicos.php">Meus Serviços</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'portfolio' ? 'active' : ''; ?>" href="portfolio.php">Portfólio</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'financeiro' ? 'active' : ''; ?>" href="financeiro.php">Financeiro</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'suporte' ? 'active' : ''; ?>" href="../suporte.php">Suporte</a></li>
-        <li class="nav-item">
-          <a class="nav-link <?php echo $paginaAtiva === 'notificacoes' ? 'active' : ''; ?>" href="../notificacoes.php">
-            Notificações<?php if ($naoLidas > 0): ?><span class="badge bg-danger ms-1"><?php echo $naoLidas; ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li class="nav-item"><a class="nav-link" href="../perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="../../logout.php?entidade=prestador">Sair</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<?php require_once __DIR__ . '/../../includes/prestador_nav.php'; ?>
 
 <main class="container py-5 mt-5">
 
@@ -153,7 +122,7 @@ $paginaAtiva       = 'chamados';
                     <span class="text-muted">—</span>
                   <?php endif; ?>
                 </td>
-                <td><?php echo !empty($p['exige_prestadora_mulher']) ? '<span class="badge bg-info text-dark">Só prestadoras</span>' : '<span class="text-muted">—</span>'; ?></td>
+                <td><?php echo !empty($p['prest_feminino']) ? '<span class="badge bg-info text-dark">Só prestadoras</span>' : '<span class="text-muted">—</span>'; ?></td>
                 <td>
                   <button type="button" class="btn btn-sm btn-outline-secondary js-open-cliente-perfil"
                     data-cliente-nome="<?php echo htmlspecialchars($p['cliente_nome'], ENT_QUOTES); ?>"
@@ -442,9 +411,7 @@ $paginaAtiva       = 'chamados';
   </div>
 </div>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script src="../../assets/js/forms-helpers.js"></script>

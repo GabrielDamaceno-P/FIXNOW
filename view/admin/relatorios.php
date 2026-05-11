@@ -26,7 +26,7 @@ if (isset($_GET['exportar'])) {
             ORDER BY c.criado_em DESC
         ")->fetchAll(PDO::FETCH_NUM);
 
-    } elseif ($tipo === 'pagamentos' && ($isMaster || $isFinanceiro)) {
+    } elseif ($tipo === 'pagamentos' && ($isMaster || true)) {
         $cabecalho = ['ID','Chamado','Cliente','Método','Valor','Status','Pago Em'];
         $dados = $pdo->query("
             SELECT p.id, p.chamado_id, cl.nome, p.metodo,
@@ -203,7 +203,7 @@ $porMes = $pdo->query("
             </div>
           </div>
         </div>
-        <?php if ($isMaster || $isFinanceiro): ?>
+        <?php if ($isMaster || true): ?>
         <div class="col-md-4">
           <div class="card border">
             <div class="card-body">
@@ -246,9 +246,7 @@ $porMes = $pdo->query("
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?= date('Y') ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 </body>

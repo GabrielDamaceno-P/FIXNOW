@@ -12,12 +12,14 @@ $notificacoes        = $ctrl->notificacoes;
 $servicos            = $ctrl->servicos;
 $categorias          = $ctrl->categorias;
 $depoimento          = $ctrl->depoimento;
-$filtroCategoria     = $ctrl->filtroCategoria;
-$mensagem            = $ctrl->mensagem;
-$erro                = $ctrl->erro;
-$naoLidas            = $ctrl->naoLidas;
-$clienteNome         = $_SESSION['cliente_nome'] ?? 'Cliente';
-$clienteFoto         = $_SESSION['cliente_foto'] ?? '';
+$filtroCategoria        = $ctrl->filtroCategoria;
+$filtroPrestadoraMulher = $ctrl->filtroPrestadoraMulher;
+$clienteGenero          = $ctrl->clienteGenero;
+$mensagem               = $ctrl->mensagem;
+$erro                   = $ctrl->erro;
+$naoLidas               = $ctrl->naoLidas;
+$clienteNome            = $_SESSION['cliente_nome'] ?? 'Cliente';
+$clienteFoto            = $_SESSION['cliente_foto'] ?? '';
 
 $dicasGerais = [
     'Adicione fotos ao abrir um chamado — prestadores aceitam mais rápido quando entendem o problema.',
@@ -47,36 +49,8 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/stars-avaliacao.css" rel="stylesheet">
 </head>
-<body data-live-update-interval="9000">
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-  <div class="container">
-    <span class="fn-user-badge me-2">
-      <?php if ($clienteFoto): ?>
-        <img src="../<?php echo htmlspecialchars($clienteFoto); ?>" alt="Foto" width="44" height="44">
-      <?php else: ?>
-        <span class="fallback"><?php echo htmlspecialchars(mb_substr($clienteNome, 0, 1)); ?></span>
-      <?php endif; ?>
-      <span><?php echo htmlspecialchars($clienteNome); ?></span>
-    </span>
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../index.php">Início</a></li>
-        <li class="nav-item"><a class="nav-link active" href="dashboardCliente.php">Dashboard</a></li>
-        <li class="nav-item">
-          <a class="nav-link" href="notificacoes.php">
-            Notificações<?php if ($naoLidas > 0): ?><span class="badge bg-danger ms-1"><?php echo $naoLidas; ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li class="nav-item"><a class="nav-link" href="perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="rastreamento.php">Rastreamento</a></li>
-        <li class="nav-item"><a class="nav-link" href="suporte.php">Suporte</a></li>
-        <li class="nav-item"><a class="nav-link" href="../logout.php">Sair</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<body>
+<?php $paginaAtiva = 'dashboard'; $_navDepth = 1; require_once __DIR__ . '/../includes/cliente_nav.php'; ?>
 
 <main class="container py-5 mt-5">
   <section class="fn-hero p-4 p-lg-5 mb-4">
@@ -146,18 +120,40 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
         <p class="text-muted mb-0 small">Escolha um prestador e veja os horários disponíveis para agendar.</p>
       </div>
     </div>
-    <div class="d-flex flex-wrap gap-2 mb-4">
-      <a href="dashboardCliente.php#encontrar-prestador"
+    <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+      <?php
+        $baseUrl = 'dashboardCliente.php';
+        $soMulher = $filtroPrestadoraMulher ? '&so_mulher=1' : '';
+      ?>
+      <a href="<?php echo $baseUrl . ($soMulher ? '?so_mulher=1' : ''); ?>#encontrar-prestador"
          class="btn btn-sm <?php echo $filtroCategoria === '' ? 'btn-primary' : 'btn-outline-secondary'; ?>">Todos</a>
       <?php foreach ($categorias as $cat): ?>
-        <a href="dashboardCliente.php?categoria=<?php echo urlencode($cat['nome']); ?>#encontrar-prestador"
+        <?php $catParam = '?categoria=' . urlencode($cat['nome']) . ($filtroPrestadoraMulher ? '&so_mulher=1' : ''); ?>
+        <a href="<?php echo $baseUrl . $catParam; ?>#encontrar-prestador"
            class="btn btn-sm <?php echo $filtroCategoria === $cat['nome'] ? 'btn-primary' : 'btn-outline-secondary'; ?>">
           <?php echo htmlspecialchars($cat['nome']); ?>
         </a>
       <?php endforeach; ?>
+
+      <?php if ($clienteGenero === 'Feminino'): ?>
+        <span class="vr mx-1 d-none d-sm-block"></span>
+        <?php
+          $toggleUrl = $baseUrl . ($filtroCategoria ? '?categoria=' . urlencode($filtroCategoria) : '?');
+          $toggleUrl .= ($filtroCategoria ? '&' : '') . ($filtroPrestadoraMulher ? '' : 'so_mulher=1');
+          $toggleUrl .= '#encontrar-prestador';
+        ?>
+        <a href="<?php echo $toggleUrl; ?>"
+           class="btn btn-sm <?php echo $filtroPrestadoraMulher ? 'btn-pink' : 'btn-outline-pink'; ?>"
+           title="Mostrar somente prestadoras mulheres">
+          <i class="bi bi-gender-female me-1"></i>Somente mulheres
+        </a>
+      <?php endif; ?>
     </div>
     <?php if (!$servicos): ?>
-      <div class="alert alert-info">Nenhum prestador encontrado<?php echo $filtroCategoria ? ' para esta categoria' : ''; ?>.</div>
+      <div class="alert alert-info">
+        Nenhum prestador encontrado<?php echo $filtroCategoria ? ' para a categoria <strong>' . htmlspecialchars($filtroCategoria) . '</strong>' : ''; ?>
+        <?php echo $filtroPrestadoraMulher ? ' entre as prestadoras mulheres' : ''; ?>.
+      </div>
     <?php else: ?>
       <div class="row g-4">
         <?php foreach ($servicos as $s): ?>
@@ -245,36 +241,6 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   <?php endif; ?>
   <?php if ($erro): ?><div class="alert alert-danger"><?php echo htmlspecialchars($erro); ?></div><?php endif; ?>
 
-  <?php if ($notificacoes): ?>
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h3 class="h5 mb-0">Notificações <span class="badge bg-danger"><?php echo count($notificacoes); ?></span></h3>
-          <div class="d-flex gap-2">
-            <form method="post" action="notificacoes.php">
-              <input type="hidden" name="acao" value="marcar_todas_lidas">
-              <button class="btn btn-sm btn-outline-secondary">Marcar todas como lidas</button>
-            </form>
-            <a href="notificacoes.php" class="btn btn-sm btn-outline-primary">Ver todas</a>
-          </div>
-        </div>
-        <ul class="list-group list-group-flush">
-          <?php foreach ($notificacoes as $n): ?>
-            <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2">
-              <div>
-                <span class="badge bg-primary me-1">Nova</span>
-                <span class="small"><?php echo htmlspecialchars($n['mensagem']); ?></span>
-                <?php if (!empty($n['chamado_id'])): ?>
-                  <div class="small text-muted">Chamado #<?php echo (int)$n['chamado_id']; ?> &middot; <?php echo date('d/m H:i', strtotime($n['criado_em'])); ?></div>
-                <?php endif; ?>
-              </div>
-              <a class="btn btn-sm btn-outline-secondary flex-shrink-0" href="dashboardCliente.php?lida=<?php echo (int)$n['id']; ?>">Marcar lida</a>
-            </li>
-          <?php endforeach; ?>
-        </ul>
-      </div>
-    </div>
-  <?php endif; ?>
 
   <?php if (!$chamados): ?>
     <div class="alert alert-info">Você ainda não possui chamados abertos.</div>
@@ -412,37 +378,104 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
 
 <!-- Modal Pagamento -->
 <div class="modal fade" id="modalPagamento" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Pagamento simulado</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p class="small text-muted" data-pagamento-resumo></p>
-        <form method="post" id="form-confirmar-pagamento" class="js-guard-submit">
-          <input type="hidden" name="confirmar_pagamento_id" value="">
-          <div class="mb-3">
-            <label class="form-label">Método</label>
-            <select name="metodo_pagamento" class="form-select">
-              <option value="PIX">PIX</option>
-              <option value="Cartão">Cartão</option>
-              <option value="Dinheiro">Dinheiro</option>
-            </select>
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+    <div class="modal-content border-0 shadow-lg overflow-hidden">
+
+      <!-- Cabeçalho com valor -->
+      <div class="p-4 text-white" style="background:var(--fix-blue)">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="small opacity-75 mb-1">Total a pagar · Chamado <span id="pag-chamado-ref">#—</span></div>
+            <div class="fw-bold fs-3" id="pag-valor-display">R$ 0,00</div>
           </div>
-        </form>
-        <div class="text-center mb-3 p-3 bg-light rounded border" style="min-height:140px;">
-          <div class="small text-muted mb-2">QR Code (demonstração)</div>
-          <div style="width:120px;height:120px;margin:0 auto;background:repeating-linear-gradient(45deg,#222 0 4px,#fff 4px 8px);border-radius:8px;" role="img" aria-label="QR Code simulado"></div>
+          <button type="button" class="btn-close btn-close-white mt-1" data-bs-dismiss="modal"></button>
         </div>
-        <label class="form-label">Código copia e cola (simulado)</label>
-        <textarea class="form-control font-monospace small" id="pix-copia-cola" rows="3" readonly></textarea>
-        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="btn-copiar-pix">Copiar código</button>
       </div>
-      <div class="modal-footer flex-column align-items-stretch gap-2">
-        <button type="submit" class="btn btn-warning fw-semibold" form="form-confirmar-pagamento">Confirmar pagamento (demo)</button>
-        <small class="text-muted">Em produção, integre o gateway (Mercado Pago, Stripe, etc.).</small>
+
+      <!-- Abas de método -->
+      <div class="px-4 pt-3">
+        <ul class="nav nav-pills gap-2" id="pag-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active px-3 py-1" id="tab-pix-btn" data-bs-toggle="pill" data-bs-target="#tab-pix" type="button" role="tab">
+              <i class="bi bi-qr-code me-1"></i>PIX
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-3 py-1" id="tab-cartao-btn" data-bs-toggle="pill" data-bs-target="#tab-cartao" type="button" role="tab">
+              <i class="bi bi-credit-card me-1"></i>Cartão
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-3 py-1" id="tab-dinheiro-btn" data-bs-toggle="pill" data-bs-target="#tab-dinheiro" type="button" role="tab">
+              <i class="bi bi-cash me-1"></i>Dinheiro
+            </button>
+          </li>
+        </ul>
       </div>
+
+      <form method="post" id="form-confirmar-pagamento" class="js-guard-submit">
+        <input type="hidden" name="confirmar_pagamento_id" value="">
+        <input type="hidden" name="metodo_pagamento" id="pag-metodo-hidden" value="PIX">
+
+        <div class="tab-content px-4 pt-3 pb-1">
+
+          <!-- PIX -->
+          <div class="tab-pane fade show active" id="tab-pix" role="tabpanel">
+            <div class="text-center mb-3">
+              <div class="d-inline-flex align-items-center justify-content-center rounded-3 border bg-white p-2 mb-2">
+                <div id="pix-qrcode"></div>
+              </div>
+              <div class="small text-muted">Escaneie com o app do seu banco</div>
+            </div>
+            <div class="mb-1">
+              <label class="form-label small fw-semibold">Código copia e cola</label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control font-monospace" id="pix-copia-cola" readonly>
+                <button type="button" class="btn btn-outline-secondary" id="btn-copiar-pix" title="Copiar"><i class="bi bi-clipboard"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cartão -->
+          <div class="tab-pane fade" id="tab-cartao" role="tabpanel">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Número do cartão</label>
+              <input type="text" class="form-control" id="cartao-numero" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric" autocomplete="cc-number">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Nome no cartão</label>
+              <input type="text" class="form-control text-uppercase" id="cartao-nome" placeholder="NOME SOBRENOME" autocomplete="cc-name">
+            </div>
+            <div class="row g-2 mb-1">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Validade</label>
+                <input type="text" class="form-control" id="cartao-validade" placeholder="MM/AA" maxlength="5" inputmode="numeric" autocomplete="cc-exp">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">CVV</label>
+                <input type="text" class="form-control" id="cartao-cvv" placeholder="•••" maxlength="3" inputmode="numeric" autocomplete="cc-csc">
+              </div>
+            </div>
+          </div>
+
+          <!-- Dinheiro -->
+          <div class="tab-pane fade" id="tab-dinheiro" role="tabpanel">
+            <div class="text-center py-3">
+              <i class="bi bi-cash-stack text-success" style="font-size:3rem"></i>
+              <p class="mt-2 mb-1 fw-semibold">Pagamento em dinheiro</p>
+              <p class="small text-muted">O prestador registrará a confirmação após o recebimento presencial.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="px-4 pb-4 pt-2">
+          <button type="submit" class="btn btn-warning fw-semibold w-100" id="btn-confirmar-pag">
+            Confirmar pagamento
+          </button>
+        </div>
+      </form>
+
     </div>
   </div>
 </div>
@@ -570,13 +603,12 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   </div>
 </div>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/forms-helpers.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../assets/js/pagamento-dashboard.js"></script>
 <script src="../assets/js/avaliacao-dashboard.js"></script>
 <script src="../assets/js/cpf-validation-reload.js"></script>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../../controller/CalendarioPrestadorControl.php';
 
@@ -49,38 +49,7 @@ $hoje           = new DateTime('today');
   </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-  <div class="container">
-    <span class="fn-user-badge me-2">
-      <?php if ($tecnicoFoto): ?>
-        <img src="../../<?php echo htmlspecialchars($tecnicoFoto); ?>" alt="Foto" width="44" height="44">
-      <?php else: ?>
-        <span class="fallback"><?php echo htmlspecialchars(mb_substr($tecnicoNome, 0, 1)); ?></span>
-      <?php endif; ?>
-      <span><?php echo htmlspecialchars($tecnicoNome); ?></span>
-    </span>
-    <a class="navbar-brand fw-bold" href="../../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="dashboardPrestador.php">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link active" href="calendario.php">Calendário</a></li>
-        <li class="nav-item"><a class="nav-link" href="orcamento.php">Orçamentos</a></li>
-        <li class="nav-item"><a class="nav-link" href="servicos.php">Meus Serviços</a></li>
-        <li class="nav-item"><a class="nav-link" href="portfolio.php">Portfólio</a></li>
-        <li class="nav-item"><a class="nav-link" href="financeiro.php">Financeiro</a></li>
-        <li class="nav-item"><a class="nav-link" href="../suporte.php">Suporte</a></li>
-        <li class="nav-item">
-          <a class="nav-link" href="../notificacoes.php">
-            Notificações<?php if ($naoLidas > 0): ?><span class="badge bg-danger ms-1"><?php echo $naoLidas; ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li class="nav-item"><a class="nav-link" href="../perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="../../logout.php?entidade=prestador">Sair</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<?php $paginaAtiva = 'calendario'; require_once __DIR__ . '/../../includes/prestador_nav.php'; ?>
 
 <main class="container py-5 mt-5">
   <h2 class="mb-1">Calendário de Disponibilidade</h2>
@@ -171,9 +140,7 @@ $hoje           = new DateTime('today');
   </form>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script>

@@ -69,7 +69,7 @@ class ChamadoDAO
                     )
                     OR c.tecnico_id = ?
               )
-              AND (COALESCE(c.exige_prestadora_mulher, 0) = 0 OR (c.exige_prestadora_mulher = 1 AND ? = 'Feminino'))
+              AND (COALESCE(c.prest_feminino, 0) = 0 OR (c.prest_feminino = 1 AND ? = 'Feminino'))
               AND NOT EXISTS (SELECT 1 FROM orcamento o WHERE o.chamado_id = c.id AND o.tecnico_id = ?)
             ORDER BY solicitacao_direta DESC, c.criado_em ASC
         ");
@@ -135,13 +135,13 @@ class ChamadoDAO
         $stmt = $this->pdo->prepare('
             INSERT INTO chamado
               (cliente_id, tecnico_id, categoria, descricao, endereco_servico,
-               data_agendamento, exige_prestadora_mulher)
+               data_agendamento, prest_feminino)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['cliente_id'], $data['tecnico_id'] ?? null, $data['categoria'],
             $data['descricao'], $data['endereco_servico'],
-            $data['data_agendamento'] ?? null, $data['exige_prestadora_mulher'] ?? 0,
+            $data['data_agendamento'] ?? null, $data['prest_feminino'] ?? 0,
         ]);
         $chamadoId = (int)$this->pdo->lastInsertId();
 

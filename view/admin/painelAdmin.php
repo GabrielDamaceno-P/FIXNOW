@@ -72,7 +72,7 @@ $navbarHtml = ob_get_clean();
     <div class="card-body">
       <h4>Gestão de cadastros (prestadores)</h4>
       <p class="text-muted small">Aprove ou recuse novos prestadores com cadastro pendente de análise.
-        <a href="prestadores.php?status=Pendente" class="ms-2 btn btn-sm btn-outline-warning">Ver todos os prestadores</a>
+        <a href="prestadores.php" class="ms-2 btn btn-sm btn-outline-warning">Ver todos os prestadores</a>
       </p>
       <?php if (!$pendentes): ?>
         <p class="text-muted mb-0">Nenhum prestador aguardando aprovação.</p>
@@ -135,7 +135,7 @@ $navbarHtml = ob_get_clean();
               <td><?= htmlspecialchars($c['tecnico_nome'] ?? 'A definir') ?></td>
               <td><?= htmlspecialchars($c['categoria']) ?></td>
               <td>R$ <?= number_format((float)$c['preco_sugerido'], 2, ',', '.') ?></td>
-              <td><?= !empty($c['exige_prestadora_mulher']) ? 'Sim' : '—' ?></td>
+              <td><?= !empty($c['prest_feminino']) ? 'Sim' : '—' ?></td>
               <td><?= htmlspecialchars($c['status']) ?></td>
               <td><?= date('d/m/Y', strtotime($c['criado_em'])) ?></td>
               <td>
@@ -195,16 +195,14 @@ $navbarHtml = ob_get_clean();
           </tbody>
         </table>
       </div>
-      <p class="text-muted small mt-2 mb-0">Lucro calculado com comissão padrão de 20% sobre pagamentos com status "Pago".</p>
+      <p class="text-muted small mt-2 mb-0">Lucro calculado com comissão de 20% (padrão) ou 15% (prestadores em destaque) sobre pagamentos com status "Pago".</p>
     </div>
   </div>
   <?php endif; ?>
 
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?= date('Y') ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script src="../../assets/js/admin-panel.js"></script>

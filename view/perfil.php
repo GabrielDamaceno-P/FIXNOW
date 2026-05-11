@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../controller/PerfilControl.php';
 
@@ -30,24 +30,34 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <?php if ($fotoUrl): ?>
-      <span class="fn-user-badge me-2">
-        <img src="../<?php echo htmlspecialchars($fotoUrl); ?>" alt="" width="44" height="44">
-        <span><?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></span>
-      </span>
-    <?php elseif (!empty($usuario['nome'])): ?>
-      <span class="fn-user-badge me-2">
-        <span class="fallback"><?php echo htmlspecialchars(mb_substr($usuario['nome'], 0, 1)); ?></span>
-        <span><?php echo htmlspecialchars($usuario['nome']); ?></span>
-      </span>
-    <?php endif; ?>
     <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="<?php echo $dashLink; ?>">Painel</a></li>
-        <li class="nav-item"><a class="nav-link active" href="perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="<?php echo $sairLink; ?>">Sair</a></li>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#perfilMenu" aria-controls="perfilMenu" aria-expanded="false" aria-label="Menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="perfilMenu">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="<?php echo $dashLink; ?>"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="perfil.php"><i class="bi bi-person me-1"></i>Perfil</a></li>
+      </ul>
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-1" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+            <?php if ($fotoUrl): ?>
+              <img src="../<?php echo htmlspecialchars($fotoUrl); ?>" alt="" width="32" height="32" class="rounded-circle border border-2 border-white border-opacity-50" style="object-fit:cover">
+            <?php else: ?>
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning text-dark fw-bold flex-shrink-0" style="width:32px;height:32px;font-size:.85rem"><?php echo htmlspecialchars(mb_strtoupper(mb_substr($usuario['nome'] ?? '', 0, 1))); ?></span>
+            <?php endif; ?>
+            <span class="d-none d-lg-inline text-truncate" style="max-width:120px"><?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="min-width:180px">
+            <li class="px-3 py-2 border-bottom">
+              <small class="text-muted d-block" style="font-size:.7rem">Logado como</small>
+              <strong class="d-block text-truncate" style="font-size:.85rem"><?php echo htmlspecialchars($usuario['nome'] ?? ''); ?></strong>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2 text-danger" href="<?php echo $sairLink; ?>"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+          </ul>
+        </li>
       </ul>
     </div>
   </div>
@@ -224,9 +234,7 @@ $fotoUrl  = $usuario['fotoPerfil'] ?? '';
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
 </body>

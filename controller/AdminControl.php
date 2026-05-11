@@ -165,8 +165,18 @@ class AdminControl
 
     private function carregarDados(): void
     {
+        // Comissão: destaque = 15%, demais = 20%
+        $lucro = $this->pdo->query("
+            SELECT COALESCE(SUM(
+                p.valor * CASE WHEN t.destaque = 1 THEN 0.15 ELSE 0.20 END
+            ), 0)
+            FROM pagamento p
+            INNER JOIN chamado c  ON c.id = p.chamado_id
+            INNER JOIN tecnico t  ON t.id = c.tecnico_id
+            WHERE p.status = 'Pago'
+        ")->fetchColumn();
         $totPagos = (float)($this->pdo->query("SELECT COALESCE(SUM(valor),0) FROM pagamento WHERE status='Pago'")->fetchColumn() ?? 0);
-        $this->lucroEmpresa = $totPagos * 0.20;
+        $this->lucroEmpresa = (float)($lucro ?? 0);
 
         $this->statsGerais = [
             'clientes'          => (int)$this->pdo->query("SELECT COUNT(*) FROM cliente WHERE is_admin=0")->fetchColumn(),
@@ -204,7 +214,7 @@ class AdminControl
 
         if ($isOps) {
             $this->chamados = $this->pdo->query("
-                SELECT c.id, c.categoria, c.status, c.preco_sugerido, c.criado_em, c.exige_prestadora_mulher,
+                SELECT c.id, c.categoria, c.status, c.preco_sugerido, c.criado_em, c.prest_feminino,
                        cl.nome AS cliente_nome, t.nome AS tecnico_nome
                 FROM chamado c
                 INNER JOIN cliente cl ON cl.id = c.cliente_id

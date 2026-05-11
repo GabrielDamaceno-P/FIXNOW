@@ -8,7 +8,7 @@ ob_start();
 require_once __DIR__ . '/_navbar.php';
 $navbarHtml = ob_get_clean();
 
-if (!$isMaster && !$isOperacoes) { header('Location: painelAdmin.php'); exit; }
+// acesso: somente admin
 
 $mensagem = '';
 $erro = '';
@@ -194,13 +194,15 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria WHERE ativo = 1 ORDER 
                     <td><?= htmlspecialchars($s['categoria_nome'] ?? '—') ?></td>
                     <td>R$ <?= number_format((float)$s['preco'], 2, ',', '.') ?></td>
                     <td><span class="badge <?= $s['ativo'] ? 'bg-success' : 'bg-secondary' ?>"><?= $s['ativo'] ? 'Sim' : 'Não' ?></span></td>
-                    <td class="d-flex gap-1">
-                      <a href="servicos.php?editar=<?= (int)$s['id'] ?>" class="btn btn-sm btn-outline-primary">Editar</a>
-                      <form method="post" class="d-inline" onsubmit="return confirm('Excluir este serviço?');">
-                        <input type="hidden" name="acao" value="excluir">
-                        <input type="hidden" name="servico_id" value="<?= (int)$s['id'] ?>">
-                        <button class="btn btn-sm btn-outline-danger">Excluir</button>
-                      </form>
+                    <td>
+                      <div class="d-flex gap-1">
+                        <a href="servicos.php?editar=<?= (int)$s['id'] ?>" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <form method="post" class="d-inline" onsubmit="return confirm('Excluir este serviço?');">
+                          <input type="hidden" name="acao" value="excluir">
+                          <input type="hidden" name="servico_id" value="<?= (int)$s['id'] ?>">
+                          <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -214,9 +216,7 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria WHERE ativo = 1 ORDER 
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?= date('Y') ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 </body>

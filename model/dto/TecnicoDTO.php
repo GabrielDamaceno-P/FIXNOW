@@ -11,6 +11,7 @@ class TecnicoDTO
     public string $telefone        = '';
     public string $genero          = 'Masculino';
     public string $fotoPerfil      = '';
+    public string $documentoPath   = '';
     public float  $avaliacaoMedia  = 0.0;
     public int    $ativo           = 1;
     public string $statusCadastro  = 'Pendente';
@@ -29,6 +30,7 @@ class TecnicoDTO
         $dto->telefone      = $row['telefone']               ?? '';
         $dto->genero        = $row['genero']                 ?? 'Masculino';
         $dto->fotoPerfil    = $row['foto_perfil']            ?? '';
+        $dto->documentoPath = $row['documento_path']         ?? '';
         $dto->avaliacaoMedia = (float)($row['avaliacao_media'] ?? 0);
         $dto->ativo         = (int)($row['ativo']            ?? 1);
         $dto->statusCadastro = $row['status_cadastro']       ?? 'Pendente';

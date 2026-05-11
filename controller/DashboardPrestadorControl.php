@@ -99,8 +99,8 @@ class DashboardPrestadorControl
                         INNER JOIN categoria cat ON cat.id = s.categoria_id
                         WHERE s.tecnico_id = ? AND s.ativo = 1
                       )
-                      AND (COALESCE(exige_prestadora_mulher, 0) = 0
-                           OR (exige_prestadora_mulher = 1 AND ? = 'Feminino'))
+                      AND (COALESCE(prest_feminino, 0) = 0
+                           OR (prest_feminino = 1 AND ? = 'Feminino'))
                 ");
                 $up->execute([$this->tecnicoId, $cid, $this->tecnicoId, $this->genero]);
                 if ($up->rowCount() > 0) {

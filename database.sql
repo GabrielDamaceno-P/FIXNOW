@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS tecnico (
   telefone         VARCHAR(20) NOT NULL,
   genero           ENUM('Feminino','Masculino','Outro') NOT NULL DEFAULT 'Masculino',
   foto_perfil      VARCHAR(255) NOT NULL,
+  documento_path   VARCHAR(255) NULL,
   avaliacao_media  DECIMAL(3,2) DEFAULT 0.00,
   ativo            TINYINT(1) NOT NULL DEFAULT 1,
   status_cadastro  ENUM('Pendente','Aprovado','Recusado') NOT NULL DEFAULT 'Aprovado',
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS chamado (
   data_agendamento_proposta DATETIME NULL,
   reagendamento_pendente    TINYINT(1) NOT NULL DEFAULT 0,
   preco_sugerido            DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  exige_prestadora_mulher   TINYINT(1) NOT NULL DEFAULT 0,
+  prest_feminino   TINYINT(1) NOT NULL DEFAULT 0,
   status                    ENUM('Pendente','Em Andamento','Concluído','Negado') NOT NULL DEFAULT 'Pendente',
   criado_em                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em             TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -87,7 +88,7 @@ CREATE TABLE IF NOT EXISTS avaliacao (
   chamado_id INT NOT NULL,
   cliente_id INT NOT NULL,
   tecnico_id INT NOT NULL,
-  nota       TINYINT NOT NULL CHECK (nota BETWEEN 1 AND 5),
+  nota       TINYINT NOT NULL,
   comentario VARCHAR(255) NULL,
   criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_avaliacao_chamado (chamado_id),
@@ -196,8 +197,7 @@ CREATE TABLE IF NOT EXISTS orcamento (
   descricao     TEXT NULL,
   prazo_dias    TINYINT UNSIGNED NULL,
   status        ENUM('Pendente','Aceito','Recusado') NOT NULL DEFAULT 'Pendente',
-  motivo_recusa VARCHAR(500) NULL
-    COMMENT 'Motivo informado pelo cliente ao recusar o orçamento',
+  motivo_recusa VARCHAR(500) NULL COMMENT 'Motivo informado pelo cliente ao recusar o orcamento',
   criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_orcamento_chamado FOREIGN KEY (chamado_id) REFERENCES chamado(id) ON DELETE CASCADE,
   CONSTRAINT fk_orcamento_tecnico FOREIGN KEY (tecnico_id) REFERENCES tecnico(id) ON DELETE CASCADE
@@ -239,6 +239,48 @@ ON DUPLICATE KEY UPDATE
   genero          = VALUES(genero),
   ativo           = VALUES(ativo),
   status_cadastro = VALUES(status_cadastro);
+
+-- Categorias adicionais para simulação
+INSERT IGNORE INTO categoria (nome, descricao) VALUES
+('Limpeza',       'Limpeza residencial, comercial e pós-obra'),
+('Refrigeração',  'Ar-condicionado, geladeiras e equipamentos de frio'),
+('Jardinagem',    'Jardins, gramados, podas e paisagismo');
+
+-- Prestadores simulados com login (senha: senha123)
+INSERT INTO tecnico (nome, email, senha, cpf, especialidade, telefone, genero, foto_perfil, avaliacao_media, ativo, status_cadastro) VALUES
+('Ana Costa',       'ana.costa@fixnow.com',     '$2y$10$cuCvJDChfM6zsmivKvmZUuO.Ei1/I/6Biu.LIjSqGZoKKAh.igqNi', NULL, 'Limpeza',      '(11) 93333-1111', 'Feminino',  'assets/img/perfil/default-tecnico.jpg', 4.9, 1, 'Aprovado'),
+('Lucas Ferreira',  'lucas.ferreira@fixnow.com','$2y$10$cuCvJDChfM6zsmivKvmZUuO.Ei1/I/6Biu.LIjSqGZoKKAh.igqNi', NULL, 'Refrigeração', '(11) 93333-2222', 'Masculino', 'assets/img/perfil/default-tecnico.jpg', 4.7, 1, 'Aprovado'),
+('Beatriz Santos',  'beatriz.santos@fixnow.com','$2y$10$cuCvJDChfM6zsmivKvmZUuO.Ei1/I/6Biu.LIjSqGZoKKAh.igqNi', NULL, 'Jardinagem',   '(11) 93333-3333', 'Feminino',  'assets/img/perfil/default-tecnico.jpg', 4.8, 1, 'Aprovado')
+ON DUPLICATE KEY UPDATE
+  especialidade = VALUES(especialidade), telefone = VALUES(telefone),
+  genero = VALUES(genero), ativo = VALUES(ativo), status_cadastro = VALUES(status_cadastro);
+
+-- Serviços dos prestadores simulados
+INSERT IGNORE INTO servico (tecnico_id, categoria_id, nome, descricao, preco, ativo)
+SELECT t.id, c.id,
+       CASE t.email
+         WHEN 'ana.costa@fixnow.com'     THEN 'Limpeza residencial'
+         WHEN 'lucas.ferreira@fixnow.com' THEN 'Instalação de ar-condicionado'
+         WHEN 'beatriz.santos@fixnow.com' THEN 'Manutenção de jardim'
+       END,
+       CASE t.email
+         WHEN 'ana.costa@fixnow.com'     THEN 'Limpeza completa de casas e apartamentos, incluindo cozinha, banheiros e áreas comuns.'
+         WHEN 'lucas.ferreira@fixnow.com' THEN 'Instalação, manutenção e limpeza de ar-condicionado split e janela.'
+         WHEN 'beatriz.santos@fixnow.com' THEN 'Corte de grama, poda, plantio e cuidados gerais com jardins residenciais.'
+       END,
+       CASE t.email
+         WHEN 'ana.costa@fixnow.com'     THEN 120.00
+         WHEN 'lucas.ferreira@fixnow.com' THEN 180.00
+         WHEN 'beatriz.santos@fixnow.com' THEN 90.00
+       END,
+       1
+FROM tecnico t
+JOIN categoria c ON c.nome = CASE t.email
+  WHEN 'ana.costa@fixnow.com'     THEN 'Limpeza'
+  WHEN 'lucas.ferreira@fixnow.com' THEN 'Refrigeração'
+  WHEN 'beatriz.santos@fixnow.com' THEN 'Jardinagem'
+END
+WHERE t.email IN ('ana.costa@fixnow.com','lucas.ferreira@fixnow.com','beatriz.santos@fixnow.com');
 
 -- Admin Master  (senha: admin123)
 INSERT INTO cliente (nome, email, senha, cpf, telefone, endereco, cep, foto_perfil, genero, is_admin, admin_perfil)

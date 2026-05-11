@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../controller/RastreamentoChamadoControl.php';
 
@@ -33,20 +33,7 @@ $nomeCli     = $ctrl->clienteNome;
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="dashboardCliente.php">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link active" href="rastreamento.php">Rastreamento</a></li>
-        <li class="nav-item"><a class="nav-link" href="../logout.php">Sair</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<?php $paginaAtiva = 'rastreamento'; $_navDepth = 1; require_once __DIR__ . '/../includes/cliente_nav.php'; ?>
 
 <main class="container py-5 mt-5">
   <h2 class="mb-3">Rastreamento do chamado</h2>
@@ -111,9 +98,7 @@ $nomeCli     = $ctrl->clienteNome;
   </div>
 </div>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <?php if ($chamado): ?>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

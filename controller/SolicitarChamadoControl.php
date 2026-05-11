@@ -166,7 +166,7 @@ class SolicitarChamadoControl
         $categoria   = trim($_POST['categoria']  ?? '');
         $descricao   = trim($_POST['descricao']  ?? '');
         $endereco    = trim($_POST['endereco']   ?? '');
-        $exigeMulher = isset($_POST['exige_prestadora_mulher']) ? 1 : 0;
+        $exigeMulher = isset($_POST['prest_feminino']) ? 1 : 0;
         $tecnicoId   = null;
         $dataAgend   = null;
 
@@ -251,7 +251,7 @@ class SolicitarChamadoControl
             'fotos'                   => $fotos,
             'endereco_servico'        => $endereco,
             'data_agendamento'        => $dataAgend,
-            'exige_prestadora_mulher' => $exigeMulher,
+            'prest_feminino' => $exigeMulher,
         ]);
 
         if ($tecnicoId) {

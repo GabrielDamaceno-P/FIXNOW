@@ -39,6 +39,9 @@ class CadastroPrestadorControl
         if (empty($_FILES['foto_perfil']['name'])) {
             $this->erro = 'A foto de perfil é obrigatória.'; return;
         }
+        if (empty($_FILES['documento']['name'])) {
+            $this->erro = 'O documento de identidade (RG ou CNH) é obrigatório.'; return;
+        }
         if ($cpf && (strlen($cpf) !== 11 || !fixnow_validar_cpf($cpf))) {
             $this->erro = 'Informe um CPF válido.'; return;
         }
@@ -66,6 +69,13 @@ class CadastroPrestadorControl
             $this->erro = 'Foto inválida. Envie JPG, PNG ou WEBP.'; return;
         }
 
+        $docDir  = __DIR__ . '/../assets/img/documentos/';
+        if (!is_dir($docDir)) mkdir($docDir, 0755, true);
+        $docPath = fixnow_upload_image($_FILES['documento'], $docDir, 'doc_tec');
+        if ($docPath === null) {
+            $this->erro = 'Documento inválido. Envie JPG, PNG ou WEBP.'; return;
+        }
+
         $dto               = new TecnicoDTO();
         $dto->nome         = $nome;
         $dto->email        = $email;
@@ -75,6 +85,7 @@ class CadastroPrestadorControl
         $dto->especialidade = $especialidade;
         $dto->genero       = $genero;
         $dto->fotoPerfil   = $fotoPath;
+        $dto->documentoPath = $docPath;
         $dto->statusCadastro = 'Pendente';
 
         $this->tecnicoDAO->inserir($dto);

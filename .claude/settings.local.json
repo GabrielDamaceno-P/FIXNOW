@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r 'session_start\\\\|session_regenerate_id\\\\|$_SESSION' /c/xampp/htdocs/Projeto_fixnow/projeto_fixnow/view '--include=*.php')",
+      "Bash(xargs grep *)",
+      "Bash(python3 -c ' *)",
+      "Bash(php -r \"echo password_hash\\('senha123', PASSWORD_DEFAULT\\);\")"
+    ]
+  }
+}

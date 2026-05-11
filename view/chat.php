@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../controller/ChatControl.php';
 
@@ -268,9 +268,7 @@ $statusBadge = match($chamado->status ?? '') {
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
 <script>
@@ -307,7 +305,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-setInterval(function () { if (!document.hidden) location.reload(); }, 8000);
+setInterval(function () {
+  if (document.hidden) return;
+  var textarea = document.querySelector('textarea[name="mensagem"]');
+  if (textarea && textarea.value.trim() !== '') return;
+  var active = document.activeElement;
+  if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+  location.reload();
+}, 8000);
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../../controller/CalendarioClienteControl.php';
 
@@ -53,29 +53,7 @@ $podeReagendar = fn($status) => in_array($status, ['Pendente', 'Em Andamento']);
   </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="../../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../dashboardCliente.php">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="../catalogo.php">Catálogo</a></li>
-        <li class="nav-item"><a class="nav-link" href="solicitar.php">Solicitar</a></li>
-        <li class="nav-item"><a class="nav-link active" href="calendario.php">Calendário</a></li>
-        <li class="nav-item">
-          <a class="nav-link" href="../notificacoes.php">Notificações
-            <?php if ($naoLidas > 0): ?><span class="badge bg-danger ms-1"><?php echo $naoLidas; ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li class="nav-item"><a class="nav-link" href="../perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="../rastreamento.php">Rastreamento</a></li>
-        <li class="nav-item"><a class="nav-link" href="../suporte.php">Suporte</a></li>
-        <li class="nav-item"><a class="nav-link" href="../../logout.php">Sair</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<?php $paginaAtiva = 'solicitar'; $_navDepth = 2; require_once __DIR__ . '/../../includes/cliente_nav.php'; ?>
 
 <main class="container py-5 mt-5">
   <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
@@ -219,9 +197,7 @@ $podeReagendar = fn($status) => in_array($status, ['Pendente', 'Em Andamento']);
   </div>
 </div>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../controller/CadastroPrestadorControl.php';
 
@@ -87,7 +87,7 @@ $mensagem = $ctrl->mensagem;
               <input type="file" name="foto_perfil" class="form-control" required accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Gênero</label>
+              <label class="form-label">Gênero <span class="text-danger">*</span></label>
               <select name="genero" class="form-select" required>
                 <option value="">Selecione...</option>
                 <?php
@@ -101,6 +101,11 @@ $mensagem = $ctrl->mensagem;
               <small class="text-muted">Usado para combinar com clientes que pedem só prestadoras mulheres.</small>
             </div>
             <div class="col-12">
+              <label class="form-label">Documento de identidade (RG ou CNH) <span class="text-danger">*</span></label>
+              <input type="file" name="documento" class="form-control" required accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+              <small class="text-muted">Foto legível do RG ou CNH. Usado pelo admin para verificar identidade e gênero antes da aprovação.</small>
+            </div>
+            <div class="col-12">
               <button type="submit" class="btn btn-warning fw-semibold">Cadastrar</button>
               <a href="login.php" class="btn btn-outline-primary">Já tenho conta</a>
               <a href="cadastrarCliente.php" class="btn btn-link">Sou cliente</a>
@@ -112,9 +117,7 @@ $mensagem = $ctrl->mensagem;
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/forms-helpers.js"></script>

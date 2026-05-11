@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once __DIR__ . '/../../controller/SolicitarChamadoControl.php';
 
@@ -31,35 +31,7 @@ $erro            = $ctrl->erro;
   <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body data-cliente-genero="<?php echo htmlspecialchars($clienteGenero); ?>">
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
-  <div class="container">
-    <span class="fn-user-badge me-2">
-      <?php if ($clienteFoto): ?>
-        <img src="../../<?php echo htmlspecialchars($clienteFoto); ?>" alt="Foto" width="44" height="44">
-      <?php else: ?>
-        <span class="fallback"><?php echo htmlspecialchars(mb_substr($clienteNome, 0, 1)); ?></span>
-      <?php endif; ?>
-      <span><?php echo htmlspecialchars($clienteNome); ?></span>
-    </span>
-    <a class="navbar-brand fw-bold" href="../../index.php">Fix Now</a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../../index.php">Início</a></li>
-        <li class="nav-item"><a class="nav-link" href="../dashboardCliente.php">Dashboard</a></li>
-        <li class="nav-item">
-          <a class="nav-link" href="../notificacoes.php">
-            Notificações<?php if ($naoLidas > 0): ?><span class="badge bg-danger ms-1"><?php echo $naoLidas; ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li class="nav-item"><a class="nav-link" href="../perfil.php">Perfil</a></li>
-        <li class="nav-item"><a class="nav-link" href="../rastreamento.php">Rastreamento</a></li>
-        <li class="nav-item"><a class="nav-link" href="../suporte.php">Suporte</a></li>
-        <li class="nav-item"><a class="nav-link" href="../../logout.php?entidade=cliente">Sair</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<?php $paginaAtiva = 'solicitar'; $_navDepth = 2; require_once __DIR__ . '/../../includes/cliente_nav.php'; ?>
 
 <main class="container py-5 mt-5">
   <div class="row justify-content-center">
@@ -141,8 +113,8 @@ $erro            = $ctrl->erro;
             <?php if ($clienteGenero === 'Feminino'): ?>
             <div class="col-12" id="wrap-prestadora-mulher">
               <div class="form-check border rounded p-3 bg-light">
-                <input class="form-check-input" type="checkbox" name="exige_prestadora_mulher" value="1"
-                  id="chk-prestadora-mulher" <?php echo !empty($_POST['exige_prestadora_mulher']) ? 'checked' : ''; ?>>
+                <input class="form-check-input" type="checkbox" name="prest_feminino" value="1"
+                  id="chk-prestadora-mulher" <?php echo !empty($_POST['prest_feminino']) ? 'checked' : ''; ?>>
                 <label class="form-check-label" for="chk-prestadora-mulher">
                   Quero <strong>somente prestadoras mulheres</strong> para este serviço.
                 </label>
@@ -207,9 +179,7 @@ $erro            = $ctrl->erro;
   </div>
 </main>
 
-<footer class="bg-dark text-light py-3 mt-5">
-  <div class="container text-center"><small>&copy; <?php echo date('Y'); ?> Fix Now.</small></div>
-</footer>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script src="../../assets/js/forms-helpers.js"></script>

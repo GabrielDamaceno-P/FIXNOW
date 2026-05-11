@@ -45,13 +45,13 @@ class TecnicoDAO
     public function inserir(TecnicoDTO $dto): int
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO tecnico (nome, email, senha, cpf, especialidade, telefone, genero, foto_perfil, status_cadastro)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tecnico (nome, email, senha, cpf, especialidade, telefone, genero, foto_perfil, documento_path, status_cadastro)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $dto->nome, $dto->email, $dto->senha, $dto->cpf ?: null,
             $dto->especialidade, $dto->telefone, $dto->genero,
-            $dto->fotoPerfil, $dto->statusCadastro,
+            $dto->fotoPerfil, $dto->documentoPath ?: null, $dto->statusCadastro,
         ]);
         return (int)$this->pdo->lastInsertId();
     }
