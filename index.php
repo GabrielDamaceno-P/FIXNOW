@@ -113,7 +113,6 @@ $stats = $stmtStats->fetch();
       align-items: center;
       gap: .55rem;
       font-size: .88rem;
-      white-space: nowrap;
     }
     .ponto-confianca {
       width: 7px;

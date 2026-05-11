@@ -42,8 +42,11 @@ $statusBadge = match($chamado->status ?? '') {
     .chat-wrap {
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 200px);
-      min-height: 400px;
+      height: calc(100dvh - 200px);
+      min-height: 360px;
+    }
+    @supports not (height: 100dvh) {
+      .chat-wrap { height: calc(100vh - 200px); }
     }
     .chat-messages {
       flex: 1;

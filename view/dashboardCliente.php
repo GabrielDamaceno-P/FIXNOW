@@ -378,7 +378,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
 
 <!-- Modal Pagamento -->
 <div class="modal fade" id="modalPagamento" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down" style="max-width:440px">
     <div class="modal-content border-0 shadow-lg overflow-hidden">
 
       <!-- Cabeçalho com valor -->

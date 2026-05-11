@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS cliente (
   foto_perfil  VARCHAR(255) NOT NULL,
   genero       ENUM('Feminino','Masculino','Outro','Prefiro não informar') NOT NULL DEFAULT 'Prefiro não informar',
   is_admin     TINYINT(1) NOT NULL DEFAULT 0,
-  admin_perfil ENUM('Master','Operacoes','Financeiro') NULL DEFAULT NULL,
+  admin_perfil ENUM('Master') NULL DEFAULT NULL,
   criado_em    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS tecnico (
   documento_path   VARCHAR(255) NULL,
   avaliacao_media  DECIMAL(3,2) DEFAULT 0.00,
   ativo            TINYINT(1) NOT NULL DEFAULT 1,
-  status_cadastro  ENUM('Pendente','Aprovado','Recusado') NOT NULL DEFAULT 'Aprovado',
+  status_cadastro  ENUM('Pendente','Aprovado','Recusado') NOT NULL DEFAULT 'Pendente',
   destaque         TINYINT(1) NOT NULL DEFAULT 0,
   criado_em        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS chamado (
   id                        INT AUTO_INCREMENT PRIMARY KEY,
   cliente_id                INT NOT NULL,
   tecnico_id                INT NULL,
-  categoria                 ENUM('Suporte TI','Elétrica','Hidráulica','Pintura','Marcenaria') NOT NULL,
+  categoria                 ENUM('Suporte TI','Elétrica','Hidráulica','Pintura','Marcenaria','Limpeza','Refrigeração','Jardinagem') NOT NULL,
   descricao                 TEXT NOT NULL,
   foto_path                 VARCHAR(255) NULL,
   endereco_servico          VARCHAR(200) NOT NULL,
@@ -295,15 +295,3 @@ ON DUPLICATE KEY UPDATE
   endereco = VALUES(endereco), cep = VALUES(cep),
   genero = VALUES(genero), is_admin = 1, admin_perfil = 'Master';
 
--- Admin Financeiro  (senha: admin123)
-INSERT INTO cliente (nome, email, senha, cpf, telefone, endereco, cep, foto_perfil, genero, is_admin, admin_perfil)
-VALUES (
-  'Admin Financeiro', 'financeiro@fixnow.com',
-  '$2y$10$P8Aq84K5xS7gQ7Lh7V4I9e9yq8jS8W1SIbIz.I8vowAN3zJfYzEe2',
-  NULL, '(11) 91111-1111', 'Rua Central, 100', '01000-000',
-  'assets/img/perfil/default-cliente.jpg', 'Prefiro não informar', 1, 'Financeiro'
-)
-ON DUPLICATE KEY UPDATE
-  nome = VALUES(nome), telefone = VALUES(telefone),
-  endereco = VALUES(endereco), cep = VALUES(cep),
-  genero = VALUES(genero), is_admin = 1, admin_perfil = 'Financeiro';
