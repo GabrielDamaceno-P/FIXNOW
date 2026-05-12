@@ -46,15 +46,21 @@ class NotificacoesControl
         if (isset($_GET['lida'])) {
             $nid = (int)$_GET['lida'];
             if ($nid > 0) {
-                if ($this->usuarioTipo === 'cliente') $this->notifDAO->marcarLidaCliente($nid, $this->usuarioId);
-                else $this->notifDAO->marcarLidaTecnico($nid, $this->usuarioId);
+                match($this->usuarioTipo) {
+                    'admin'     => $this->notifDAO->marcarLidaAdmin($nid),
+                    'prestador' => $this->notifDAO->marcarLidaTecnico($nid, $this->usuarioId),
+                    default     => $this->notifDAO->marcarLidaCliente($nid, $this->usuarioId),
+                };
             }
             header('Location: notificacoes.php'); exit;
         }
 
         if (isset($_POST['marcar_todas'])) {
-            if ($this->usuarioTipo === 'cliente') $this->notifDAO->marcarTodasLidasCliente($this->usuarioId);
-            else $this->notifDAO->marcarTodasLidasTecnico($this->usuarioId);
+            match($this->usuarioTipo) {
+                'admin'     => $this->notifDAO->marcarTodasLidasAdmin(),
+                'prestador' => $this->notifDAO->marcarTodasLidasTecnico($this->usuarioId),
+                default     => $this->notifDAO->marcarTodasLidasCliente($this->usuarioId),
+            };
             header('Location: notificacoes.php'); exit;
         }
 

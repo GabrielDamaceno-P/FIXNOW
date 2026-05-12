@@ -62,8 +62,8 @@ class AdminControl
             if ($acao === 'aprovar_prestador' && $isOps) {
                 $tid = (int)($_POST['tecnico_id'] ?? 0);
                 if ($tid > 0) {
-                    $up = $this->pdo->prepare("UPDATE tecnico SET ativo=1, status_cadastro='Aprovado' WHERE id=? AND status_cadastro='Pendente'");
-                    $up->execute([$tid]);
+                    $up = $this->pdo->prepare("UPDATE tecnico SET ativo=1, status_cadastro='Aprovado', admin_id=? WHERE id=? AND status_cadastro='Pendente'");
+                    $up->execute([$this->adminId, $tid]);
                     if ($up->rowCount() > 0) {
                         fixnow_notificar_prestador($this->pdo, $tid,
                             'Seu cadastro de prestador foi aprovado! Você já pode acessar o painel e aceitar chamados.');
@@ -73,8 +73,8 @@ class AdminControl
             } elseif ($acao === 'recusar_prestador' && $isOps) {
                 $tid = (int)($_POST['tecnico_id'] ?? 0);
                 if ($tid > 0) {
-                    $up = $this->pdo->prepare("UPDATE tecnico SET ativo=0, status_cadastro='Recusado' WHERE id=? AND status_cadastro='Pendente'");
-                    $up->execute([$tid]);
+                    $up = $this->pdo->prepare("UPDATE tecnico SET ativo=0, status_cadastro='Recusado', admin_id=? WHERE id=? AND status_cadastro='Pendente'");
+                    $up->execute([$this->adminId, $tid]);
                     if ($up->rowCount() > 0) {
                         fixnow_notificar_prestador($this->pdo, $tid,
                             'Seu cadastro de prestador foi recusado. Entre em contato com o suporte para mais informações.');
@@ -121,7 +121,7 @@ class AdminControl
             } elseif ($acao === 'excluir_cliente' && $isMaster) {
                 $cid = (int)($_POST['cliente_id'] ?? 0);
                 if ($cid > 0) {
-                    $this->pdo->prepare('DELETE FROM cliente WHERE id=? AND is_admin=0')->execute([$cid]);
+                    $this->pdo->prepare('DELETE FROM cliente WHERE id=?')->execute([$cid]);
                     $this->mensagem = 'Cliente removido.';
                 }
             } elseif ($acao === 'excluir_prestador' && $isMaster) {
@@ -139,7 +139,7 @@ class AdminControl
                 elseif ($this->categoriaDAO->nomeExiste($nome, $cid)) { $this->erro = 'Nome já existe.'; }
                 else {
                     if ($cid > 0) { $this->categoriaDAO->atualizar($cid, $nome, $descricao, $ativo); $this->mensagem = 'Categoria atualizada.'; }
-                    else { $this->categoriaDAO->inserir($nome, $descricao); $this->mensagem = 'Categoria criada.'; }
+                    else { $this->categoriaDAO->inserir($nome, $descricao, $this->adminId); $this->mensagem = 'Categoria criada.'; }
                 }
             } elseif ($acao === 'excluir_categoria' && $isMaster) {
                 $cid = (int)($_POST['cat_id'] ?? 0);
@@ -153,7 +153,7 @@ class AdminControl
                 $status  = $_POST['ticket_status']   ?? 'Fechado';
                 if ($tid > 0 && $resp) {
                     $this->pdo->prepare("
-                        UPDATE suporte SET resposta=?, status=?, respondido_por=? WHERE id=?
+                        UPDATE suporte SET resposta=?, status=?, admin_id=? WHERE id=?
                     ")->execute([$resp, $status, $this->adminId, $tid]);
                     $this->mensagem = 'Resposta enviada.';
                 }
@@ -179,7 +179,7 @@ class AdminControl
         $this->lucroEmpresa = (float)($lucro ?? 0);
 
         $this->statsGerais = [
-            'clientes'          => (int)$this->pdo->query("SELECT COUNT(*) FROM cliente WHERE is_admin=0")->fetchColumn(),
+            'clientes'          => (int)$this->pdo->query("SELECT COUNT(*) FROM cliente")->fetchColumn(),
             'prestadores'       => (int)$this->pdo->query("SELECT COUNT(*) FROM tecnico")->fetchColumn(),
             'prestadores_ativos'=> (int)$this->pdo->query("SELECT COUNT(*) FROM tecnico WHERE ativo=1")->fetchColumn(),
             'chamados'          => $this->chamadoDAO->estatisticasGerais(),
@@ -194,7 +194,7 @@ class AdminControl
 
         $this->clientes = $this->pdo->query("
             SELECT id, nome, email, telefone, genero, endereco, cep, criado_em
-            FROM cliente WHERE is_admin=0 ORDER BY criado_em DESC LIMIT 200
+            FROM cliente ORDER BY criado_em DESC LIMIT 200
         ")->fetchAll();
 
         $this->prestadores = $this->pdo->query("

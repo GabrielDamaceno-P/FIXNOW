@@ -317,7 +317,7 @@ function _limparEndereco(str) {
             .trim();
 }
 
-/* Nominatim — busca por string de endereço */
+
 function _geocodificarString(str) {
   var query = _limparEndereco(str);
   if (query.length < 3) return;

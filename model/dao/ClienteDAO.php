@@ -12,10 +12,10 @@ class ClienteDAO
         $this->pdo = Conexao::getConexao();
     }
 
-    public function buscarPorEmail(string $email, int $isAdmin = 0): ?ClienteDTO
+    public function buscarPorEmail(string $email): ?ClienteDTO
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM cliente WHERE email = ? AND is_admin = ?');
-        $stmt->execute([$email, $isAdmin]);
+        $stmt = $this->pdo->prepare('SELECT * FROM cliente WHERE email = ?');
+        $stmt->execute([$email]);
         $row = $stmt->fetch();
         return $row ? ClienteDTO::fromArray($row) : null;
     }

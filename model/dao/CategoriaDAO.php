@@ -35,10 +35,10 @@ class CategoriaDAO
         return (bool)$stmt->fetch();
     }
 
-    public function inserir(string $nome, ?string $descricao): int
+    public function inserir(string $nome, ?string $descricao, ?int $criadoPor = null): int
     {
-        $stmt = $this->pdo->prepare('INSERT INTO categoria (nome, descricao) VALUES (?, ?)');
-        $stmt->execute([$nome, $descricao ?: null]);
+        $stmt = $this->pdo->prepare('INSERT INTO categoria (nome, descricao, admin_id) VALUES (?, ?, ?)');
+        $stmt->execute([$nome, $descricao ?: null, $criadoPor]);
         return (int)$this->pdo->lastInsertId();
     }
 

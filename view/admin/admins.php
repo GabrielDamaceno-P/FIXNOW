@@ -13,6 +13,9 @@ if (!$isMaster) { header('Location: painelAdmin.php'); exit; }
 $mensagem = '';
 $erro = '';
 
+require_once __DIR__ . '/../../model/dao/AdminDAO.php';
+$adminDAO = new AdminDAO();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
 
@@ -30,17 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (mb_strlen($senha) < 6) {
             $erro = 'A senha deve ter pelo menos 6 caracteres.';
         } else {
-            try {
-                $pdo->prepare('INSERT INTO cliente (nome, email, senha, telefone, genero, foto_perfil, is_admin, admin_perfil)
-                               VALUES (?, ?, ?, ?, ?, ?, 1, ?)')
-                    ->execute([
-                        $nome, $email, password_hash($senha, PASSWORD_DEFAULT),
-                        $tel, $genero,
-                        'assets/img/perfil/default-cliente.jpg',
-                        'Master'
-                    ]);
+            if ($adminDAO->inserir($nome, $email, password_hash($senha, PASSWORD_DEFAULT), $tel, $genero)) {
                 $mensagem = 'Administrador criado com sucesso.';
-            } catch (PDOException $e) {
+            } else {
                 $erro = 'E-mail já cadastrado ou erro ao salvar.';
             }
         }
@@ -57,40 +52,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $erro = 'E-mail inválido.';
         } else {
-            try {
-                if ($novaSenha !== '') {
-                    if (mb_strlen($novaSenha) < 6) {
-                        $erro = 'A nova senha deve ter pelo menos 6 caracteres.';
-                    } else {
-                        $pdo->prepare('UPDATE cliente SET nome=?, email=?, senha=?, telefone=?, genero=? WHERE id=? AND is_admin=1')
-                            ->execute([
-                                $nome, $email, password_hash($novaSenha, PASSWORD_DEFAULT),
-                                $tel, $genero, $id
-                            ]);
-                        $mensagem = 'Administrador atualizado.';
-                    }
-                } else {
-                    $pdo->prepare('UPDATE cliente SET nome=?, email=?, telefone=?, genero=? WHERE id=? AND is_admin=1')
-                        ->execute([$nome, $email, $tel, $genero, $id]);
+            if ($novaSenha !== '' && mb_strlen($novaSenha) < 6) {
+                $erro = 'A nova senha deve ter pelo menos 6 caracteres.';
+            } else {
+                if ($adminDAO->atualizar($id, $nome, $email, $tel, $genero)) {
+                    if ($novaSenha !== '') $adminDAO->atualizarSenha($id, password_hash($novaSenha, PASSWORD_DEFAULT));
                     $mensagem = 'Administrador atualizado.';
+                } else {
+                    $erro = 'E-mail já utilizado ou erro ao atualizar.';
                 }
-            } catch (PDOException $e) {
-                $erro = 'E-mail já utilizado ou erro ao atualizar.';
             }
         }
     } elseif ($acao === 'excluir') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id > 0 && $id !== $adminId) {
-            $del = $pdo->prepare('DELETE FROM cliente WHERE id = ? AND is_admin = 1');
-            $del->execute([$id]);
-            $mensagem = $del->rowCount() > 0 ? 'Administrador excluído.' : 'Não encontrado.';
+            $mensagem = $adminDAO->excluir($id) ? 'Administrador excluído.' : 'Não encontrado.';
         } else {
             $erro = 'Não é possível excluir a própria conta.';
         }
     }
 }
 
-$admins = $pdo->query("SELECT id, nome, email, telefone, genero, criado_em FROM cliente WHERE is_admin = 1 ORDER BY nome ASC")->fetchAll();
+$admins = $adminDAO->listar();
 
 $editando = null;
 if (isset($_GET['editar'])) {

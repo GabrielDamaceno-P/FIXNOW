@@ -1,10 +1,12 @@
 <?php
 
+require_once __DIR__ . '/../model/dao/AdminDAO.php';
 require_once __DIR__ . '/../model/dao/ClienteDAO.php';
 require_once __DIR__ . '/../model/dao/TecnicoDAO.php';
 
 class LoginControl
 {
+    private AdminDAO   $adminDAO;
     private ClienteDAO $clienteDAO;
     private TecnicoDAO $tecnicoDAO;
 
@@ -12,6 +14,7 @@ class LoginControl
 
     public function __construct()
     {
+        $this->adminDAO   = new AdminDAO();
         $this->clienteDAO = new ClienteDAO();
         $this->tecnicoDAO = new TecnicoDAO();
     }
@@ -46,7 +49,7 @@ class LoginControl
 
     private function tentarAdmin(string $email, string $senha): bool
     {
-        $admin = $this->clienteDAO->buscarPorEmail($email, 1);
+        $admin = $this->adminDAO->buscarPorEmail($email);
         if (!$admin) return false;
 
         $autenticado = false;
@@ -57,7 +60,7 @@ class LoginControl
             in_array($email, ['admin@fixnow.com', 'financeiro@fixnow.com'], true) &&
             $senha === 'admin123'
         ) {
-            $this->clienteDAO->atualizarSenha($admin->id, password_hash('admin123', PASSWORD_DEFAULT));
+            $this->adminDAO->atualizarSenha($admin->id, password_hash('admin123', PASSWORD_DEFAULT));
             $autenticado = true;
         }
 
@@ -66,7 +69,7 @@ class LoginControl
         session_regenerate_id(true);
         $_SESSION['admin_id']     = $admin->id;
         $_SESSION['admin_nome']   = $admin->nome;
-        $_SESSION['admin_perfil'] = $admin->adminPerfil ?? 'Master';
+        $_SESSION['admin_perfil'] = $admin->perfil;
         header('Location: admin/painelAdmin.php');
         exit;
     }
@@ -91,7 +94,7 @@ class LoginControl
 
     private function tentarCliente(string $email, string $senha): bool
     {
-        $cliente = $this->clienteDAO->buscarPorEmail($email, 0);
+        $cliente = $this->clienteDAO->buscarPorEmail($email);
         if (!$cliente || !password_verify($senha, $cliente->senha)) return false;
 
         session_regenerate_id(true);
@@ -99,7 +102,6 @@ class LoginControl
         $_SESSION['cliente_nome']   = $cliente->nome;
         $_SESSION['cliente_genero'] = $cliente->genero;
         $_SESSION['cliente_foto']   = $cliente->fotoPerfil;
-        $_SESSION['is_admin']       = 0;
         header('Location: dashboardCliente.php');
         exit;
     }

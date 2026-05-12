@@ -72,6 +72,17 @@ class NotificacaoDAO
             ->execute([$tecnicoId]);
     }
 
+    public function marcarLidaAdmin(int $id): void
+    {
+        $this->pdo->prepare("UPDATE notificacao SET lida=1 WHERE id=? AND tipo_destinatario='admin'")
+            ->execute([$id]);
+    }
+
+    public function marcarTodasLidasAdmin(): void
+    {
+        $this->pdo->query("UPDATE notificacao SET lida=1 WHERE tipo_destinatario='admin'");
+    }
+
     public function contarNaoLidasCliente(int $clienteId): int
     {
         $stmt = $this->pdo->prepare("

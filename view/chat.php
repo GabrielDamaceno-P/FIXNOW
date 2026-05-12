@@ -187,16 +187,13 @@ $statusBadge = match($chamado->status ?? '') {
                 </div>
               <?php endif; ?>
               <?php foreach ($mensagens as $m): ?>
-                <?php $isMinha = ($m->remetenteType === $usuarioTipo); ?>
+                <?php $isMinha = $usuarioTipo === 'cliente' ? $m->clienteId !== null : $m->tecnicoId !== null; ?>
                 <div class="d-flex align-items-end gap-2 mb-3 <?php echo $isMinha ? 'flex-row-reverse' : ''; ?>">
                   <?php if (!$isMinha && $chamado): ?>
                     <?php
-                      $fotoOp = $m->remetenteType === 'prestador'
-                        ? ($chamado->tecnicoFoto ?? '')
-                        : ($chamado->clienteFoto ?? '');
-                      $nomeOp = $m->remetenteType === 'prestador'
-                        ? ($chamado->tecnicoNome ?? 'Prestador')
-                        : ($chamado->clienteNome ?? 'Cliente');
+                      $eMsgPrestador = $m->tecnicoId !== null;
+                      $fotoOp = $eMsgPrestador ? ($chamado->tecnicoFoto ?? '') : ($chamado->clienteFoto ?? '');
+                      $nomeOp = $eMsgPrestador ? ($chamado->tecnicoNome ?? 'Prestador') : ($chamado->clienteNome ?? 'Cliente');
                     ?>
                     <?php if ($fotoOp): ?>
                       <img src="../<?php echo htmlspecialchars($fotoOp); ?>" class="avatar-sm" alt="Foto">

@@ -8,32 +8,40 @@ class SuporteDAO
 {
     private PDO $pdo;
 
-    const CATEGORIAS  = ['Pagamento', 'Técnico', 'Conta', 'Outro'];
-    const PRIORIDADES = ['Baixa', 'Normal', 'Alta', 'Urgente'];
+    public const CATEGORIAS  = ['Pagamento', 'Técnico', 'Conta', 'Outro'];
+    public const PRIORIDADES = ['Baixa', 'Normal', 'Alta', 'Urgente'];
 
     public function __construct()
     {
         $this->pdo = Conexao::getConexao();
     }
 
-    /**
-     * Abre um novo ticket com a primeira mensagem.
-     * @return int ID do ticket criado, ou 0 em caso de erro
-     */
-    public function abrir(string $tipoUsuario, int $usuarioId, string $assunto, string $categoria, string $prioridade, string $texto): int
+    /** @return int ID do ticket criado, ou 0 em caso de erro */
+    public function abrir(string $tipoUsuario, int $usuarioId, string $assunto, string $categoria, string $prioridade, string $texto, ?int $chamadoId = null): int
     {
+        $clienteId = $tipoUsuario === 'cliente'   ? $usuarioId : null;
+        $tecnicoId = $tipoUsuario === 'prestador' ? $usuarioId : null;
+
         try {
             $this->pdo->beginTransaction();
-            $this->pdo->prepare("
-                INSERT INTO suporte (tipo_usuario, usuario_id, assunto, categoria, prioridade, status)
-                VALUES (?,?,?,?,?,'Aberto')
-            ")->execute([$tipoUsuario, $usuarioId, $assunto, $categoria, $prioridade]);
+            if ($chamadoId !== null) {
+                $this->pdo->prepare("
+                    INSERT INTO suporte (cliente_id, tecnico_id, assunto, categoria, prioridade, status, chamado_id)
+                    VALUES (?,?,?,?,?,'Aberto',?)
+                ")->execute([$clienteId, $tecnicoId, $assunto, $categoria, $prioridade, $chamadoId]);
+            } else {
+                $this->pdo->prepare("
+                    INSERT INTO suporte (cliente_id, tecnico_id, assunto, categoria, prioridade, status)
+                    VALUES (?,?,?,?,?,'Aberto')
+                ")->execute([$clienteId, $tecnicoId, $assunto, $categoria, $prioridade]);
+            }
             $sid = (int)$this->pdo->lastInsertId();
             $this->pdo->prepare("
                 INSERT INTO suporte_mensagem (suporte_id, autor_tipo, autor_id, mensagem) VALUES (?,?,?,?)
             ")->execute([$sid, $tipoUsuario, $usuarioId, $texto]);
             $this->pdo->commit();
-            fixnow_notificar_admin($this->pdo, "Novo ticket #{$sid} [{$categoria} / {$prioridade}] de {$tipoUsuario}: {$assunto}");
+            $chamadoInfo = $chamadoId ? " | Chamado #{$chamadoId}" : '';
+            fixnow_notificar_admin($this->pdo, "Novo ticket #{$sid} [{$categoria} / {$prioridade}]{$chamadoInfo} de {$tipoUsuario}: {$assunto}");
             return $sid;
         } catch (Exception $e) {
             $this->pdo->rollBack();
@@ -41,13 +49,19 @@ class SuporteDAO
         }
     }
 
-    /**
-     * Adiciona mensagem a um ticket existente do usuário.
-     */
+    public function registrarAcao(int $suporteId, int $adminId, string $descricao): void
+    {
+        $this->pdo->prepare(
+            "INSERT INTO suporte_mensagem (suporte_id, autor_tipo, autor_id, mensagem) VALUES (?,'admin',?,?)"
+        )->execute([$suporteId, $adminId, '[AÇÃO] ' . $descricao]);
+        $this->pdo->prepare("UPDATE suporte SET atualizado_em=NOW() WHERE id=?")->execute([$suporteId]);
+    }
+
     public function adicionarMensagem(int $suporteId, string $tipoUsuario, int $usuarioId, string $texto): bool
     {
-        $stk = $this->pdo->prepare('SELECT id, status FROM suporte WHERE id=? AND tipo_usuario=? AND usuario_id=?');
-        $stk->execute([$suporteId, $tipoUsuario, $usuarioId]);
+        $col = $tipoUsuario === 'cliente' ? 'cliente_id' : 'tecnico_id';
+        $stk = $this->pdo->prepare("SELECT id, status FROM suporte WHERE id=? AND {$col}=?");
+        $stk->execute([$suporteId, $usuarioId]);
         $tk = $stk->fetch();
         if (!$tk || $tk['status'] === 'Fechado') return false;
 
@@ -60,16 +74,12 @@ class SuporteDAO
         return true;
     }
 
-    /**
-     * Lista tickets do usuário com mensagens embutidas.
-     * @return SuporteDTO[]
-     */
+    /** @return SuporteDTO[] */
     public function listarPorUsuario(string $tipoUsuario, int $usuarioId): array
     {
-        $stmt = $this->pdo->prepare('
-            SELECT * FROM suporte WHERE tipo_usuario=? AND usuario_id=? ORDER BY criado_em DESC
-        ');
-        $stmt->execute([$tipoUsuario, $usuarioId]);
+        $col  = $tipoUsuario === 'cliente' ? 'cliente_id' : 'tecnico_id';
+        $stmt = $this->pdo->prepare("SELECT * FROM suporte WHERE {$col}=? ORDER BY criado_em DESC");
+        $stmt->execute([$usuarioId]);
         $rows = $stmt->fetchAll();
         if (!$rows) return [];
 
@@ -92,10 +102,7 @@ class SuporteDAO
         }, $rows);
     }
 
-    /**
-     * Lista todos os tickets (uso admin).
-     * @return SuporteDTO[]
-     */
+    /** @return SuporteDTO[] */
     public function listarTodos(int $limit = 50): array
     {
         $rows = $this->pdo->query("SELECT * FROM suporte ORDER BY criado_em DESC LIMIT {$limit}")->fetchAll();
@@ -110,7 +117,6 @@ class SuporteDAO
         if (!$row) return null;
 
         $dto = SuporteDTO::fromArray($row);
-
         $msgs = $this->pdo->prepare('SELECT * FROM suporte_mensagem WHERE suporte_id=? ORDER BY criado_em ASC');
         $msgs->execute([$id]);
         $dto->mensagens = array_map([SuporteMensagemDTO::class, 'fromArray'], $msgs->fetchAll());
@@ -120,7 +126,25 @@ class SuporteDAO
     public function responder(int $id, string $resposta, string $status, int $adminId): void
     {
         $this->pdo->prepare("
-            UPDATE suporte SET resposta=?, status=?, respondido_por=? WHERE id=?
+            UPDATE suporte SET resposta=?, status=?, admin_id=? WHERE id=?
         ")->execute([$resposta, $status, $adminId, $id]);
+    }
+
+    public function reabrir(int $suporteId, string $tipoUsuario, int $usuarioId): bool
+    {
+        $col = $tipoUsuario === 'cliente' ? 'cliente_id' : 'tecnico_id';
+        $stk = $this->pdo->prepare("SELECT id, status FROM suporte WHERE id=? AND {$col}=?");
+        $stk->execute([$suporteId, $usuarioId]);
+        $tk = $stk->fetch();
+        if (!$tk || $tk['status'] !== 'Fechado') return false;
+
+        $this->pdo->prepare(
+            "UPDATE suporte SET status='Aberto', resposta=NULL, admin_id=NULL, atualizado_em=NOW() WHERE id=?"
+        )->execute([$suporteId]);
+        $this->pdo->prepare(
+            "INSERT INTO suporte_mensagem (suporte_id, autor_tipo, autor_id, mensagem) VALUES (?,?,?,'Ticket reaberto pelo usuário.')"
+        )->execute([$suporteId, $tipoUsuario, $usuarioId]);
+        fixnow_notificar_admin($this->pdo, "Ticket #{$suporteId} foi reaberto pelo usuário.");
+        return true;
     }
 }

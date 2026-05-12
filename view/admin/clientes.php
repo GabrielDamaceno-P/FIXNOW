@@ -17,7 +17,7 @@ $erro = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isMaster) {
     $cid = (int)($_POST['cliente_id'] ?? 0);
     if ($cid > 0) {
-        $pdo->prepare('DELETE FROM cliente WHERE id = ? AND is_admin = 0')->execute([$cid]);
+        $pdo->prepare('DELETE FROM cliente WHERE id = ?')->execute([$cid]);
         $mensagem = 'Cliente excluído.';
     }
 }
@@ -25,10 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isMaster) {
 $filtro = trim($_GET['busca'] ?? '');
 if ($filtro !== '') {
     $like = '%' . $filtro . '%';
-    $stmt = $pdo->prepare("SELECT id, nome, email, telefone, genero, endereco, cep, criado_em FROM cliente WHERE is_admin=0 AND (nome LIKE ? OR email LIKE ?) ORDER BY nome ASC");
+    $stmt = $pdo->prepare("SELECT id, nome, email, telefone, genero, endereco, cep, criado_em FROM cliente WHERE nome LIKE ? OR email LIKE ? ORDER BY nome ASC");
     $stmt->execute([$like, $like]);
 } else {
-    $stmt = $pdo->query("SELECT id, nome, email, telefone, genero, endereco, cep, criado_em FROM cliente WHERE is_admin=0 ORDER BY nome ASC");
+    $stmt = $pdo->query("SELECT id, nome, email, telefone, genero, endereco, cep, criado_em FROM cliente ORDER BY nome ASC");
 }
 $clientes = $stmt->fetchAll();
 ?>

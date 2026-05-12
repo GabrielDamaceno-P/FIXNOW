@@ -14,7 +14,7 @@ try {
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="painelAdmin.php">Fix Now</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#adminMenu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="adminMenu">
       <ul class="navbar-nav me-auto">

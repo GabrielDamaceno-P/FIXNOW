@@ -34,29 +34,33 @@ class MensagemDAO
 
     public function inserir(int $chamadoId, string $tipo, int $remetenteId, string $mensagem, ?string $arquivoPath = null, ?string $arquivoNome = null): int
     {
+        $clienteId = $tipo === 'cliente'   ? $remetenteId : null;
+        $tecnicoId = $tipo === 'prestador' ? $remetenteId : null;
         $stmt = $this->pdo->prepare('
-            INSERT INTO mensagem_chamado (chamado_id, remetente_tipo, remetente_id, mensagem, arquivo_path, arquivo_nome)
+            INSERT INTO mensagem_chamado (chamado_id, cliente_id, tecnico_id, mensagem, arquivo_path, arquivo_nome)
             VALUES (?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$chamadoId, $tipo, $remetenteId, $mensagem ?: null, $arquivoPath, $arquivoNome]);
+        $stmt->execute([$chamadoId, $clienteId, $tecnicoId, $mensagem ?: null, $arquivoPath, $arquivoNome]);
         return (int)$this->pdo->lastInsertId();
     }
 
     public function marcarLidas(int $chamadoId, string $tipoRemetente): void
     {
+        $col = $tipoRemetente === 'cliente' ? 'cliente_id' : 'tecnico_id';
         $this->pdo->prepare("
             UPDATE mensagem_chamado SET lida=1
-            WHERE chamado_id=? AND remetente_tipo=? AND lida=0
-        ")->execute([$chamadoId, $tipoRemetente]);
+            WHERE chamado_id=? AND $col IS NOT NULL AND lida=0
+        ")->execute([$chamadoId]);
     }
 
     public function contarNaoLidas(int $chamadoId, string $tipoRemetente): int
     {
+        $col  = $tipoRemetente === 'cliente' ? 'cliente_id' : 'tecnico_id';
         $stmt = $this->pdo->prepare("
             SELECT COUNT(*) FROM mensagem_chamado
-            WHERE chamado_id=? AND remetente_tipo=? AND lida=0
+            WHERE chamado_id=? AND $col IS NOT NULL AND lida=0
         ");
-        $stmt->execute([$chamadoId, $tipoRemetente]);
+        $stmt->execute([$chamadoId]);
         return (int)$stmt->fetchColumn();
     }
 }

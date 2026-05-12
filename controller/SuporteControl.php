@@ -14,6 +14,8 @@ class SuporteControl
     public string $erro         = '';
     /** @var SuporteDTO[] */
     public array  $tickets      = [];
+    public array  $pagamentos   = [];
+    public array  $chamados     = [];
 
     public function __construct()
     {
@@ -53,11 +55,12 @@ class SuporteControl
                 $texto      = trim($_POST['mensagem']   ?? '');
                 $categoria  = in_array($_POST['categoria']  ?? '', SuporteDAO::CATEGORIAS,  true) ? $_POST['categoria']  : 'Outro';
                 $prioridade = in_array($_POST['prioridade'] ?? '', SuporteDAO::PRIORIDADES, true) ? $_POST['prioridade'] : 'Normal';
+                $chamadoId  = ($v = (int)($_POST['chamado_id'] ?? 0)) > 0 ? $v : null;
 
                 if (!$assunto || !$texto) {
                     $this->erro = 'Preencha assunto e mensagem.';
                 } else {
-                    $sid = $this->suporteDAO->abrir($this->usuarioTipo, $this->usuarioId, $assunto, $categoria, $prioridade, $texto);
+                    $sid = $this->suporteDAO->abrir($this->usuarioTipo, $this->usuarioId, $assunto, $categoria, $prioridade, $texto, $chamadoId);
                     if ($sid > 0) {
                         $this->mensagem = 'Ticket aberto com sucesso. Responderemos em breve.';
                     } else {
@@ -76,9 +79,71 @@ class SuporteControl
                 } else {
                     $this->erro = 'Não foi possível enviar a mensagem (ticket fechado ou não encontrado).';
                 }
+
+            } elseif ($acao === 'reabrir') {
+                $sid = (int)($_POST['suporte_id'] ?? 0);
+                if ($sid > 0 && $this->suporteDAO->reabrir($sid, $this->usuarioTipo, $this->usuarioId)) {
+                    $this->mensagem = 'Ticket reaberto. Nossa equipe irá analisar em breve.';
+                } else {
+                    $this->erro = 'Não foi possível reabrir o ticket.';
+                }
             }
         }
 
         $this->tickets = $this->suporteDAO->listarPorUsuario($this->usuarioTipo, $this->usuarioId);
+        $this->carregarContexto();
+    }
+
+    private function carregarContexto(): void
+    {
+        require_once __DIR__ . '/../model/dao/Conexao.php';
+        $pdo = Conexao::getConexao();
+
+        if ($this->usuarioTipo === 'cliente') {
+            $stmt = $pdo->prepare("
+                SELECT p.id, p.valor, p.status, p.metodo, p.criado_em,
+                       c.id AS chamado_id, c.categoria AS chamado_categoria
+                FROM pagamento p
+                JOIN chamado c ON c.id = p.chamado_id
+                WHERE c.cliente_id = ?
+                ORDER BY p.criado_em DESC LIMIT 10
+            ");
+            $stmt->execute([$this->usuarioId]);
+            $this->pagamentos = $stmt->fetchAll();
+
+            $stmt = $pdo->prepare("
+                SELECT c.id, c.categoria, c.status, c.criado_em,
+                       t.nome AS tecnico_nome
+                FROM chamado c
+                LEFT JOIN tecnico t ON t.id = c.tecnico_id
+                WHERE c.cliente_id = ? AND c.status NOT IN ('Negado')
+                ORDER BY c.criado_em DESC LIMIT 10
+            ");
+            $stmt->execute([$this->usuarioId]);
+            $this->chamados = $stmt->fetchAll();
+
+        } elseif ($this->usuarioTipo === 'prestador') {
+            $stmt = $pdo->prepare("
+                SELECT p.id, p.valor, p.status, p.metodo, p.criado_em,
+                       c.id AS chamado_id, c.categoria AS chamado_categoria
+                FROM pagamento p
+                JOIN chamado c ON c.id = p.chamado_id
+                WHERE c.tecnico_id = ?
+                ORDER BY p.criado_em DESC LIMIT 10
+            ");
+            $stmt->execute([$this->usuarioId]);
+            $this->pagamentos = $stmt->fetchAll();
+
+            $stmt = $pdo->prepare("
+                SELECT c.id, c.categoria, c.status, c.criado_em,
+                       cl.nome AS cliente_nome
+                FROM chamado c
+                LEFT JOIN cliente cl ON cl.id = c.cliente_id
+                WHERE c.tecnico_id = ? AND c.status NOT IN ('Negado')
+                ORDER BY c.criado_em DESC LIMIT 10
+            ");
+            $stmt->execute([$this->usuarioId]);
+            $this->chamados = $stmt->fetchAll();
+        }
     }
 }

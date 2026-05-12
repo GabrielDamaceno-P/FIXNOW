@@ -12,7 +12,6 @@ class ClienteDTO
     public string $cep       = '';
     public string $fotoPerfil = '';
     public string $genero    = 'Prefiro não informar';
-    public int    $isAdmin   = 0;
 
     public static function fromArray(array $row): self
     {
@@ -27,7 +26,6 @@ class ClienteDTO
         $dto->cep         = $row['cep']                ?? '';
         $dto->fotoPerfil  = $row['foto_perfil']        ?? '';
         $dto->genero      = $row['genero']             ?? 'Prefiro não informar';
-        $dto->isAdmin     = (int)($row['is_admin']     ?? 0);
         return $dto;
     }
 }

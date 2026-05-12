@@ -43,7 +43,7 @@ if (isset($_GET['exportar'])) {
         $dados = $pdo->query("
             SELECT id, nome, email, telefone, genero, endereco, cep,
                    DATE_FORMAT(criado_em,'%d/%m/%Y')
-            FROM cliente WHERE is_admin = 0 ORDER BY nome ASC
+            FROM cliente ORDER BY nome ASC
         ")->fetchAll(PDO::FETCH_NUM);
 
     } elseif ($tipo === 'prestadores') {
@@ -81,7 +81,7 @@ if (isset($_GET['exportar'])) {
     }
 }
 
-$totClientes    = (int)$pdo->query("SELECT COUNT(*) FROM cliente WHERE is_admin=0")->fetchColumn();
+$totClientes    = (int)$pdo->query("SELECT COUNT(*) FROM cliente")->fetchColumn();
 $totPrestadores = (int)$pdo->query("SELECT COUNT(*) FROM tecnico")->fetchColumn();
 $totChamados    = (int)$pdo->query("SELECT COUNT(*) FROM chamado")->fetchColumn();
 $totConcluidos  = (int)$pdo->query("SELECT COUNT(*) FROM chamado WHERE status='Concluído'")->fetchColumn();

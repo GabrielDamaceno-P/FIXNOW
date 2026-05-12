@@ -14,7 +14,7 @@ $_navInicial  = htmlspecialchars(mb_strtoupper(mb_substr($clienteNome, 0, 1)));
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="<?= $_r ?>index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="<?= $_v ?>dashboardCliente.php">Fix Now</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#clienteMenu" aria-controls="clienteMenu" aria-expanded="false" aria-label="Menu">
       <span class="navbar-toggler-icon"></span>
     </button>
