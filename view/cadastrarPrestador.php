@@ -9,6 +9,11 @@ $ctrl = new CadastroPrestadorControl();
 $ctrl->processar();
 $erro     = $ctrl->erro;
 $mensagem = $ctrl->mensagem;
+
+$_urlInicio = '../index.php';
+if (isset($_SESSION['cliente_id']))      $_urlInicio = 'dashboardCliente.php';
+elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPrestador.php';
+elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -22,11 +27,11 @@ $mensagem = $ctrl->mensagem;
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="<?= $_urlInicio ?>">Fix Now</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../index.php">Início</a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= $_urlInicio ?>">Início</a></li>
         <li class="nav-item"><a class="nav-link active" href="cadastrarPrestador.php">Sou prestador</a></li>
         <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
       </ul>
@@ -106,6 +111,20 @@ $mensagem = $ctrl->mensagem;
               <small class="text-muted">Foto legível do RG ou CNH. Usado pelo admin para verificar identidade e gênero antes da aprovação.</small>
             </div>
             <div class="col-12">
+              <div class="form-check border rounded p-3 bg-light">
+                <input class="form-check-input" type="checkbox" name="aceitar_termos" id="aceitar-termos" required value="1"
+                  <?php echo !empty($_POST['aceitar_termos']) ? 'checked' : ''; ?>>
+                <label class="form-check-label" for="aceitar-termos">
+                  Li e concordo com os
+                  <a href="termos.php?tipo=termos" target="_blank" class="text-primary fw-semibold">Termos de Uso</a>
+                  e a
+                  <a href="termos.php?tipo=privacidade" target="_blank" class="text-primary fw-semibold">Política de Privacidade (LGPD)</a>,
+                  incluindo o tratamento dos meus dados pessoais e do documento de identidade para verificação.
+                  <span class="text-danger">*</span>
+                </label>
+              </div>
+            </div>
+            <div class="col-12">
               <button type="submit" class="btn btn-warning fw-semibold">Cadastrar</button>
               <a href="login.php" class="btn btn-outline-primary">Já tenho conta</a>
               <a href="cadastrarCliente.php" class="btn btn-link">Sou cliente</a>
@@ -120,7 +139,7 @@ $mensagem = $ctrl->mensagem;
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
-<script src="../assets/js/forms-helpers.js"></script>
+<script src="../assets/js/forms-helpers.js?v=4"></script>
 <script src="../assets/js/cpf-validation-reload.js"></script>
 </body>
 </html>

@@ -23,6 +23,103 @@
     });
   }
 
+  function bindPasswordStrength() {
+    var senha = document.getElementById('campo-senha');
+    if (!senha) return;
+
+    var wrapper = senha.closest('.input-group') || senha;
+
+    // Container externo (posicionamento para o checklist flutuante)
+    var container = document.createElement('div');
+    container.style.cssText = 'position:relative;margin-top:6px;';
+
+    // Barra de força (ocupa espaço no fluxo — apenas 4px)
+    var bar = document.createElement('div');
+    bar.style.cssText = 'height:100%;width:0;border-radius:2px;transition:width .25s,background .25s;';
+    var barOuter = document.createElement('div');
+    barOuter.style.cssText = 'height:4px;border-radius:2px;background:#dee2e6;overflow:hidden;';
+    barOuter.appendChild(bar);
+    container.appendChild(barOuter);
+    wrapper.insertAdjacentElement('afterend', container);
+
+    // Checklist flutuante — não desloca outros campos
+    var checker = document.createElement('div');
+    checker.id = 'senha-requisitos';
+    checker.style.cssText = 'display:none;position:absolute;z-index:1050;top:calc(100% + 4px);left:0;width:100%;padding:8px 10px;border-radius:6px;background:var(--bs-body-bg,#fff);border:1px solid #dee2e6;box-shadow:0 4px 12px rgba(0,0,0,.2);';
+    container.appendChild(checker);
+    checker.innerHTML =
+      '<div class="js-req d-flex align-items-center gap-2 py-1" data-req="len">'    +
+        '<span class="req-icon" style="font-size:.9rem;">○</span>'                  +
+        '<small>Mínimo 6 caracteres</small>'                                        +
+      '</div>'                                                                       +
+      '<div class="js-req d-flex align-items-center gap-2 py-1" data-req="upper">' +
+        '<span class="req-icon" style="font-size:.9rem;">○</span>'                  +
+        '<small>Uma letra maiúscula (A–Z)</small>'                                  +
+      '</div>'                                                                       +
+      '<div class="js-req d-flex align-items-center gap-2 py-1" data-req="special">'+
+        '<span class="req-icon" style="font-size:.9rem;">○</span>'                  +
+        '<small>Um caractere especial (!@#$%...)</small>'                           +
+      '</div>';
+
+    var rules = {
+      len:     function (v) { return v.length >= 6; },
+      upper:   function (v) { return /[A-Z]/.test(v); },
+      special: function (v) { return /[^a-zA-Z0-9]/.test(v); }
+    };
+
+    var barColors = ['#dc3545', '#fd7e14', '#ffc107', '#198754'];
+
+    function atualizar() {
+      var v = senha.value;
+      var score = 0;
+      var allOk = true;
+
+      checker.querySelectorAll('.js-req').forEach(function (el) {
+        var ok = rules[el.dataset.req](v);
+        var icon = el.querySelector('.req-icon');
+        if (ok) {
+          score++;
+          el.style.color = '#198754';
+          icon.textContent = '✔';
+        } else {
+          allOk = false;
+          el.style.color = v.length > 0 ? '#dc3545' : '#6c757d';
+          icon.textContent = v.length > 0 ? '✖' : '○';
+        }
+      });
+
+      // Barra de força
+      if (v.length === 0) {
+        bar.style.width = '0';
+      } else {
+        bar.style.width = (score / 3 * 100) + '%';
+        bar.style.background = barColors[score - 1] || barColors[0];
+      }
+
+      // Validação Bootstrap
+      if (v.length === 0) {
+        senha.classList.remove('is-valid', 'is-invalid');
+      } else if (allOk) {
+        senha.classList.add('is-valid');
+        senha.classList.remove('is-invalid');
+      } else {
+        senha.classList.add('is-invalid');
+        senha.classList.remove('is-valid');
+      }
+    }
+
+    senha.addEventListener('focus', function () {
+      checker.style.display = 'block';
+      atualizar();
+    });
+
+    senha.addEventListener('blur', function () {
+      if (senha.value.length === 0) checker.style.display = 'none';
+    });
+
+    senha.addEventListener('input', atualizar);
+  }
+
   function bindConfirmarSenha() {
     var senha = document.getElementById('campo-senha');
     var confirmar = document.getElementById('campo-confirmar-senha');
@@ -187,6 +284,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     bindPasswordToggle();
+    bindPasswordStrength();
     bindMasks();
     bindGuardSubmit();
     bindEmailTrim();

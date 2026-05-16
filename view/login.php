@@ -6,6 +6,11 @@ $ctrl = new LoginControl();
 $ctrl->jaLogado();
 $ctrl->processar();
 $erro = $ctrl->erro;
+
+$_urlInicio = '../index.php';
+if (isset($_SESSION['cliente_id']))      $_urlInicio = 'dashboardCliente.php';
+elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPrestador.php';
+elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -19,11 +24,11 @@ $erro = $ctrl->erro;
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="<?= $_urlInicio ?>">Fix Now</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../index.php">Início</a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= $_urlInicio ?>">Início</a></li>
         <li class="nav-item"><a class="nav-link" href="cadastrarCliente.php">Cadastro cliente</a></li>
         <li class="nav-item"><a class="nav-link" href="cadastrarPrestador.php">Cadastro prestador</a></li>
       </ul>

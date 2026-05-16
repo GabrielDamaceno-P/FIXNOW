@@ -258,10 +258,11 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
           <?php if (isset($chamadosComOrcamentoPendente[$c->id])) continue; ?>
           <?php
             $badge = 'secondary';
-            if ($c->status === 'Pendente')     $badge = 'warning text-dark';
-            if ($c->status === 'Em Andamento') $badge = 'primary';
-            if ($c->status === 'Concluído')    $badge = 'success';
-            if ($c->status === 'Negado')       $badge = 'dark';
+            if ($c->status === 'Pendente')              $badge = 'warning text-dark';
+            if ($c->status === 'Aguardando Orçamento')  $badge = 'info text-dark';
+            if ($c->status === 'Em Andamento')          $badge = 'primary';
+            if ($c->status === 'Concluído')             $badge = 'success';
+            if ($c->status === 'Negado')                $badge = 'dark';
 
             $podePagar    = $c->status === 'Concluído' && $c->pagamentoId && $c->pagStatus === 'Pendente';
             $jaAvaliado   = $c->avaliacaoNota !== null;

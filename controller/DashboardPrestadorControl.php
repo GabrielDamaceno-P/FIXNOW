@@ -19,19 +19,20 @@ class DashboardPrestadorControl
     private ServicoDAO     $servicoDAO;
     private PDO            $pdo;
 
-    public int    $tecnicoId           = 0;
-    public string $genero              = 'Masculino';
-    public bool   $isDestaque          = false;
-    public array  $categoriasServico   = [];
-    public string $mensagem            = '';
-    public string $erro                = '';
-    public array  $stats               = [];
-    public int    $pendentesCount      = 0;
-    public array  $chamadosDisponiveis = [];
-    public array  $solicitacoesDiretas = [];
-    public array  $emAndamento         = [];
-    public array  $historico           = [];
-    public array  $notificacoes        = [];
+    public int    $tecnicoId              = 0;
+    public string $genero                 = 'Masculino';
+    public bool   $isDestaque             = false;
+    public array  $categoriasServico      = [];
+    public string $mensagem               = '';
+    public string $erro                   = '';
+    public array  $stats                  = [];
+    public int    $pendentesCount         = 0;
+    public array  $chamadosDisponiveis    = [];
+    public array  $solicitacoesDiretas    = [];
+    public array  $chamadosAguardando     = [];
+    public array  $emAndamento            = [];
+    public array  $historico              = [];
+    public array  $notificacoes           = [];
 
     public function __construct()
     {
@@ -94,7 +95,7 @@ class DashboardPrestadorControl
             if ($cid > 0) {
                 $up = $this->pdo->prepare("
                     UPDATE chamado
-                    SET tecnico_id = ?, status = 'Em Andamento'
+                    SET tecnico_id = ?, status = 'Aguardando Orçamento'
                     WHERE id = ?
                       AND status = 'Pendente'
                       AND tecnico_id IS NULL
@@ -113,9 +114,9 @@ class DashboardPrestadorControl
                     $row = $stmt->fetch();
                     if ($row) {
                         fixnow_notificar_cliente($this->pdo, (int)$row['cliente_id'],
-                            "Seu chamado #{$cid} foi aceito por um prestador e está Em Andamento.", $cid);
+                            "Seu chamado #{$cid} foi aceito! Aguarde o envio do orçamento.", $cid);
                     }
-                    $this->mensagem = 'Chamado aceito. Status: Em andamento.';
+                    $this->mensagem = 'Chamado aceito. Envie o orçamento ao cliente.';
                 } else {
                     $this->erro = 'Não foi possível aceitar este chamado (já atribuído ou indisponível).';
                 }
@@ -147,7 +148,7 @@ class DashboardPrestadorControl
         } elseif (isset($_POST['aceitar_direto_id'])) {
             $cid = (int)$_POST['aceitar_direto_id'];
             if ($cid > 0) {
-                $up = $this->pdo->prepare("UPDATE chamado SET status = 'Em Andamento' WHERE id = ? AND tecnico_id = ? AND status = 'Pendente'");
+                $up = $this->pdo->prepare("UPDATE chamado SET status = 'Aguardando Orçamento' WHERE id = ? AND tecnico_id = ? AND status = 'Pendente'");
                 $up->execute([$cid, $this->tecnicoId]);
                 if ($up->rowCount() > 0) {
                     $stmt = $this->pdo->prepare('SELECT cliente_id FROM chamado WHERE id = ?');
@@ -155,9 +156,9 @@ class DashboardPrestadorControl
                     $row = $stmt->fetch();
                     if ($row) {
                         fixnow_notificar_cliente($this->pdo, (int)$row['cliente_id'],
-                            "Sua solicitação direta #{$cid} foi aceita! O prestador está em andamento.", $cid);
+                            "Sua solicitação direta #{$cid} foi aceita! Aguarde o envio do orçamento.", $cid);
                     }
-                    $this->mensagem = 'Solicitação direta aceita. Status: Em andamento.';
+                    $this->mensagem = 'Solicitação aceita. Envie o orçamento ao cliente.';
                 } else {
                     $this->erro = 'Não foi possível aceitar esta solicitação.';
                 }
@@ -302,5 +303,18 @@ class DashboardPrestadorControl
         $this->historico           = $this->chamadoDAO->listarHistoricoPorTecnico($this->tecnicoId);
         $this->notificacoes        = $this->notifDAO->listarPorTecnico($this->tecnicoId, 10);
         $this->categoriasServico   = $this->servicoDAO->listarNomesCategoriasDoTecnico($this->tecnicoId);
+
+        // Chamados aceitos aguardando envio de orçamento
+        $stmtAg = $this->pdo->prepare("
+            SELECT c.*, cl.nome AS cliente_nome, cl.telefone AS cliente_telefone,
+                   cl.foto_perfil AS cliente_foto, cl.endereco AS cliente_endereco
+            FROM chamado c
+            INNER JOIN cliente cl ON cl.id = c.cliente_id
+            WHERE c.tecnico_id = ? AND c.status = 'Aguardando Orçamento'
+              AND NOT EXISTS (SELECT 1 FROM orcamento o WHERE o.chamado_id = c.id AND o.tecnico_id = ? AND o.status = 'Pendente')
+            ORDER BY c.criado_em DESC
+        ");
+        $stmtAg->execute([$this->tecnicoId, $this->tecnicoId]);
+        $this->chamadosAguardando = $stmtAg->fetchAll();
     }
 }

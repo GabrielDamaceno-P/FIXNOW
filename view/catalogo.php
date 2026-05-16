@@ -7,6 +7,11 @@ $ctrl->processar();
 $prestadores     = $ctrl->prestadores;
 $categorias      = $ctrl->categorias;
 $filtroCategoria = $ctrl->filtroCategoria;
+
+$_urlInicio = '../index.php';
+if (isset($_SESSION['cliente_id']))      $_urlInicio = 'dashboardCliente.php';
+elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPrestador.php';
+elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -20,11 +25,11 @@ $filtroCategoria = $ctrl->filtroCategoria;
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="<?= $_urlInicio ?>">Fix Now</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../index.php">Início</a></li>
+        <li class="nav-item"><a class="nav-link" href="<?= $_urlInicio ?>">Início</a></li>
         <li class="nav-item"><a class="nav-link active" href="catalogo.php">Catálogo</a></li>
         <?php if (isset($_SESSION['cliente_id'])): ?>
           <li class="nav-item"><a class="nav-link" href="dashboardCliente.php">Dashboard</a></li>
@@ -37,6 +42,13 @@ $filtroCategoria = $ctrl->filtroCategoria;
 </nav>
 
 <main class="container py-5 mt-5">
+  <?php if (($_GET['aviso'] ?? '') === 'solicitar'): ?>
+  <div class="alert alert-info alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-info-circle-fill fs-5"></i>
+    <span>Para solicitar um serviço, escolha um prestador abaixo e clique em <strong>Solicitar serviço</strong>.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+  </div>
+  <?php endif; ?>
   <h2 class="mb-1">Catálogo de Prestadores</h2>
   <p class="text-muted mb-4">Encontre o profissional ideal para o seu problema.</p>
 

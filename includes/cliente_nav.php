@@ -26,8 +26,8 @@ $_navInicial  = htmlspecialchars(mb_strtoupper(mb_substr($clienteNome, 0, 1)));
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <?= $paginaAtiva === 'solicitar' ? 'active' : '' ?>" href="<?= $_v ?>cliente/solicitar.php">
-            <i class="bi bi-plus-circle me-1"></i>Solicitar
+          <a class="nav-link <?= $paginaAtiva === 'catalogo' ? 'active' : '' ?>" href="<?= $_v ?>catalogo.php">
+            <i class="bi bi-grid me-1"></i>Catálogo
           </a>
         </li>
         <li class="nav-item">

@@ -28,7 +28,7 @@ $dashLink = match($usuarioTipo) {
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="<?php echo $dashLink; ?>">Fix Now</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#notifMenu" aria-controls="notifMenu" aria-expanded="false" aria-label="Menu">
       <span class="navbar-toggler-icon"></span>
     </button>

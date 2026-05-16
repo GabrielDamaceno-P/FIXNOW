@@ -49,7 +49,26 @@ class OrcamentoPrestadorControl
         }
 
         $genero = $_SESSION['tecnico_genero'] ?? 'Masculino';
-        $this->chamadosDisponiveis = $this->chamadoDAO->listarDisponiveisPorCategoria($this->tecnicoId, $genero);
+
+        // Chamados abertos na especialidade (fila + diretos) — status Pendente
+        $disponiveis = $this->chamadoDAO->listarDisponiveisPorCategoria($this->tecnicoId, $genero);
+
+        // Chamados aceitos aguardando orçamento (já atribuídos a este técnico)
+        $stmtAg = $this->pdo->prepare("
+            SELECT c.*, cl.nome AS cliente_nome
+            FROM chamado c
+            INNER JOIN cliente cl ON cl.id = c.cliente_id
+            WHERE c.tecnico_id = ? AND c.status = 'Aguardando Orçamento'
+              AND NOT EXISTS (
+                SELECT 1 FROM orcamento o WHERE o.chamado_id = c.id AND o.tecnico_id = ? AND o.status = 'Pendente'
+              )
+            ORDER BY c.criado_em DESC
+        ");
+        $stmtAg->execute([$this->tecnicoId, $this->tecnicoId]);
+        $aguardando = $stmtAg->fetchAll();
+
+        // Aguardando orçamento aparece primeiro (são prioridade)
+        $this->chamadosDisponiveis = array_merge($aguardando, $disponiveis);
 
         $this->meusOrcamentos = $this->orcamentoDAO->listarPorTecnico($this->tecnicoId);
     }

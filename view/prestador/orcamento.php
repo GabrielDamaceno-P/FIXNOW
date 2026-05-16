@@ -45,6 +45,7 @@ $tecnicoFoto      = $_SESSION['tecnico_foto'] ?? '';
                 <option value="">— Selecione —</option>
                 <?php foreach ($chamadosDisp as $ch): ?>
                   <option value="<?php echo (int)$ch['id']; ?>" <?php echo $chamadoSelecionado === (int)$ch['id'] ? 'selected' : ''; ?>>
+                    <?php echo ($ch['status'] ?? '') === 'Aguardando Orçamento' ? '⏳ ' : ''; ?>
                     #<?php echo (int)$ch['id']; ?> - <?php echo htmlspecialchars(mb_strimwidth($ch['descricao'], 0, 50, '...')); ?> (<?php echo htmlspecialchars($ch['cliente_nome']); ?>)
                   </option>
                 <?php endforeach; ?>
@@ -93,8 +94,10 @@ $tecnicoFoto      = $_SESSION['tecnico_foto'] ?? '';
                   <td><?php echo (int)$ch['id']; ?></td>
                   <td>
                     <?php echo htmlspecialchars($ch['cliente_nome']); ?>
-                    <?php if (!empty($ch['solicitacao_direta'])): ?>
-                      <span class="badge bg-warning text-dark ms-1" title="O cliente escolheu você diretamente">Direto</span>
+                    <?php if (($ch['status'] ?? '') === 'Aguardando Orçamento'): ?>
+                      <span class="badge bg-warning text-dark ms-1">Aceito</span>
+                    <?php elseif (!empty($ch['solicitacao_direta'])): ?>
+                      <span class="badge bg-primary ms-1">Direto</span>
                     <?php endif; ?>
                   </td>
                   <td><?php echo htmlspecialchars($ch['categoria']); ?></td>

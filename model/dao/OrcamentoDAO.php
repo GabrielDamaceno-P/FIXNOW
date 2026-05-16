@@ -20,7 +20,7 @@ class OrcamentoDAO
             FROM orcamento o
             INNER JOIN chamado c ON c.id = o.chamado_id AND c.cliente_id = ?
             INNER JOIN tecnico t ON t.id = o.tecnico_id
-            WHERE o.status = 'Pendente' AND c.status = 'Pendente'
+            WHERE o.status = 'Pendente' AND c.status IN ('Pendente','Aguardando Orçamento')
             ORDER BY o.criado_em DESC
         ");
         $stmt->execute([$clienteId]);

@@ -2,6 +2,11 @@
 session_start();
 require_once __DIR__ . '/../../controller/SolicitarChamadoControl.php';
 
+// Sem prestador definido não há como montar o formulário completo — redireciona ao catálogo
+if (empty($_GET['prestador'])) {
+    header('Location: ../catalogo.php?aviso=solicitar'); exit;
+}
+
 $ctrl = new SolicitarChamadoControl();
 $ctrl->processar();
 
@@ -256,11 +261,12 @@ $erro            = $ctrl->erro;
     if (solTxt) solTxt.textContent = 'Não foi possível localizar. Arraste o marcador para o local correto.';
   }
 
-  // Remove "Quadra " do início e "Conjunto X" do fim para obter só "QNN 7"
+  // Remove "Quadra " do início e "Conjunto ..." do fim para obter só a quadra base (ex: "QNN 7", "QN 414")
   function limparRua(str) {
     return (str || '')
-      .replace(/^Quadra\s+/i, '')
-      .replace(/\s+Conjunto\s+\S+$/i, '')
+      .replace(/^Quadra\s+/i, '')       // "Quadra QNN 7 Conjunto H" → "QNN 7 Conjunto H"
+      .replace(/\s+Conjunto\s+.*$/i, '') // "QNN 7 Conjunto H" → "QNN 7"
+      .replace(/\s+Lote\s+.*$/i, '')     // remove "Lote X..." se existir
       .trim();
   }
 

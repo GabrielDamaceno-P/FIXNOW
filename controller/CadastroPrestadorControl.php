@@ -23,6 +23,10 @@ class CadastroPrestadorControl
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
 
+        if (empty($_POST['aceitar_termos'])) {
+            $this->erro = 'Você precisa aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.'; return;
+        }
+
         $nome         = trim($_POST['nome']      ?? '');
         $email        = trim($_POST['email']     ?? '');
         $senha        = $_POST['senha']          ?? '';
@@ -50,6 +54,12 @@ class CadastroPrestadorControl
         }
         if (strlen($senha) < 6) {
             $this->erro = 'A senha deve ter ao menos 6 caracteres.'; return;
+        }
+        if (!preg_match('/[A-Z]/', $senha)) {
+            $this->erro = 'A senha deve conter ao menos uma letra maiúscula.'; return;
+        }
+        if (!preg_match('/[^a-zA-Z0-9]/', $senha)) {
+            $this->erro = 'A senha deve conter ao menos um caractere especial (!@#$%...).'; return;
         }
         if ($senha !== $confirma) {
             $this->erro = 'As senhas não conferem.'; return;

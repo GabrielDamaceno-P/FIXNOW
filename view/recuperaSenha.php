@@ -8,6 +8,11 @@ $mensagem  = $ctrl->mensagem;
 $erro      = $ctrl->erro;
 $senhaTemp = $ctrl->senhaTemp;
 $etapa     = $ctrl->etapa;
+
+$_urlInicio = '../index.php';
+if (isset($_SESSION['cliente_id']))      $_urlInicio = 'dashboardCliente.php';
+elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPrestador.php';
+elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -21,7 +26,7 @@ $etapa     = $ctrl->etapa;
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">Fix Now</a>
+    <a class="navbar-brand fw-bold" href="<?= $_urlInicio ?>">Fix Now</a>
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>

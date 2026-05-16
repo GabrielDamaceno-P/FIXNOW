@@ -7,18 +7,19 @@ $ctrl->processar();
 
 $tecnicoNome       = $_SESSION['tecnico_nome'] ?? 'Prestador';
 $tecnicoFoto       = $_SESSION['tecnico_foto'] ?? '';
-$stats             = $ctrl->stats;
-$pendentesCount    = $ctrl->pendentesCount;
-$chamadosDisp      = $ctrl->chamadosDisponiveis;
-$diretos           = $ctrl->solicitacoesDiretas;
-$meusChamados      = $ctrl->emAndamento;
-$historico         = $ctrl->historico;
-$notificacoes      = $ctrl->notificacoes;
-$mensagem          = $ctrl->mensagem;
-$erro              = $ctrl->erro;
-$isDestaque        = $ctrl->isDestaque;
-$categoriasServico = $ctrl->categoriasServico;
-$naoLidas          = count(array_filter($notificacoes, fn($n) => !$n->lida));
+$stats              = $ctrl->stats;
+$pendentesCount     = $ctrl->pendentesCount;
+$chamadosDisp       = $ctrl->chamadosDisponiveis;
+$diretos            = $ctrl->solicitacoesDiretas;
+$chamadosAguardando = $ctrl->chamadosAguardando;
+$meusChamados       = $ctrl->emAndamento;
+$historico          = $ctrl->historico;
+$notificacoes       = $ctrl->notificacoes;
+$mensagem           = $ctrl->mensagem;
+$erro               = $ctrl->erro;
+$isDestaque         = $ctrl->isDestaque;
+$categoriasServico  = $ctrl->categoriasServico;
+$naoLidas           = count(array_filter($notificacoes, fn($n) => !$n->lida));
 $paginaAtiva       = 'chamados';
 ?>
 <!DOCTYPE html>
@@ -60,7 +61,13 @@ $paginaAtiva       = 'chamados';
   <section class="row g-3 mb-4">
     <div class="col-md-4">
       <div class="card fn-stat-card h-100">
-        <div class="card-body"><p class="text-muted mb-1">Chamados disponíveis</p><h3 class="mb-0"><?php echo $pendentesCount; ?></h3></div>
+        <div class="card-body">
+          <p class="text-muted mb-1">Chamados disponíveis</p>
+          <h3 class="mb-0"><?php echo $pendentesCount; ?></h3>
+          <?php if ($chamadosAguardando): ?>
+            <small class="text-warning fw-semibold"><?php echo count($chamadosAguardando); ?> aguardando orçamento</small>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
     <div class="col-md-4">
@@ -85,12 +92,12 @@ $paginaAtiva       = 'chamados';
   </div>
   <?php endif; ?>
 
-  <!-- Chamados pendentes (fila da especialidade) -->
+  <!-- Chamados pendentes (fila + diretos unificados) -->
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
-      <h4 class="h5">Chamados pendentes (sua especialidade)</h4>
+      <h4 class="h5">Chamados pendentes</h4>
       <?php if (!$chamadosDisp): ?>
-        <p class="text-muted mb-0">Nenhum chamado aberto aguardando técnico no momento.</p>
+        <p class="text-muted mb-0">Nenhum chamado pendente no momento.</p>
       <?php else: ?>
         <div class="table-responsive">
           <table class="table table-hover align-middle">
@@ -100,21 +107,20 @@ $paginaAtiva       = 'chamados';
                 <th>Cliente</th>
                 <th>Descrição</th>
                 <th>Endereço</th>
-                <th>Preço</th>
                 <th>Data solicitada</th>
-                <th>Preferência</th>
                 <th>Foto</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-            <?php foreach ($chamadosDisp as $p): ?>
+            <?php foreach ($chamadosDisp as $p):
+              $isDireto = !empty($p['solicitacao_direta']);
+            ?>
               <tr>
                 <td><?php echo (int)$p['id']; ?></td>
                 <td><?php echo htmlspecialchars($p['cliente_nome']); ?></td>
                 <td><?php echo htmlspecialchars(mb_strimwidth($p['descricao'], 0, 60, '...')); ?></td>
                 <td><?php echo htmlspecialchars(mb_strimwidth($p['endereco_servico'], 0, 40, '...')); ?></td>
-                <td>R$ <?php echo number_format((float)$p['preco_sugerido'], 2, ',', '.'); ?></td>
                 <td>
                   <?php if (!empty($p['data_agendamento'])): ?>
                     <span class="badge bg-info text-dark"><?php echo date('d/m/Y H:i', strtotime($p['data_agendamento'])); ?></span>
@@ -122,7 +128,6 @@ $paginaAtiva       = 'chamados';
                     <span class="text-muted">—</span>
                   <?php endif; ?>
                 </td>
-                <td><?php echo !empty($p['prest_feminino']) ? '<span class="badge bg-info text-dark">Só prestadoras</span>' : '<span class="text-muted">—</span>'; ?></td>
                 <td>
                   <button type="button" class="btn btn-sm btn-outline-secondary js-open-cliente-perfil"
                     data-cliente-nome="<?php echo htmlspecialchars($p['cliente_nome'], ENT_QUOTES); ?>"
@@ -133,14 +138,25 @@ $paginaAtiva       = 'chamados';
                     data-resumo="<?php echo htmlspecialchars(mb_strimwidth($p['descricao'], 0, 170, '...'), ENT_QUOTES); ?>">Ver perfil</button>
                 </td>
                 <td>
-                  <form method="post" class="d-inline js-confirm-aceitar js-guard-submit">
-                    <input type="hidden" name="aceitar_id" value="<?php echo (int)$p['id']; ?>">
-                    <button type="submit" class="btn btn-sm btn-warning fw-semibold">Aceitar</button>
-                  </form>
-                  <form method="post" class="d-inline js-confirm-negar js-guard-submit ms-1">
-                    <input type="hidden" name="negar_id" value="<?php echo (int)$p['id']; ?>">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Negar serviço</button>
-                  </form>
+                  <?php if ($isDireto): ?>
+                    <form method="post" class="d-inline js-confirm-aceitar js-guard-submit">
+                      <input type="hidden" name="aceitar_direto_id" value="<?php echo (int)$p['id']; ?>">
+                      <button type="submit" class="btn btn-sm btn-warning fw-semibold">Aceitar</button>
+                    </form>
+                    <form method="post" class="d-inline js-confirm-negar js-guard-submit ms-1">
+                      <input type="hidden" name="recusar_direto_id" value="<?php echo (int)$p['id']; ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">Recusar</button>
+                    </form>
+                  <?php else: ?>
+                    <form method="post" class="d-inline js-confirm-aceitar js-guard-submit">
+                      <input type="hidden" name="aceitar_id" value="<?php echo (int)$p['id']; ?>">
+                      <button type="submit" class="btn btn-sm btn-warning fw-semibold">Aceitar</button>
+                    </form>
+                    <form method="post" class="d-inline js-confirm-negar js-guard-submit ms-1">
+                      <input type="hidden" name="negar_id" value="<?php echo (int)$p['id']; ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">Negar</button>
+                    </form>
+                  <?php endif; ?>
                   <a href="../chat.php?chamado=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-outline-primary ms-1">💬 Chat</a>
                 </td>
               </tr>
@@ -152,60 +168,34 @@ $paginaAtiva       = 'chamados';
     </div>
   </div>
 
-  <!-- Solicitações diretas -->
-  <?php if ($diretos): ?>
-  <div class="card shadow-sm mb-4" style="border: 2px solid #0d6efd !important;">
+  <!-- Aguardando envio de orçamento -->
+  <?php if ($chamadosAguardando): ?>
+  <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
-      <h4 class="h5 text-primary">Solicitações diretas <span class="badge bg-primary ms-1"><?php echo count($diretos); ?></span></h4>
-      <p class="text-muted small mb-3">Clientes que escolheram você especificamente pelo catálogo. Aceite ou recuse cada solicitação.</p>
+      <h4 class="h5"><i class="bi bi-receipt me-2"></i>Aguardando orçamento <span class="badge bg-primary ms-1"><?php echo count($chamadosAguardando); ?></span></h4>
+      <p class="text-muted small mb-3">Chamados aceitos. Envie o orçamento para cada cliente continuar.</p>
       <div class="table-responsive">
         <table class="table table-hover align-middle">
           <thead class="table-primary">
-            <tr>
-              <th>#</th>
-              <th>Cliente</th>
-              <th>Descrição</th>
-              <th>Endereço</th>
-              <th>Preço</th>
-              <th>Horário solicitado</th>
-              <th>Foto</th>
-              <th></th>
-            </tr>
+            <tr><th>#</th><th>Cliente</th><th>Descrição</th><th>Endereço</th><th>Data solicitada</th><th></th></tr>
           </thead>
           <tbody>
-          <?php foreach ($diretos as $d): ?>
+          <?php foreach ($chamadosAguardando as $aw): ?>
             <tr>
-              <td><?php echo (int)$d['id']; ?></td>
-              <td><?php echo htmlspecialchars($d['cliente_nome']); ?></td>
-              <td><?php echo htmlspecialchars(mb_strimwidth($d['descricao'], 0, 60, '...')); ?></td>
-              <td><?php echo htmlspecialchars(mb_strimwidth($d['endereco_servico'], 0, 40, '...')); ?></td>
-              <td>R$ <?php echo number_format((float)$d['preco_sugerido'], 2, ',', '.'); ?></td>
+              <td><?php echo (int)$aw['id']; ?></td>
+              <td><?php echo htmlspecialchars($aw['cliente_nome']); ?></td>
+              <td><?php echo htmlspecialchars(mb_strimwidth($aw['descricao'], 0, 60, '...')); ?></td>
+              <td><?php echo htmlspecialchars(mb_strimwidth($aw['endereco_servico'] ?? '', 0, 40, '...')); ?></td>
               <td>
-                <?php if (!empty($d['data_agendamento'])): ?>
-                  <span class="badge bg-success"><?php echo date('d/m/Y H:i', strtotime($d['data_agendamento'])); ?></span>
+                <?php if (!empty($aw['data_agendamento'])): ?>
+                  <span class="badge bg-info text-dark"><?php echo date('d/m/Y H:i', strtotime($aw['data_agendamento'])); ?></span>
                 <?php else: ?>
                   <span class="text-muted">—</span>
                 <?php endif; ?>
               </td>
-              <td>
-                <button type="button" class="btn btn-sm btn-outline-secondary js-open-cliente-perfil"
-                  data-cliente-nome="<?php echo htmlspecialchars($d['cliente_nome'], ENT_QUOTES); ?>"
-                  data-cliente-foto="<?php echo htmlspecialchars($d['cliente_foto'] ?? '', ENT_QUOTES); ?>"
-                  data-cliente-telefone="<?php echo htmlspecialchars($d['cliente_telefone'] ?? '', ENT_QUOTES); ?>"
-                  data-cliente-endereco="<?php echo htmlspecialchars($d['endereco_servico'] ?? '', ENT_QUOTES); ?>"
-                  data-problema-foto="<?php echo htmlspecialchars($d['foto_path'] ?? '', ENT_QUOTES); ?>"
-                  data-resumo="<?php echo htmlspecialchars(mb_strimwidth($d['descricao'], 0, 170, '...'), ENT_QUOTES); ?>">Ver perfil</button>
-              </td>
-              <td>
-                <form method="post" class="d-inline js-confirm-aceitar js-guard-submit">
-                  <input type="hidden" name="aceitar_direto_id" value="<?php echo (int)$d['id']; ?>">
-                  <button type="submit" class="btn btn-sm btn-primary fw-semibold">Aceitar</button>
-                </form>
-                <form method="post" class="d-inline js-confirm-negar js-guard-submit ms-1">
-                  <input type="hidden" name="recusar_direto_id" value="<?php echo (int)$d['id']; ?>">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Recusar</button>
-                </form>
-                <a href="../chat.php?chamado=<?php echo (int)$d['id']; ?>" class="btn btn-sm btn-outline-primary ms-1">💬 Chat</a>
+              <td class="d-flex gap-1">
+                <a href="orcamento.php?chamado=<?php echo (int)$aw['id']; ?>" class="btn btn-sm btn-warning fw-semibold">Enviar orçamento</a>
+                <a href="../chat.php?chamado=<?php echo (int)$aw['id']; ?>" class="btn btn-sm btn-outline-primary">💬 Chat</a>
               </td>
             </tr>
           <?php endforeach; ?>
