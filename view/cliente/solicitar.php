@@ -126,81 +126,35 @@ $erro            = $ctrl->erro;
             </div>
             <?php endif; ?>
 
-            <?php
-              $endCadastrado = trim($clienteEndereco . ($clienteCep ? " - CEP: $clienteCep" : ''));
-              $endPost       = $_POST['endereco'] ?? '';
-              $usandoOutro   = $endPost !== '' && $endPost !== $endCadastrado;
-            ?>
+            <?php $endCadastrado = trim($clienteEndereco . ($clienteCep ? " - CEP: $clienteCep" : '')); ?>
             <div class="col-12">
-              <label class="form-label">Endereço do serviço <span class="text-danger">*</span></label>
+              <label class="form-label">Endereço do serviço</label>
               <?php if ($endCadastrado): ?>
-              <div class="border rounded p-3 bg-light mb-2">
-                <div class="form-check mb-1">
-                  <input class="form-check-input" type="radio" name="endereco_opcao" id="end-cadastrado"
-                    value="cadastrado" <?php echo !$usandoOutro ? 'checked' : ''; ?>
-                    onclick="fnEndToggle(false)">
-                  <label class="form-check-label" for="end-cadastrado">
-                    Usar endereço cadastrado: <strong><?php echo htmlspecialchars($endCadastrado); ?></strong>
-                  </label>
+                <div class="border rounded p-3 bg-light d-flex align-items-center gap-2">
+                  <span class="text-success fs-5">📍</span>
+                  <span><?php echo htmlspecialchars($endCadastrado); ?></span>
+                  <a href="../perfil.php" class="ms-auto small text-muted">Alterar</a>
                 </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="endereco_opcao" id="end-outro"
-                    value="outro" <?php echo $usandoOutro ? 'checked' : ''; ?>
-                    onclick="fnEndToggle(true)">
-                  <label class="form-check-label" for="end-outro">Usar outro endereço</label>
-                </div>
-              </div>
-              <div id="wrap-outro-endereco" <?php echo $usandoOutro ? '' : 'style="display:none"'; ?>>
-                <div class="row g-2">
-                  <div class="col-auto">
-                    <label class="form-label small text-muted mb-1">CEP</label>
-                    <div class="input-group input-group-sm">
-                      <input type="text" id="inp-cep-outro" class="form-control" maxlength="9"
-                             placeholder="00000-000" inputmode="numeric" style="width:110px">
-                      <span class="input-group-text" id="cep-spinner" style="display:none">
-                        <span class="spinner-border spinner-border-sm"></span>
-                      </span>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label small text-muted mb-1">Endereço completo <span class="text-danger">*</span></label>
-                    <input type="text" name="endereco" id="input-outro-endereco" class="form-control" maxlength="200"
-                           placeholder="Rua, número, bairro, cidade — ou busque pelo CEP acima"
-                           value="<?php echo htmlspecialchars($usandoOutro ? $endPost : ''); ?>">
-                  </div>
-                </div>
-              </div>
-              <input type="hidden" name="endereco_cadastrado" value="<?php echo htmlspecialchars($endCadastrado, ENT_QUOTES); ?>">
+                <input type="hidden" name="endereco" value="<?php echo htmlspecialchars($endCadastrado, ENT_QUOTES); ?>">
               <?php else: ?>
-              <div class="row g-2">
-                <div class="col-auto">
-                  <label class="form-label small text-muted mb-1">CEP</label>
-                  <div class="input-group input-group-sm">
-                    <input type="text" id="inp-cep-outro" class="form-control" maxlength="9"
-                           placeholder="00000-000" inputmode="numeric" style="width:110px">
-                    <span class="input-group-text" id="cep-spinner" style="display:none">
-                      <span class="spinner-border spinner-border-sm"></span>
-                    </span>
-                  </div>
+                <div class="alert alert-warning py-2 mb-0">
+                  Você ainda não cadastrou um endereço.
+                  <a href="../perfil.php" class="alert-link">Clique aqui para atualizar seu perfil</a>.
                 </div>
-                <div class="col-12">
-                  <label class="form-label small text-muted mb-1">Endereço completo <span class="text-danger">*</span></label>
-                  <input type="text" name="endereco" id="input-outro-endereco" class="form-control" required maxlength="200"
-                         placeholder="Rua, número, bairro, cidade — ou busque pelo CEP acima"
-                         value="<?php echo htmlspecialchars($endPost); ?>">
-                </div>
-              </div>
+                <input type="hidden" name="endereco" value="">
               <?php endif; ?>
             </div>
 
-            <!-- Mapa de confirmação do local do serviço -->
+            <!-- Mapa mostrando o local do serviço -->
+            <?php if ($endCadastrado): ?>
             <div class="col-12">
-              <label class="form-label">Confirme o local no mapa <span class="text-muted small">(arraste o marcador para o local exato)</span></label>
+              <label class="form-label">Local do serviço no mapa <span class="text-muted small">(arraste o marcador para ajustar)</span></label>
               <div id="mapa-solicitar"></div>
               <input type="hidden" name="lat_servico" id="inp-lat-servico">
               <input type="hidden" name="lng_servico" id="inp-lng-servico">
-              <p class="form-text" id="txt-coords-selecionadas">Clique ou arraste o marcador no mapa para confirmar o local.</p>
+              <p class="form-text text-muted" id="txt-coords-selecionadas">Localizando endereço...</p>
             </div>
+            <?php endif; ?>
 
             <?php if ($tecnicoInfo): ?>
             <div class="col-md-6">
@@ -260,189 +214,133 @@ $erro            = $ctrl->erro;
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../../assets/js/solicitar.js"></script>
 <script>
-/* ── Toggle endereço ───────────────────────────────────────────── */
-function fnEndToggle(usaOutro) {
-  var wrap   = document.getElementById('wrap-outro-endereco');
-  var inp    = document.getElementById('input-outro-endereco');
-  var hidCad = document.querySelector('input[name="endereco_cadastrado"]');
-  var hidVal = document.getElementById('_end-cad-value');
-  if (!wrap) return;
-  wrap.style.display = usaOutro ? '' : 'none';
-  if (inp) {
-    inp.required = usaOutro;
-    inp.name = usaOutro ? 'endereco' : '_endereco_ignorado';
-    if (!usaOutro) inp.value = '';
+/* ── Mapa do endereço cadastrado ───────────────────────────────── */
+(function () {
+  var mapaEl = document.getElementById('mapa-solicitar');
+  if (!mapaEl || typeof L === 'undefined') return;
+
+  var solLat = document.getElementById('inp-lat-servico');
+  var solLng = document.getElementById('inp-lng-servico');
+  var solTxt = document.getElementById('txt-coords-selecionadas');
+
+  var cepCad = '<?php echo preg_replace('/\D/', '', $clienteCep ?? ''); ?>';
+  var endCad = '<?php echo addslashes($clienteEndereco ?? ''); ?>';
+
+  var map    = L.map(mapaEl).setView([-15.7801, -47.9292], 12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap',
+  }).addTo(map);
+
+  var marker = L.marker([-15.7801, -47.9292], { draggable: true }).addTo(map);
+
+  function atualizar(latlng) {
+    if (solLat) solLat.value = latlng.lat.toFixed(7);
+    if (solLng) solLng.value = latlng.lng.toFixed(7);
+    if (solTxt) solTxt.textContent = 'Local confirmado: ' + latlng.lat.toFixed(5) + ', ' + latlng.lng.toFixed(5);
   }
-  if (!usaOutro && hidCad) {
-    if (!hidVal) {
-      hidVal = document.createElement('input');
-      hidVal.type = 'hidden'; hidVal.id = '_end-cad-value'; hidVal.name = 'endereco';
-      hidCad.parentNode.appendChild(hidVal);
-    }
-    hidVal.value = hidCad.value;
-    // Dispara geocodificação do endereço cadastrado ao voltar
-    _centralizarEnderecoCadastrado();
-  } else if (hidVal) {
-    hidVal.parentNode.removeChild(hidVal);
+
+  function mover(lat, lng) {
+    var ll = L.latLng(lat, lng);
+    map.setView(ll, 17);
+    marker.setLatLng(ll);
+    atualizar(ll);
   }
-}
 
-/* ── Mapa + CEP ────────────────────────────────────────────────── */
-var _solMap    = null;
-var _solMarker = null;
-var _solLat    = document.getElementById('inp-lat-servico');
-var _solLng    = document.getElementById('inp-lng-servico');
-var _solTxt    = document.getElementById('txt-coords-selecionadas');
-var _geoTimer  = null;
+  marker.on('dragend', function () { atualizar(marker.getLatLng()); });
+  map.on('click', function (e) { marker.setLatLng(e.latlng); atualizar(e.latlng); });
 
-function _solAtualizar(latlng) {
-  if (_solLat) _solLat.value = latlng.lat.toFixed(7);
-  if (_solLng) _solLng.value = latlng.lng.toFixed(7);
-  if (_solTxt) _solTxt.textContent = 'Local selecionado: ' + latlng.lat.toFixed(5) + ', ' + latlng.lng.toFixed(5);
-}
+  function confirmar() {
+    if (solTxt) solTxt.textContent = 'Local confirmado. Arraste o marcador para ajustar se necessário.';
+  }
+  function falhou() {
+    if (solTxt) solTxt.textContent = 'Não foi possível localizar. Arraste o marcador para o local correto.';
+  }
 
-function _solMover(lat, lng) {
-  if (!_solMap || !_solMarker) return;
-  var ll = L.latLng(lat, lng);
-  _solMap.setView(ll, 16);
-  _solMarker.setLatLng(ll);
-  _solAtualizar(ll);
-}
+  // Remove "Quadra " do início e "Conjunto X" do fim para obter só "QNN 7"
+  function limparRua(str) {
+    return (str || '')
+      .replace(/^Quadra\s+/i, '')
+      .replace(/\s+Conjunto\s+\S+$/i, '')
+      .trim();
+  }
 
-function _limparEndereco(str) {
-  if (!str) return '';
-  return str.replace(/Quadra\s+/i, '')
-            .replace(/Conjunto\s+/i, '')
-            .replace(/Brasília\s*-\s*DF/i, 'Ceilândia')
-            .trim();
-}
+  // Último recurso: busca por bairro + cidade
+  function porBairro(bairro, cidade, uf) {
+    var q = [bairro, cidade, uf, 'Brasil'].filter(Boolean).join(', ');
+    if (q.replace('Brasil', '').trim().length < 3) { falhou(); return; }
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.length) { mover(parseFloat(d[0].lat), parseFloat(d[0].lon)); confirmar(); }
+        else falhou();
+      })
+      .catch(falhou);
+  }
 
+  // Nominatim busca estruturada: street + suburb + city + state
+  // Se não achar com suburb, tenta sem suburb
+  function porNominatimEstruturado(rua, bairro, cidade, uf) {
+    var p = 'format=json&limit=1&countrycodes=br';
+    if (rua)   p += '&street='  + encodeURIComponent(rua);
+    if (bairro) p += '&suburb=' + encodeURIComponent(bairro);
+    if (cidade) p += '&city='   + encodeURIComponent(cidade);
+    if (uf)     p += '&state='  + encodeURIComponent(uf);
 
-function _geocodificarString(str) {
-  var query = _limparEndereco(str);
-  if (query.length < 3) return;
-                 
-  var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(query);
-  
-  fetch(url)
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-      if (d && d.length) {
-        _solMover(parseFloat(d[0].lat), parseFloat(d[0].lon));
-      }
-    })
-    .catch(function () {});
-}
-
-/* Geocodificação Combinada — Prioriza string do endereço, cai para CEP */
-function _geocodificarCompleto(cep, endereco) {
-  var query = _limparEndereco(endereco);
-  if (query.length > 5) {
-    // Tenta primeiro pela string completa (mais preciso para quadras)
-    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(query);
-    fetch(url)
+    fetch('https://nominatim.openstreetmap.org/search?' + p)
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.length) {
-          _solMover(parseFloat(d[0].lat), parseFloat(d[0].lon));
-        } else if (cep) {
-          _geocodificarCep(cep);
+          mover(parseFloat(d[0].lat), parseFloat(d[0].lon)); confirmar();
+        } else if (bairro) {
+          // Tenta sem o bairro (mais abrangente)
+          porNominatimEstruturado(rua, '', cidade, uf);
+        } else {
+          porAwesome(bairro, cidade, uf);
         }
       })
-      .catch(function () {
-        if (cep) _geocodificarCep(cep);
-      });
-  } else if (cep) {
-    _geocodificarCep(cep);
+      .catch(function () { porAwesome(bairro, cidade, uf); });
   }
-}
 
-/* BrasilAPI v2 — coordenadas do CEP */
-function _geocodificarCep(cep) {
-  if (!cep) return;
-  fetch('https://brasilapi.com.br/api/cep/v2/' + cep.replace(/\D/g, ''))
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) {
-      var c = d && d.location && d.location.coordinates;
-      if (c && c.latitude && c.longitude) {
-        _solMover(parseFloat(c.latitude), parseFloat(c.longitude));
-      }
-    })
-    .catch(function () {});
-}
-
-function _centralizarEnderecoCadastrado() {
-  var _cepCad = '<?php echo preg_replace('/\D/', '', $clienteCep); ?>';
-  var _endCad = '<?php echo addslashes($clienteEndereco); ?>';
-  _geocodificarCompleto(_cepCad, _endCad);
-}
-
-/* Inicializa o mapa */
-var _mapaEl = document.getElementById('mapa-solicitar');
-if (_mapaEl && typeof L !== 'undefined') {
-  _solMap = L.map(_mapaEl).setView([-15.7801, -47.9292], 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap',
-  }).addTo(_solMap);
-  _solMarker = L.marker([-15.7801, -47.9292], { draggable: true }).addTo(_solMap);
-  _solAtualizar(_solMarker.getLatLng());
-  _solMarker.on('dragend', function () { _solAtualizar(_solMarker.getLatLng()); });
-  _solMap.on('click', function (e) { _solMarker.setLatLng(e.latlng); _solAtualizar(e.latlng); });
-
-  var _radCad = document.getElementById('end-cadastrado');
-  if (_radCad && _radCad.checked) _centralizarEnderecoCadastrado();
-  
-  if (!_radCad && navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function (pos) {
-      _solMover(pos.coords.latitude, pos.coords.longitude);
-    });
+  // AwesomeAPI: coordenadas por CEP (nível de bairro/quadra)
+  function porAwesome(bairro, cidade, uf) {
+    fetch('https://cep.awesomeapi.com.br/json/' + cepCad)
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) {
+        if (d && d.lat && d.lng && parseFloat(d.lat) !== 0) {
+          mover(parseFloat(d.lat), parseFloat(d.lng)); confirmar();
+        } else {
+          porBairro(bairro || (d && d.district), cidade || (d && d.city), uf || (d && d.state));
+        }
+      })
+      .catch(function () { porBairro(bairro, cidade, uf); });
   }
-}
 
-/* ── Busca CEP via BrasilAPI (+ fallback ViaCEP) ──────────────── */
-var _inpCep  = document.getElementById('inp-cep-outro');
-var _inpEnd2 = document.getElementById('input-outro-endereco');
-var _spinner = document.getElementById('cep-spinner');
+  // Ponto de entrada: ViaCEP para dados do endereço → Nominatim estruturado → AwesomeAPI → bairro
+  function iniciar() {
+    if (cepCad.length !== 8) {
+      if (endCad) porBairro('', endCad, '');
+      else falhou();
+      return;
+    }
+    fetch('https://viacep.com.br/ws/' + cepCad + '/json/')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.erro || !d.localidade) { porAwesome('', '', ''); return; }
+        var rua    = limparRua(d.logradouro);   // "QNN 7"
+        var bairro = d.bairro    || '';          // "Ceilândia Norte"
+        var cidade = d.localidade || '';         // "Brasília"
+        var uf     = d.uf        || '';          // "DF"
+        if (rua) {
+          porNominatimEstruturado(rua, bairro, cidade, uf);
+        } else {
+          porAwesome(bairro, cidade, uf);
+        }
+      })
+      .catch(function () { porAwesome('', '', ''); });
+  }
 
-if (_inpCep) {
-  _inpCep.addEventListener('input', function () {
-    var v = this.value.replace(/\D/g, '').slice(0, 8);
-    this.value = v.length > 5 ? v.slice(0, 5) + '-' + v.slice(5) : v;
-    if (v.length === 8) _buscarCep(v);
-  });
-}
-
-// Debounce para geocodificação manual do endereço
-if (_inpEnd2) {
-  _inpEnd2.addEventListener('input', function() {
-    clearTimeout(_geoTimer);
-    var val = this.value;
-    _geoTimer = setTimeout(function() {
-      if (val.length > 10) _geocodificarString(val);
-    }, 1200);
-  });
-}
-
-function _buscarCep(cep) {
-  if (_spinner) _spinner.style.display = '';
-  /* ViaCEP: preenche o endereço */
-  fetch('https://viacep.com.br/ws/' + cep + '/json/')
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      if (_spinner) _spinner.style.display = 'none';
-      if (data.erro) {
-        if (_inpEnd2) _inpEnd2.placeholder = 'CEP não encontrado — preencha manualmente';
-        return;
-      }
-      var partes = [data.logradouro, data.bairro, data.localidade + ' - ' + data.uf]
-        .filter(Boolean).join(', ');
-      if (_inpEnd2) { _inpEnd2.value = partes; _inpEnd2.focus(); }
-      
-      // Mover o mapa usando o endereço completo (mais preciso que apenas o CEP)
-      _geocodificarCompleto(cep, partes);
-    })
-    .catch(function () { if (_spinner) _spinner.style.display = 'none'; });
-}
+  iniciar();
+})();
 
 </script>
 </body>

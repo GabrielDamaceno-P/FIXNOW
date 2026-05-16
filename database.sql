@@ -1,52 +1,70 @@
-
-
 CREATE DATABASE IF NOT EXISTS projeto_fixnow
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE projeto_fixnow;
 
+-- ─────────────────────────────────────────────
+--  TABELAS
+-- ─────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS admin (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  nome        VARCHAR(120) NOT NULL,
+  email       VARCHAR(150) NOT NULL UNIQUE,
+  senha       VARCHAR(255) NOT NULL,
+  telefone    VARCHAR(20)  NOT NULL,
+  genero      ENUM('Feminino','Masculino','Outro','Prefiro não informar') NOT NULL DEFAULT 'Prefiro não informar',
+  perfil      ENUM('Master') NOT NULL DEFAULT 'Master',
+  foto_perfil VARCHAR(255) NOT NULL DEFAULT 'assets/img/perfil/default-cliente.jpg',
+  criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE IF NOT EXISTS cliente (
-  id           INT AUTO_INCREMENT PRIMARY KEY,
-  nome         VARCHAR(120) NOT NULL,
-  email        VARCHAR(150) NOT NULL UNIQUE,
-  senha        VARCHAR(255) NOT NULL,
-  cpf          CHAR(11) NULL UNIQUE,
-  telefone     VARCHAR(20) NOT NULL,
-  endereco     VARCHAR(200) NOT NULL,
-  cep          VARCHAR(10) NOT NULL,
-  foto_perfil  VARCHAR(255) NOT NULL,
-  genero       ENUM('Feminino','Masculino','Outro','Prefiro não informar') NOT NULL DEFAULT 'Prefiro não informar',
-  is_admin     TINYINT(1) NOT NULL DEFAULT 0,
-  admin_perfil ENUM('Master') NULL DEFAULT NULL,
-  criado_em    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  nome        VARCHAR(120) NOT NULL,
+  email       VARCHAR(150) NOT NULL UNIQUE,
+  senha       VARCHAR(255) NOT NULL,
+  cpf         CHAR(11)     NULL UNIQUE,
+  telefone    VARCHAR(20)  NOT NULL,
+  endereco    VARCHAR(200) NOT NULL DEFAULT '',
+  cep         VARCHAR(10)  NOT NULL DEFAULT '',
+  foto_perfil VARCHAR(255) NOT NULL DEFAULT 'assets/img/perfil/default-cliente.jpg',
+  genero      ENUM('Feminino','Masculino','Outro','Prefiro não informar') NOT NULL DEFAULT 'Prefiro não informar',
+  criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE IF NOT EXISTS tecnico (
-  id               INT AUTO_INCREMENT PRIMARY KEY,
-  nome             VARCHAR(120) NOT NULL,
-  email            VARCHAR(150) NULL UNIQUE,
-  senha            VARCHAR(255) NULL,
-  cpf              CHAR(11) NULL UNIQUE,
-  especialidade    VARCHAR(100) NULL DEFAULT NULL,
-  telefone         VARCHAR(20) NOT NULL,
-  genero           ENUM('Feminino','Masculino','Outro') NOT NULL DEFAULT 'Masculino',
-  foto_perfil      VARCHAR(255) NOT NULL,
-  documento_path   VARCHAR(255) NULL,
-  avaliacao_media  DECIMAL(3,2) DEFAULT 0.00,
-  ativo            TINYINT(1) NOT NULL DEFAULT 1,
-  status_cadastro  ENUM('Pendente','Aprovado','Recusado') NOT NULL DEFAULT 'Pendente',
-  destaque         TINYINT(1) NOT NULL DEFAULT 0,
-  criado_em        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  nome            VARCHAR(120) NOT NULL,
+  email           VARCHAR(150) NULL UNIQUE,
+  senha           VARCHAR(255) NULL,
+  cpf             CHAR(11)     NULL UNIQUE,
+  especialidade   VARCHAR(100) NULL DEFAULT NULL,
+  telefone        VARCHAR(20)  NOT NULL,
+  genero          ENUM('Feminino','Masculino','Outro') NOT NULL DEFAULT 'Masculino',
+  foto_perfil     VARCHAR(255) NOT NULL DEFAULT 'assets/img/perfil/default-tecnico.jpg',
+  documento_path  VARCHAR(255) NULL,
+  avaliacao_media DECIMAL(3,2) DEFAULT 0.00,
+  ativo           TINYINT(1)   NOT NULL DEFAULT 1,
+  status_cadastro ENUM('Pendente','Aprovado','Recusado') NOT NULL DEFAULT 'Pendente',
+  destaque        TINYINT(1)   NOT NULL DEFAULT 0,
+  criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  admin_id        INT NULL,
+  CONSTRAINT fk_tecnico_admin FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE IF NOT EXISTS categoria (
   id        INT AUTO_INCREMENT PRIMARY KEY,
   nome      VARCHAR(100) NOT NULL UNIQUE,
   descricao VARCHAR(255) NULL,
-  ativo     TINYINT(1) NOT NULL DEFAULT 1,
-  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ativo     TINYINT(1)   NOT NULL DEFAULT 1,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  admin_id  INT NULL,
+  CONSTRAINT fk_categoria_admin FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -54,26 +72,36 @@ CREATE TABLE IF NOT EXISTS chamado (
   id                        INT AUTO_INCREMENT PRIMARY KEY,
   cliente_id                INT NOT NULL,
   tecnico_id                INT NULL,
-  categoria                 ENUM('Suporte TI','Elétrica','Hidráulica','Pintura','Marcenaria','Limpeza','Refrigeração','Jardinagem') NOT NULL,
+  categoria                 VARCHAR(100) NOT NULL,
   descricao                 TEXT NOT NULL,
   foto_path                 VARCHAR(255) NULL,
   endereco_servico          VARCHAR(200) NOT NULL,
   data_agendamento          DATETIME NULL,
   data_agendamento_proposta DATETIME NULL,
-  reagendamento_pendente    TINYINT(1) NOT NULL DEFAULT 0,
+  reagendamento_pendente    TINYINT(1)   NOT NULL DEFAULT 0,
   preco_sugerido            DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  prest_feminino            TINYINT(1) NOT NULL DEFAULT 0,
+  prest_feminino            TINYINT(1)   NOT NULL DEFAULT 0,
   lat_servico               DECIMAL(10,7) NULL,
   lng_servico               DECIMAL(10,7) NULL,
-  em_deslocamento           TINYINT(1) NOT NULL DEFAULT 0,
-  deslocamento_inicio       DATETIME NULL,
-  tecnico_lat               DECIMAL(10,7) NULL,
-  tecnico_lng               DECIMAL(10,7) NULL,
   status                    ENUM('Pendente','Em Andamento','Concluído','Negado') NOT NULL DEFAULT 'Pendente',
   criado_em                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em             TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  em_deslocamento           TINYINT(1)   NOT NULL DEFAULT 0,
+  deslocamento_inicio       DATETIME NULL,
+  tecnico_lat               DECIMAL(10,7) NULL,
+  tecnico_lng               DECIMAL(10,7) NULL,
   CONSTRAINT fk_chamado_cliente FOREIGN KEY (cliente_id) REFERENCES cliente(id) ON DELETE CASCADE,
   CONSTRAINT fk_chamado_tecnico FOREIGN KEY (tecnico_id) REFERENCES tecnico(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS chamado_foto (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  chamado_id INT NOT NULL,
+  foto_path  VARCHAR(300) NOT NULL,
+  criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_chamado_foto (chamado_id),
+  CONSTRAINT fk_chamado_foto FOREIGN KEY (chamado_id) REFERENCES chamado(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -111,11 +139,11 @@ CREATE TABLE IF NOT EXISTS notificacao (
   tecnico_id        INT NULL,
   chamado_id        INT NULL,
   mensagem          VARCHAR(500) NOT NULL,
-  lida              TINYINT(1) NOT NULL DEFAULT 0,
+  lida              TINYINT(1)   NOT NULL DEFAULT 0,
   criado_em         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_notif_cliente  FOREIGN KEY (cliente_id)  REFERENCES cliente(id)  ON DELETE CASCADE,
-  CONSTRAINT fk_notif_tecnico  FOREIGN KEY (tecnico_id)  REFERENCES tecnico(id)  ON DELETE CASCADE,
-  CONSTRAINT fk_notif_chamado  FOREIGN KEY (chamado_id)  REFERENCES chamado(id)  ON DELETE SET NULL
+  CONSTRAINT fk_notif_cliente FOREIGN KEY (cliente_id) REFERENCES cliente(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notif_tecnico FOREIGN KEY (tecnico_id) REFERENCES tecnico(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notif_chamado FOREIGN KEY (chamado_id) REFERENCES chamado(id)  ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -126,7 +154,7 @@ CREATE TABLE IF NOT EXISTS servico (
   nome         VARCHAR(150) NOT NULL,
   descricao    TEXT NULL,
   preco        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  ativo        TINYINT(1) NOT NULL DEFAULT 1,
+  ativo        TINYINT(1)    NOT NULL DEFAULT 1,
   criado_em    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_servico_tecnico   FOREIGN KEY (tecnico_id)   REFERENCES tecnico(id)   ON DELETE CASCADE,
   CONSTRAINT fk_servico_categoria FOREIGN KEY (categoria_id) REFERENCES categoria(id) ON DELETE SET NULL
@@ -157,44 +185,6 @@ CREATE TABLE IF NOT EXISTS portfolio_foto (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS chamado_foto (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  chamado_id INT NOT NULL,
-  foto_path  VARCHAR(300) NOT NULL,
-  criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_chamado_foto (chamado_id),
-  CONSTRAINT fk_chamado_foto FOREIGN KEY (chamado_id) REFERENCES chamado(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS suporte (
-  id             INT AUTO_INCREMENT PRIMARY KEY,
-  tipo_usuario   ENUM('cliente','prestador','admin') NOT NULL,
-  usuario_id     INT NOT NULL,
-  assunto        VARCHAR(200) NOT NULL,
-  mensagem       TEXT NULL,
-  categoria      VARCHAR(50) NOT NULL DEFAULT 'Outro',
-  prioridade     ENUM('Baixa','Normal','Alta','Urgente') NOT NULL DEFAULT 'Normal',
-  status         ENUM('Aberto','Em Andamento','Fechado') NOT NULL DEFAULT 'Aberto',
-  resposta       TEXT NULL,
-  respondido_por INT NULL,
-  criado_em      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  atualizado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS suporte_mensagem (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  suporte_id  INT NOT NULL,
-  autor_tipo  ENUM('cliente','prestador','admin') NOT NULL,
-  autor_id    INT NOT NULL,
-  mensagem    TEXT NOT NULL,
-  criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_sup_msg (suporte_id),
-  CONSTRAINT fk_supmsg_suporte FOREIGN KEY (suporte_id) REFERENCES suporte(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 CREATE TABLE IF NOT EXISTS orcamento (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   chamado_id    INT NOT NULL,
@@ -203,7 +193,7 @@ CREATE TABLE IF NOT EXISTS orcamento (
   descricao     TEXT NULL,
   prazo_dias    TINYINT UNSIGNED NULL,
   status        ENUM('Pendente','Aceito','Recusado') NOT NULL DEFAULT 'Pendente',
-  motivo_recusa VARCHAR(500) NULL COMMENT 'Motivo informado pelo cliente ao recusar o orcamento',
+  motivo_recusa VARCHAR(500) NULL,
   criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_orcamento_chamado FOREIGN KEY (chamado_id) REFERENCES chamado(id) ON DELETE CASCADE,
   CONSTRAINT fk_orcamento_tecnico FOREIGN KEY (tecnico_id) REFERENCES tecnico(id) ON DELETE CASCADE
@@ -211,93 +201,79 @@ CREATE TABLE IF NOT EXISTS orcamento (
 
 
 CREATE TABLE IF NOT EXISTS mensagem_chamado (
-  id             INT AUTO_INCREMENT PRIMARY KEY,
-  chamado_id     INT NOT NULL,
-  remetente_tipo ENUM('cliente','prestador') NOT NULL,
-  remetente_id   INT NOT NULL,
-  mensagem       TEXT NULL,
-  arquivo_path   VARCHAR(300) NULL,
-  arquivo_nome   VARCHAR(200) NULL,
-  lida           TINYINT(1) NOT NULL DEFAULT 0,
-  criado_em      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  chamado_id   INT NOT NULL,
+  cliente_id   INT NULL,
+  tecnico_id   INT NULL,
+  mensagem     TEXT NULL,
+  arquivo_path VARCHAR(300) NULL,
+  arquivo_nome VARCHAR(200) NULL,
+  lida         TINYINT(1)   NOT NULL DEFAULT 0,
+  criado_em    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_chamado_msg (chamado_id),
-  INDEX idx_lida (chamado_id, remetente_tipo, lida)
+  INDEX idx_lida (chamado_id, lida),
+  CONSTRAINT fk_msg_chamado  FOREIGN KEY (chamado_id) REFERENCES chamado(id)  ON DELETE CASCADE,
+  CONSTRAINT fk_msg_cliente  FOREIGN KEY (cliente_id) REFERENCES cliente(id)  ON DELETE SET NULL,
+  CONSTRAINT fk_msg_tecnico  FOREIGN KEY (tecnico_id) REFERENCES tecnico(id)  ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE IF NOT EXISTS suporte (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  cliente_id  INT NULL,
+  tecnico_id  INT NULL,
+  assunto     VARCHAR(200) NOT NULL,
+  mensagem    TEXT NULL,
+  categoria   VARCHAR(50)  NOT NULL DEFAULT 'Outro',
+  prioridade  ENUM('Baixa','Normal','Alta','Urgente') NOT NULL DEFAULT 'Normal',
+  status      ENUM('Aberto','Em Andamento','Fechado') NOT NULL DEFAULT 'Aberto',
+  resposta    TEXT NULL,
+  admin_id    INT NULL,
+  chamado_id  INT NULL,
+  criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_suporte_cliente  FOREIGN KEY (cliente_id)  REFERENCES cliente(id)  ON DELETE SET NULL,
+  CONSTRAINT fk_suporte_tecnico  FOREIGN KEY (tecnico_id)  REFERENCES tecnico(id)  ON DELETE SET NULL,
+  CONSTRAINT fk_suporte_admin    FOREIGN KEY (admin_id)    REFERENCES admin(id)    ON DELETE SET NULL,
+  CONSTRAINT fk_suporte_chamado  FOREIGN KEY (chamado_id)  REFERENCES chamado(id)  ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT IGNORE INTO categoria (nome, descricao) VALUES
-('Suporte TI',  'Computadores, redes, dispositivos e sistemas'),
-('Elétrica',    'Instalações elétricas residenciais e comerciais'),
-('Hidráulica',  'Encanamentos, vazamentos e instalações hidráulicas'),
-('Pintura',     'Pintura residencial e comercial'),
-('Marcenaria',  'Móveis, portas, janelas e estruturas de madeira');
 
-INSERT INTO tecnico (nome, email, senha, cpf, especialidade, telefone, genero, foto_perfil, avaliacao_media, ativo, status_cadastro) VALUES
-('João Silva',   NULL, NULL, NULL, 'Suporte TI', '(11) 98888-1111', 'Masculino', 'assets/img/perfil/default-tecnico.jpg', 4.8, 1, 'Aprovado'),
-('Carlos Souza', NULL, NULL, NULL, 'Elétrica',   '(11) 97777-2222', 'Masculino', 'assets/img/perfil/default-tecnico.jpg', 4.7, 1, 'Aprovado'),
-('Marina Alves', NULL, NULL, NULL, 'Hidráulica', '(11) 96666-3333', 'Feminino',  'assets/img/perfil/default-tecnico.jpg', 4.9, 1, 'Aprovado'),
-('Rafael Lima',  NULL, NULL, NULL, 'Pintura',    '(11) 95555-4444', 'Masculino', 'assets/img/perfil/default-tecnico.jpg', 4.6, 1, 'Aprovado'),
-('Pedro Nunes',  NULL, NULL, NULL, 'Marcenaria', '(11) 94444-5555', 'Masculino', 'assets/img/perfil/default-tecnico.jpg', 4.8, 1, 'Aprovado')
-ON DUPLICATE KEY UPDATE
-  especialidade   = VALUES(especialidade),
-  telefone        = VALUES(telefone),
-  genero          = VALUES(genero),
-  ativo           = VALUES(ativo),
-  status_cadastro = VALUES(status_cadastro);
+CREATE TABLE IF NOT EXISTS suporte_mensagem (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  suporte_id INT NOT NULL,
+  autor_tipo ENUM('cliente','prestador','admin') NOT NULL,
+  autor_id   INT NOT NULL,
+  mensagem   TEXT NOT NULL,
+  criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_sup_msg (suporte_id),
+  CONSTRAINT fk_supmsg_suporte FOREIGN KEY (suporte_id) REFERENCES suporte(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Categorias adicionais para simulação
-INSERT IGNORE INTO categoria (nome, descricao) VALUES
-('Limpeza',       'Limpeza residencial, comercial e pós-obra'),
-('Refrigeração',  'Ar-condicionado, geladeiras e equipamentos de frio'),
-('Jardinagem',    'Jardins, gramados, podas e paisagismo');
 
--- Prestadores simulados com login (senha: senha123)
-INSERT INTO tecnico (nome, email, senha, cpf, especialidade, telefone, genero, foto_perfil, avaliacao_media, ativo, status_cadastro) VALUES
-('Ana Costa',       'ana.costa@fixnow.com',     '$2y$10$cuCvJDChfM6zsmivKvmZUuO.Ei1/I/6Biu.LIjSqGZoKKAh.igqNi', NULL, 'Limpeza',      '(11) 93333-1111', 'Feminino',  'assets/img/perfil/default-tecnico.jpg', 4.9, 1, 'Aprovado'),
-('Lucas Ferreira',  'lucas.ferreira@fixnow.com','$2y$10$cuCvJDChfM6zsmivKvmZUuO.Ei1/I/6Biu.LIjSqGZoKKAh.igqNi', NULL, 'Refrigeração', '(11) 93333-2222', 'Masculino', 'assets/img/perfil/default-tecnico.jpg', 4.7, 1, 'Aprovado'),
-('Beatriz Santos',  'beatriz.santos@fixnow.com','$2y$10$cuCvJDChfM6zsmivKvmZUuO.Ei1/I/6Biu.LIjSqGZoKKAh.igqNi', NULL, 'Jardinagem',   '(11) 93333-3333', 'Feminino',  'assets/img/perfil/default-tecnico.jpg', 4.8, 1, 'Aprovado')
-ON DUPLICATE KEY UPDATE
-  especialidade = VALUES(especialidade), telefone = VALUES(telefone),
-  genero = VALUES(genero), ativo = VALUES(ativo), status_cadastro = VALUES(status_cadastro);
+-- ─────────────────────────────────────────────
+--  DADOS INICIAIS (admin + categorias padrão)
+-- ─────────────────────────────────────────────
 
--- Serviços dos prestadores simulados
-INSERT IGNORE INTO servico (tecnico_id, categoria_id, nome, descricao, preco, ativo)
-SELECT t.id, c.id,
-       CASE t.email
-         WHEN 'ana.costa@fixnow.com'     THEN 'Limpeza residencial'
-         WHEN 'lucas.ferreira@fixnow.com' THEN 'Instalação de ar-condicionado'
-         WHEN 'beatriz.santos@fixnow.com' THEN 'Manutenção de jardim'
-       END,
-       CASE t.email
-         WHEN 'ana.costa@fixnow.com'     THEN 'Limpeza completa de casas e apartamentos, incluindo cozinha, banheiros e áreas comuns.'
-         WHEN 'lucas.ferreira@fixnow.com' THEN 'Instalação, manutenção e limpeza de ar-condicionado split e janela.'
-         WHEN 'beatriz.santos@fixnow.com' THEN 'Corte de grama, poda, plantio e cuidados gerais com jardins residenciais.'
-       END,
-       CASE t.email
-         WHEN 'ana.costa@fixnow.com'     THEN 120.00
-         WHEN 'lucas.ferreira@fixnow.com' THEN 180.00
-         WHEN 'beatriz.santos@fixnow.com' THEN 90.00
-       END,
-       1
-FROM tecnico t
-JOIN categoria c ON c.nome = CASE t.email
-  WHEN 'ana.costa@fixnow.com'     THEN 'Limpeza'
-  WHEN 'lucas.ferreira@fixnow.com' THEN 'Refrigeração'
-  WHEN 'beatriz.santos@fixnow.com' THEN 'Jardinagem'
-END
-WHERE t.email IN ('ana.costa@fixnow.com','lucas.ferreira@fixnow.com','beatriz.santos@fixnow.com');
-
--- Admin Master  (senha: admin123)
-INSERT INTO cliente (nome, email, senha, cpf, telefone, endereco, cep, foto_perfil, genero, is_admin, admin_perfil)
+-- Admin padrão (senha: admin123)
+INSERT INTO admin (nome, email, senha, telefone, genero, perfil, foto_perfil)
 VALUES (
   'Admin Master', 'admin@fixnow.com',
-  '$2y$10$P8Aq84K5xS7gQ7Lh7V4I9e9yq8jS8W1SIbIz.I8vowAN3zJfYzEe2',
-  NULL, '(11) 90000-0000', 'Rua Central, 100', '01000-000',
-  'assets/img/perfil/default-cliente.jpg', 'Prefiro não informar', 1, 'Master'
+  '$2y$10$rkqWRfm2R3DWqByTIfuzNe2ADoie4LS6e114uh/7ZSgH2YvXOgxKC',
+  '(11) 90000-0000', 'Prefiro não informar', 'Master',
+  'assets/img/perfil/default-cliente.jpg'
 )
 ON DUPLICATE KEY UPDATE
   nome = VALUES(nome), telefone = VALUES(telefone),
-  endereco = VALUES(endereco), cep = VALUES(cep),
-  genero = VALUES(genero), is_admin = 1, admin_perfil = 'Master';
+  genero = VALUES(genero), perfil = VALUES(perfil);
 
+-- Categorias padrão
+INSERT IGNORE INTO categoria (nome, descricao) VALUES
+('Suporte TI',   'Computadores, redes, dispositivos e sistemas'),
+('Elétrica',     'Instalações elétricas residenciais e comerciais'),
+('Hidráulica',   'Encanamentos, vazamentos e instalações hidráulicas'),
+('Pintura',      'Pintura residencial e comercial'),
+('Marcenaria',   'Móveis, portas, janelas e estruturas de madeira'),
+('Limpeza',      'Limpeza residencial, comercial e pós-obra'),
+('Refrigeração', 'Ar-condicionado, geladeiras e equipamentos de frio'),
+('Jardinagem',   'Jardins, gramados, podas e paisagismo');
