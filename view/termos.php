@@ -1,6 +1,8 @@
 <?php
 session_start();
-$titulo = ($_GET['tipo'] ?? '') === 'privacidade' ? 'Política de Privacidade e LGPD' : 'Termos de Uso';
+$titulo  = ($_GET['tipo'] ?? '') === 'privacidade' ? 'Política de Privacidade e LGPD' : 'Termos de Uso';
+$isEmbed = !empty($_GET['embed']);
+$tema    = ($isEmbed && ($_GET['theme'] ?? '') === 'dark') ? 'dark' : '';
 
 $_urlInicio = '../index.php';
 if (isset($_SESSION['cliente_id']))      $_urlInicio = 'dashboardCliente.php';
@@ -8,7 +10,7 @@ elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPresta
 elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 ?>
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR"<?php echo $tema ? ' data-theme="dark"' : ''; ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,25 +20,32 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
   <style>
     .doc-section { margin-bottom: 2rem; }
     .doc-section h4 { color: var(--bs-primary); border-bottom: 2px solid var(--bs-primary); padding-bottom: .4rem; margin-bottom: 1rem; }
-    .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem 1.25rem; border-radius: 0 .5rem .5rem 0; margin: 1rem 0; }
+    .highlight-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem 1.25rem; border-radius: 0 .5rem .5rem 0; margin: 1rem 0; color: #3d3000; }
+    [data-theme="dark"] .highlight-box { background: #2e2600; border-left-color: #ffc107; color: #ffe083; }
   </style>
 </head>
 <body>
+<?php if (!$isEmbed): ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container">
     <a class="navbar-brand fw-bold" href="<?= $_urlInicio ?>">Fix Now</a>
   </div>
 </nav>
+<?php endif; ?>
 
-<main class="container py-5 mt-5" style="max-width:860px;">
+<main class="<?php echo $isEmbed ? 'container-fluid py-3 px-4' : 'container py-5 mt-5'; ?>" style="max-width:860px;">
 
   <!-- Seletor de documento -->
+  <?php
+    $qEmbed = $isEmbed ? '&embed=1' : '';
+    $qTheme = $tema    ? '&theme=dark' : '';
+  ?>
   <ul class="nav nav-pills mb-4 gap-2">
     <li class="nav-item">
-      <a class="nav-link <?php echo ($_GET['tipo'] ?? '') !== 'privacidade' ? 'active' : ''; ?>" href="?tipo=termos">Termos de Uso</a>
+      <a class="nav-link <?php echo ($_GET['tipo'] ?? '') !== 'privacidade' ? 'active' : ''; ?>" href="?tipo=termos<?= $qEmbed . $qTheme ?>">Termos de Uso</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link <?php echo ($_GET['tipo'] ?? '') === 'privacidade' ? 'active' : ''; ?>" href="?tipo=privacidade">Política de Privacidade e LGPD</a>
+      <a class="nav-link <?php echo ($_GET['tipo'] ?? '') === 'privacidade' ? 'active' : ''; ?>" href="?tipo=privacidade<?= $qEmbed . $qTheme ?>">Política de Privacidade e LGPD</a>
     </li>
   </ul>
 
@@ -214,10 +223,12 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 
   <?php endif; ?>
 
+  <?php if (!$isEmbed): ?>
   <div class="text-center mt-4 mb-2">
     <button onclick="window.close()" class="btn btn-outline-secondary me-2">Fechar</button>
     <a href="javascript:history.back()" class="btn btn-primary">Voltar ao cadastro</a>
   </div>
+  <?php endif; ?>
 
 </main>
 

@@ -132,9 +132,9 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
                   <?php echo !empty($_POST['aceitar_termos']) ? 'checked' : ''; ?>>
                 <label class="form-check-label" for="aceitar-termos">
                   Li e concordo com os
-                  <a href="termos.php?tipo=termos" target="_blank" class="text-primary fw-semibold">Termos de Uso</a>
+                  <a href="#" class="text-primary fw-semibold" data-termos="termos">Termos de Uso</a>
                   e a
-                  <a href="termos.php?tipo=privacidade" target="_blank" class="text-primary fw-semibold">Política de Privacidade (LGPD)</a>.
+                  <a href="#" class="text-primary fw-semibold" data-termos="privacidade">Política de Privacidade (LGPD)</a>.
                   <span class="text-danger">*</span>
                 </label>
               </div>
@@ -152,10 +152,41 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
   </div>
 </main>
 
+<!-- Modal Termos/Privacidade -->
+<div class="modal fade" id="modalTermos" tabindex="-1" aria-labelledby="modalTermosLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTermosLabel">Termos de Uso</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body p-0">
+        <iframe id="iframeTermos" src="" style="width:100%;height:70vh;border:none;" loading="lazy"></iframe>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/forms-helpers.js?v=4"></script>
 <script src="../assets/js/cpf-validation-reload.js"></script>
+<script>
+document.querySelectorAll('[data-termos]').forEach(function(link) {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    var tipo = this.dataset.termos;
+    var titulo = tipo === 'privacidade' ? 'Política de Privacidade (LGPD)' : 'Termos de Uso';
+    document.getElementById('modalTermosLabel').textContent = titulo;
+    var tema = localStorage.getItem('fn-theme') === 'dark' ? '&theme=dark' : '';
+    document.getElementById('iframeTermos').src = 'termos.php?embed=1&tipo=' + tipo + tema;
+    new bootstrap.Modal(document.getElementById('modalTermos')).show();
+  });
+});
+</script>
 </body>
 </html>
