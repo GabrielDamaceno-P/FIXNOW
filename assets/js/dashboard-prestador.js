@@ -60,8 +60,8 @@
       btn.addEventListener('click', function () {
         var clienteFoto = btn.getAttribute('data-cliente-foto') || '';
         var problemaFoto = btn.getAttribute('data-problema-foto') || '';
-        foto.src = clienteFoto ? '../' + clienteFoto : fallbackSvg('Sem foto do cliente');
-        problema.src = problemaFoto ? '../' + problemaFoto : fallbackSvg('Sem foto do problema');
+        foto.src = clienteFoto ? '../../' + clienteFoto : fallbackSvg('Sem foto do cliente');
+        problema.src = problemaFoto ? '../../' + problemaFoto : fallbackSvg('Sem foto do problema');
         nome.textContent = btn.getAttribute('data-cliente-nome') || 'Cliente';
         tel.textContent = btn.getAttribute('data-cliente-telefone') || 'Não informado';
         end.textContent = btn.getAttribute('data-cliente-endereco') || 'Não informado';

@@ -132,17 +132,19 @@ class ChamadoDAO
 
     public function inserir(array $data): int
     {
+        $primeiraFoto = !empty($data['fotos'][0]) ? $data['fotos'][0] : null;
         $stmt = $this->pdo->prepare('
             INSERT INTO chamado
               (cliente_id, tecnico_id, categoria, descricao, endereco_servico,
-               lat_servico, lng_servico, data_agendamento, prest_feminino)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+               lat_servico, lng_servico, data_agendamento, prest_feminino, foto_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute([
             $data['cliente_id'], $data['tecnico_id'] ?? null, $data['categoria'],
             $data['descricao'], $data['endereco_servico'],
             $data['lat_servico'] ?? null, $data['lng_servico'] ?? null,
             $data['data_agendamento'] ?? null, $data['prest_feminino'] ?? 0,
+            $primeiraFoto,
         ]);
         $chamadoId = (int)$this->pdo->lastInsertId();
 

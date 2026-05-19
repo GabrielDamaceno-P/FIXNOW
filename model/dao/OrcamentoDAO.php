@@ -86,6 +86,16 @@ class OrcamentoDAO
         return $stmt->rowCount() > 0;
     }
 
+    public function atualizarPorTecnico(int $id, int $tecnicoId, float $valor, ?string $descricao): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE orcamento SET valor=?, descricao=?
+            WHERE id=? AND tecnico_id=? AND status='Pendente'
+        ");
+        $stmt->execute([$valor, $descricao ?: null, $id, $tecnicoId]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function cancelarPorTecnico(int $id, int $tecnicoId): bool
     {
         $stmt = $this->pdo->prepare("

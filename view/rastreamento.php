@@ -54,7 +54,7 @@ $nomeCli     = $ctrl->clienteNome;
           <?php if (!empty($chamado['cliente_foto'])): ?>
             <button type="button" class="btn btn-sm btn-outline-primary js-open-foto"
               data-titulo="<?php echo htmlspecialchars($nomeCli, ENT_QUOTES); ?>"
-              data-foto="<?php echo htmlspecialchars($chamado['cliente_foto'], ENT_QUOTES); ?>">Ver foto</button>
+              data-foto="../<?php echo htmlspecialchars($chamado['cliente_foto'], ENT_QUOTES); ?>">Ver foto</button>
           <?php else: ?>
             <span class="small text-muted">sem foto</span>
           <?php endif; ?>
@@ -64,7 +64,7 @@ $nomeCli     = $ctrl->clienteNome;
           <?php if (!empty($chamado['tecnico_foto'])): ?>
             <button type="button" class="btn btn-sm btn-outline-primary js-open-foto"
               data-titulo="<?php echo htmlspecialchars($nomeTec, ENT_QUOTES); ?>"
-              data-foto="<?php echo htmlspecialchars($chamado['tecnico_foto'], ENT_QUOTES); ?>">Ver foto</button>
+              data-foto="../<?php echo htmlspecialchars($chamado['tecnico_foto'], ENT_QUOTES); ?>">Ver foto</button>
           <?php else: ?>
             <span class="small text-muted">sem foto</span>
           <?php endif; ?>

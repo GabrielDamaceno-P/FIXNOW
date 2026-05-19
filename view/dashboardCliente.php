@@ -267,8 +267,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
             $podePagar    = $c->status === 'Concluído' && $c->pagamentoId && $c->pagStatus === 'Pendente';
             $jaAvaliado   = $c->avaliacaoNota !== null;
             $podeAvaliar  = $c->status === 'Concluído' && !empty($c->tecnicoNome) && !$jaAvaliado;
-            $reagPendente = $c->reagendamentoPendente;
-            $podeReagendar = !empty($c->tecnicoId) && in_array($c->status, ['Pendente','Em Andamento']) && !$reagPendente;
+            $podeReagendar = in_array($c->status, ['Pendente','Aguardando Orçamento','Em Andamento']);
             $valorFmt = 'R$ ' . number_format((float)($c->pagValor ?? $c->precoSugerido), 2, ',', '.');
           ?>
           <tr>
@@ -294,19 +293,15 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
             </td>
             <td><span class="badge bg-<?php echo $badge; ?>"><?php echo htmlspecialchars($c->status); ?></span></td>
             <td>
-              <?php if ($reagPendente && $c->dataAgendamentoProposta): ?>
-                <span class="text-warning fw-semibold" title="Aguardando prestador confirmar">
-                  <?php echo date('d/m/Y H:i', strtotime($c->dataAgendamentoProposta)); ?>
-                  <br><small class="text-muted">Aguardando confirmação</small>
-                </span>
-              <?php elseif ($c->dataAgendamento): ?>
+              <?php if ($c->dataAgendamento): ?>
                 <?php echo date('d/m/Y H:i', strtotime($c->dataAgendamento)); ?>
               <?php else: ?>
                 <span class="text-muted">—</span>
               <?php endif; ?>
             </td>
             <td><?php echo date('d/m/Y H:i', strtotime($c->criadoEm)); ?></td>
-            <td class="d-flex flex-wrap gap-1">
+            <td>
+              <div class="d-flex flex-wrap gap-1 align-items-center">
               <?php if ($c->status === 'Em Andamento'): ?>
               <a class="btn btn-sm btn-outline-warning" href="rastreamento.php?chamado=<?php echo $c->id; ?>">📍 Rastrear</a>
               <?php endif; ?>
@@ -325,9 +320,8 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
                 <button type="button" class="btn btn-sm btn-outline-primary"
                   data-bs-toggle="modal" data-bs-target="#modalReagendarChamado"
                   data-chamado-id="<?php echo $c->id; ?>"
+                  data-tecnico-id="<?php echo (int)($c->tecnicoId ?? 0); ?>"
                   data-data-atual="<?php echo htmlspecialchars($c->dataAgendamento ?? ''); ?>">Reagendar</button>
-              <?php elseif ($reagPendente): ?>
-                <span class="badge bg-warning text-dark">Reagendamento pendente</span>
               <?php endif; ?>
               <?php if ($podePagar): ?>
                 <button type="button" class="btn btn-sm btn-success"
@@ -345,6 +339,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
                 <span class="badge bg-warning text-dark">Avaliado: <?php echo $c->avaliacaoNota; ?>/5</span>
               <?php endif; ?>
               <a href="chat.php?chamado=<?php echo $c->id; ?>" class="btn btn-sm btn-outline-primary">💬 Chat</a>
+              </div>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -526,18 +521,32 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
         <h5 class="modal-title">Reagendar serviço</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="post" class="js-guard-submit">
+      <form method="post" class="js-guard-submit" id="form-reagendar">
         <div class="modal-body">
           <input type="hidden" name="reagendar_chamado_id" id="reagendar-chamado-id">
-          <div class="mb-3">
-            <label class="form-label">Nova data e hora <span class="text-danger">*</span></label>
-            <input type="datetime-local" name="nova_data_agendamento" id="reagendar-nova-data" class="form-control" required
+          <input type="hidden" name="nova_data_agendamento" id="reagendar-nova-data-hidden">
+
+          <!-- Com prestador: select com optgroups por data -->
+          <div id="reagendar-slots-box" class="mb-3 d-none">
+            <label class="form-label">Horário disponível <span class="text-danger">*</span></label>
+            <div id="reagendar-slots-loading" class="text-muted small">Buscando horários...</div>
+            <select id="reagendar-select-slot" class="form-select d-none" required>
+              <option value="">Selecione um horário...</option>
+            </select>
+          </div>
+
+          <div id="reagendar-slots-aviso" class="text-warning small d-none mb-2"></div>
+
+          <!-- Sem prestador ou sem agenda: datetime-local livre -->
+          <div id="reagendar-hora-livre" class="mb-3 d-none">
+            <label class="form-label">Data e hora desejada <span class="text-danger">*</span></label>
+            <input type="datetime-local" id="reagendar-datetime" class="form-control"
                    min="<?php echo date('Y-m-d\TH:i', strtotime('+1 hour')); ?>">
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-warning fw-semibold">Confirmar reagendamento</button>
+          <button type="submit" id="reagendar-btn-confirmar" class="btn btn-warning fw-semibold" disabled>Confirmar reagendamento</button>
         </div>
       </form>
     </div>
@@ -628,11 +637,109 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   var modalReagendar = document.getElementById('modalReagendarChamado');
   if (modalReagendar) {
+    var _reagTecnicoId = 0;
+    var _reagChamadoId = 0;
+    var _nomeDias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+    function fmtDia(dataStr) {
+      var partes = dataStr.split('-');
+      var d = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+      var dd = String(d.getDate()).padStart(2, '0');
+      var mm = String(d.getMonth() + 1).padStart(2, '0');
+      return _nomeDias[d.getDay()] + ', ' + dd + '/' + mm;
+    }
+
     modalReagendar.addEventListener('show.bs.modal', function (e) {
       var btn = e.relatedTarget;
-      document.getElementById('reagendar-chamado-id').value = btn.dataset.chamadoId || '';
-      var dataAtual = btn.dataset.dataAtual || '';
-      document.getElementById('reagendar-nova-data').value = dataAtual ? dataAtual.slice(0, 16) : '';
+      _reagChamadoId = parseInt(btn.dataset.chamadoId || '0');
+      _reagTecnicoId = parseInt(btn.dataset.tecnicoId || '0');
+
+      document.getElementById('reagendar-chamado-id').value = _reagChamadoId;
+      document.getElementById('reagendar-nova-data-hidden').value = '';
+      document.getElementById('reagendar-btn-confirmar').disabled = true;
+
+      var slotsBox   = document.getElementById('reagendar-slots-box');
+      var loading    = document.getElementById('reagendar-slots-loading');
+      var aviso      = document.getElementById('reagendar-slots-aviso');
+      var selectEl   = document.getElementById('reagendar-select-slot');
+      var horaLivre  = document.getElementById('reagendar-hora-livre');
+      var dtInput    = document.getElementById('reagendar-datetime');
+
+      aviso.classList.add('d-none');
+      selectEl.classList.add('d-none');
+      selectEl.innerHTML = '<option value="">Selecione um horário...</option>';
+
+      if (_reagTecnicoId > 0) {
+        slotsBox.classList.remove('d-none');
+        horaLivre.classList.add('d-none');
+        loading.classList.remove('d-none');
+
+        fetch('../api/slots_prestador.php?tecnico_id=' + _reagTecnicoId + '&chamado_id=' + _reagChamadoId + '&dias=14')
+          .then(function(r){ return r.json(); })
+          .then(function(res) {
+            loading.classList.add('d-none');
+            var porData = res.slots_por_data || {};
+            var datas = Object.keys(porData);
+
+            if (res.aviso || !datas.length) {
+              // Prestador sem agenda cadastrada: libera escolha livre com aviso
+              aviso.textContent = (res.aviso || 'Prestador sem horários cadastrados.') + ' Escolha um horário de sua preferência.';
+              aviso.classList.remove('d-none');
+              slotsBox.classList.add('d-none');
+              horaLivre.classList.remove('d-none');
+              dtInput.value = '';
+              return;
+            }
+
+            datas.forEach(function(dia) {
+              var group = document.createElement('optgroup');
+              group.label = fmtDia(dia);
+              (porData[dia] || []).forEach(function(hora) {
+                var opt = document.createElement('option');
+                opt.value = dia + '|' + hora;
+                opt.textContent = fmtDia(dia) + ' às ' + hora;
+                group.appendChild(opt);
+              });
+              selectEl.appendChild(group);
+            });
+            selectEl.classList.remove('d-none');
+          })
+          .catch(function() {
+            loading.classList.add('d-none');
+            // Em caso de erro de rede, libera escolha livre
+            aviso.textContent = 'Não foi possível buscar a agenda do prestador. Escolha um horário de sua preferência.';
+            aviso.classList.remove('d-none');
+            slotsBox.classList.add('d-none');
+            horaLivre.classList.remove('d-none');
+            dtInput.value = '';
+          });
+      } else {
+        slotsBox.classList.add('d-none');
+        horaLivre.classList.remove('d-none');
+        dtInput.value = '';
+      }
+    });
+
+    document.getElementById('reagendar-select-slot').addEventListener('change', function() {
+      var val = this.value;
+      document.getElementById('reagendar-nova-data-hidden').value = '';
+      document.getElementById('reagendar-btn-confirmar').disabled = true;
+      if (val) {
+        var partes = val.split('|');
+        document.getElementById('reagendar-nova-data-hidden').value = partes[0] + ' ' + partes[1] + ':00';
+        document.getElementById('reagendar-btn-confirmar').disabled = false;
+      }
+    });
+
+    document.getElementById('reagendar-datetime').addEventListener('change', function() {
+      var val = this.value;
+      document.getElementById('reagendar-nova-data-hidden').value = val ? val.replace('T', ' ') + ':00' : '';
+      document.getElementById('reagendar-btn-confirmar').disabled = !val;
+    });
+
+    document.getElementById('form-reagendar').addEventListener('submit', function(e) {
+      var val = document.getElementById('reagendar-nova-data-hidden').value;
+      if (!val) { e.preventDefault(); alert('Selecione uma data e horário.'); }
     });
   }
   var modalRecusar = document.getElementById('modalRecusarOrcamento');

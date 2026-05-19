@@ -140,15 +140,23 @@ $tecnicoFoto      = $_SESSION['tecnico_foto'] ?? '';
                       </span>
                     <?php else: ?>—<?php endif; ?>
                   </td>
-                  <td class="d-flex gap-1">
+                  <td>
+                    <div class="d-flex gap-1">
                     <a href="../chat.php?chamado=<?php echo $o->chamadoId; ?>" class="btn btn-sm btn-outline-primary">💬</a>
                     <?php if ($o->status === 'Pendente'): ?>
-                      <form method="post" class="d-inline" onsubmit="return confirm('Cancelar?')">
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="modal" data-bs-target="#modalAlterarOrcamento"
+                        data-orcamento-id="<?php echo $o->id; ?>"
+                        data-valor="<?php echo number_format($o->valor, 2, '.', ''); ?>"
+                        data-descricao="<?php echo htmlspecialchars($o->descricao ?? '', ENT_QUOTES); ?>"
+                        data-chamado="<?php echo $o->chamadoId; ?>">Alterar</button>
+                      <form method="post" class="d-inline" onsubmit="return confirm('Cancelar este orçamento?')">
                         <input type="hidden" name="acao" value="cancelar">
                         <input type="hidden" name="orcamento_id" value="<?php echo $o->id; ?>">
                         <button class="btn btn-sm btn-outline-danger">Cancelar</button>
                       </form>
                     <?php endif; ?>
+                    </div>
                   </td>
                 </tr>
               <?php endforeach; ?>
@@ -162,6 +170,49 @@ $tecnicoFoto      = $_SESSION['tecnico_foto'] ?? '';
   </div>
 </main>
 
+<!-- Modal Alterar Orçamento -->
+<div class="modal fade" id="modalAlterarOrcamento" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Alterar orçamento — chamado <span id="modal-orc-chamado"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" class="js-guard-submit">
+        <input type="hidden" name="acao" value="alterar">
+        <input type="hidden" name="orcamento_id" id="modal-orc-id">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nível do serviço</label>
+            <select id="modal-nivel-servico" class="form-select">
+              <option value="">Selecione para sugerir um valor...</option>
+              <option value="50">Simples — R$ 50</option>
+              <option value="89">Básico — R$ 89</option>
+              <option value="130">Intermediário — R$ 130</option>
+              <option value="200">Avançado — R$ 200</option>
+              <option value="280">Premium — R$ 280</option>
+              <option value="350">Urgente — R$ 350</option>
+              <option value="">Personalizado (preencha abaixo)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Novo valor (R$) <span class="text-danger">*</span></label>
+            <input type="number" name="valor" id="modal-orc-valor" class="form-control" min="1" step="0.01" required>
+          </div>
+          <div class="mb-0">
+            <label class="form-label">Descrição / observações</label>
+            <textarea name="descricao" id="modal-orc-descricao" class="form-control" rows="3" maxlength="500"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning fw-semibold">Salvar alteração</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
@@ -169,6 +220,20 @@ $tecnicoFoto      = $_SESSION['tecnico_foto'] ?? '';
 document.getElementById('nivel-servico')?.addEventListener('change', function() {
   if (this.value) document.getElementById('input-valor-orcamento').value = this.value;
 });
+document.getElementById('modal-nivel-servico')?.addEventListener('change', function() {
+  if (this.value) document.getElementById('modal-orc-valor').value = this.value;
+});
+var modalAlterar = document.getElementById('modalAlterarOrcamento');
+if (modalAlterar) {
+  modalAlterar.addEventListener('show.bs.modal', function(e) {
+    var btn = e.relatedTarget;
+    document.getElementById('modal-orc-id').value        = btn.dataset.orcamentoId;
+    document.getElementById('modal-orc-valor').value     = btn.dataset.valor;
+    document.getElementById('modal-orc-descricao').value = btn.dataset.descricao;
+    document.getElementById('modal-orc-chamado').textContent = '#' + btn.dataset.chamado;
+    document.getElementById('modal-nivel-servico').value  = '';
+  });
+}
 </script>
 </body>
 </html>

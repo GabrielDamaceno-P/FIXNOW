@@ -106,6 +106,32 @@ class OrcamentoPrestadorControl
             }
             $this->mensagem = 'Orçamento enviado com sucesso.';
 
+        } elseif ($acao === 'alterar') {
+            $oid       = (int)($_POST['orcamento_id'] ?? 0);
+            $valor     = (float)str_replace(',', '.', $_POST['valor'] ?? '0');
+            $descricao = trim($_POST['descricao'] ?? '');
+
+            if ($oid <= 0 || $valor <= 0) {
+                $this->erro = 'Informe um valor válido.'; return;
+            }
+            if ($this->orcamentoDAO->atualizarPorTecnico($oid, $this->tecnicoId, $valor, $descricao)) {
+                // Busca chamado_id para notificar o cliente
+                $stmtO = $this->pdo->prepare("SELECT chamado_id FROM orcamento WHERE id=? AND tecnico_id=?");
+                $stmtO->execute([$oid, $this->tecnicoId]);
+                $row = $stmtO->fetch();
+                if ($row) {
+                    $chamado = $this->chamadoDAO->buscarPorId((int)$row['chamado_id']);
+                    if ($chamado) {
+                        fixnow_notificar_cliente($this->pdo, $chamado->clienteId,
+                            'O orçamento do chamado #' . $chamado->id . ' foi atualizado para R$ ' .
+                            number_format($valor, 2, ',', '.') . '. Acesse o painel para revisar.', $chamado->id);
+                    }
+                }
+                $this->mensagem = 'Orçamento atualizado com sucesso.';
+            } else {
+                $this->erro = 'Não foi possível alterar (o orçamento pode já ter sido aceito ou recusado).';
+            }
+
         } elseif ($acao === 'cancelar') {
             $oid = (int)($_POST['orcamento_id'] ?? 0);
             if ($oid > 0 && $this->orcamentoDAO->cancelarPorTecnico($oid, $this->tecnicoId)) {

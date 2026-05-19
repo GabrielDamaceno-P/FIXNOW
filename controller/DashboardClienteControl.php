@@ -169,19 +169,24 @@ class DashboardClienteControl
             } elseif (strtotime($novaData) <= time()) {
                 $this->erro = 'A data deve ser futura.';
             } else {
-                $up = $this->pdo->prepare("UPDATE chamado SET data_agendamento_proposta=?, reagendamento_pendente=1 WHERE id=? AND cliente_id=? AND status IN ('Pendente','Em Andamento') AND reagendamento_pendente=0");
-                $up->execute([$novaData, $cid, $this->clienteId]);
-                if ($up->rowCount() > 0) {
-                    $rowTec = $this->pdo->prepare('SELECT tecnico_id FROM chamado WHERE id=?');
-                    $rowTec->execute([$cid]);
-                    $tec = $rowTec->fetch();
-                    if ($tec && $tec['tecnico_id']) {
-                        fixnow_notificar_prestador($this->pdo, (int)$tec['tecnico_id'],
-                            'O cliente propôs um novo horário para o chamado #' . $cid . '. Acesse o painel para aceitar ou recusar.', $cid);
+                $rowTec = $this->pdo->prepare("SELECT tecnico_id FROM chamado WHERE id=? AND cliente_id=? AND status IN ('Pendente','Aguardando Orçamento','Em Andamento')");
+                $rowTec->execute([$cid, $this->clienteId]);
+                $tec = $rowTec->fetch();
+
+                if ($tec === false) {
+                    $this->erro = 'Chamado não encontrado ou já finalizado.';
+                } else {
+                    $up = $this->pdo->prepare("UPDATE chamado SET data_agendamento=?, data_agendamento_proposta=NULL, reagendamento_pendente=0 WHERE id=? AND cliente_id=? AND status IN ('Pendente','Aguardando Orçamento','Em Andamento')");
+                    $up->execute([$novaData, $cid, $this->clienteId]);
+                    if ($up->rowCount() > 0) {
+                        if (!empty($tec['tecnico_id'])) {
+                            fixnow_notificar_prestador($this->pdo, (int)$tec['tecnico_id'],
+                                'O cliente reagendou o chamado #' . $cid . ' para ' . date('d/m/Y H:i', strtotime($novaData)) . '.', $cid);
+                        }
+                        header('Location: dashboardCliente.php?reagendado=1'); exit;
                     }
-                    header('Location: dashboardCliente.php?reagendado=1'); exit;
+                    $this->erro = 'Não foi possível reagendar.';
                 }
-                $this->erro = 'Não foi possível reagendar. Pode já haver uma proposta pendente ou o chamado estar finalizado.';
             }
 
         } elseif (isset($_POST['confirmar_pagamento_id'])) {
