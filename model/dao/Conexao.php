@@ -9,7 +9,7 @@ class Conexao
         if (self::$instancia === null) {
             $host   = 'localhost';
             $port   = 3306;
-            $dbname = 'projeto_fixnow';
+            $dbname = 'tcc';
             $user   = 'root';
             $pass   = '';
 

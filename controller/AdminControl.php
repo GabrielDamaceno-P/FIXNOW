@@ -30,6 +30,9 @@ class AdminControl
     public array  $chamados     = [];
     public array  $pagamentos   = [];
     public array  $servicos     = [];
+    public array  $faturamentoMensal = [];
+    public array  $topPrestadores   = [];
+    public array  $atividadeRecente = [];
 
     public function __construct()
     {
@@ -247,5 +250,54 @@ class AdminControl
 
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM notificacao WHERE tipo_destinatario = 'admin' AND lida = 0");
         $this->naoLidas = $stmt ? (int)$stmt->fetchColumn() : 0;
+
+        // KPIs extras
+        $this->statsGerais['chamados_pendentes'] = (int)$this->pdo->query(
+            "SELECT COUNT(*) FROM chamado WHERE status='Pendente'"
+        )->fetchColumn();
+        $this->statsGerais['chamados_mes'] = (int)$this->pdo->query(
+            "SELECT COUNT(*) FROM chamado WHERE status='Concluído' AND MONTH(criado_em)=MONTH(NOW()) AND YEAR(criado_em)=YEAR(NOW())"
+        )->fetchColumn();
+
+        // Faturamento mensal — últimos 6 meses
+        $this->faturamentoMensal = $this->pdo->query("
+            SELECT DATE_FORMAT(p.pago_em,'%Y-%m') AS mes,
+                   DATE_FORMAT(p.pago_em,'%m/%Y') AS mes_label,
+                   ROUND(SUM(p.valor),2) AS bruto,
+                   ROUND(SUM(p.valor * CASE WHEN t.destaque=1 THEN 0.15 ELSE 0.20 END),2) AS lucro
+            FROM pagamento p
+            INNER JOIN chamado c ON c.id = p.chamado_id
+            INNER JOIN tecnico t ON t.id = c.tecnico_id
+            WHERE p.status='Pago' AND p.pago_em >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY mes, mes_label
+            ORDER BY mes ASC
+        ")->fetchAll();
+
+        // Top 5 prestadores por avaliação
+        $this->topPrestadores = $this->pdo->query("
+            SELECT t.id, t.nome, t.especialidade, t.avaliacao_media, t.foto_perfil,
+                   COUNT(c.id) AS total_concluidos
+            FROM tecnico t
+            LEFT JOIN chamado c ON c.tecnico_id = t.id AND c.status = 'Concluído'
+            WHERE t.status_cadastro = 'Aprovado'
+            GROUP BY t.id
+            ORDER BY t.avaliacao_media DESC, total_concluidos DESC
+            LIMIT 5
+        ")->fetchAll();
+
+        // Atividade recente — últimos 8 eventos combinados
+        $this->atividadeRecente = $this->pdo->query("
+            SELECT tipo, descricao, criado_em FROM (
+                (SELECT 'cliente'   AS tipo, CONCAT('Novo cliente: ', nome) AS descricao, criado_em FROM cliente ORDER BY criado_em DESC LIMIT 3)
+                UNION ALL
+                (SELECT 'prestador', CONCAT('Prestador aprovado: ', nome), criado_em FROM tecnico WHERE status_cadastro='Aprovado' ORDER BY criado_em DESC LIMIT 3)
+                UNION ALL
+                (SELECT 'chamado',   CONCAT('Chamado #', id, ' — ', status), criado_em FROM chamado ORDER BY criado_em DESC LIMIT 3)
+                UNION ALL
+                (SELECT 'pagamento', CONCAT('Pagamento recebido: R$ ', FORMAT(valor,2)), criado_em FROM pagamento WHERE status='Pago' ORDER BY criado_em DESC LIMIT 3)
+            ) ev
+            ORDER BY criado_em DESC
+            LIMIT 8
+        ")->fetchAll();
     }
 }

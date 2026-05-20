@@ -72,7 +72,9 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
           <a href="login.php" class="btn btn-warning fw-semibold w-100">Ir para o login</a>
           <?php endif; ?>
 
-          <p class="mt-3 mb-0 small"><a href="login.php">Voltar ao login</a></p>
+          <div class="mt-3">
+            <a href="login.php" class="btn btn-outline-secondary btn-sm w-100">Voltar ao login</a>
+          </div>
         </div>
       </div>
     </div>

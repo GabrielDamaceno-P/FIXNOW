@@ -13,7 +13,10 @@
       "Bash(chamado)",
       "Bash(grep -n \"CREATE TABLE.*chamado\\\\|`chamado`\" \"c:/xampp/htdocs/Projeto_fixnow/projeto_fixnow/database.sql\")",
       "Bash(del \"c:\\\\xampp\\\\htdocs\\\\projeto_fixnow\\\\migration_orcamento_flow.sql\")",
-      "Bash(php -r ' *)"
+      "Bash(php -r ' *)",
+      "Bash(python -c ' *)",
+      "Bash(grep -E \"\\\\.php$\")",
+      "Bash(grep -E \"\\\\.\\(php|html\\)$\")"
     ]
   }
 }

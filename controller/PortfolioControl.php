@@ -83,7 +83,25 @@ class PortfolioControl
             $descricao   = trim($_POST['descricao']      ?? '');
             $categoriaId = (int)($_POST['categoria_id']  ?? 0) ?: null;
             if ($fid > 0) {
-                $this->portfolioDAO->atualizar($fid, $this->tecnicoId, $titulo, $descricao, $categoriaId);
+                $novoPath = null;
+                if (!empty($_FILES['fotos']['name'][0]) && $_FILES['fotos']['error'][0] === 0) {
+                    $fileItem = [
+                        'name'     => $_FILES['fotos']['name'][0],
+                        'type'     => $_FILES['fotos']['type'][0],
+                        'tmp_name' => $_FILES['fotos']['tmp_name'][0],
+                        'error'    => $_FILES['fotos']['error'][0],
+                        'size'     => $_FILES['fotos']['size'][0],
+                    ];
+                    $novoPath = fixnow_upload_image($fileItem, fixnow_public_upload_dir(), 'portfolio');
+                    if (!$novoPath) { $this->erro = 'Arquivo inválido. Use JPG, PNG ou WEBP.'; return; }
+                    // Apaga o arquivo antigo
+                    $antiga = $this->portfolioDAO->buscarPorId($fid, $this->tecnicoId);
+                    if ($antiga) {
+                        $fsPath = dirname(__DIR__) . '/' . $antiga['foto_path'];
+                        if (is_file($fsPath)) @unlink($fsPath);
+                    }
+                }
+                $this->portfolioDAO->atualizar($fid, $this->tecnicoId, $titulo, $descricao, $categoriaId, $novoPath);
                 $this->mensagem = 'Foto atualizada.';
             }
 

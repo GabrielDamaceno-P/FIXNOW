@@ -12,23 +12,54 @@
     const box   = document.getElementById('foto-preview-box');
     const cont  = document.getElementById('foto-preview-imgs');
     if (!input || !box || !cont) return;
-    input.addEventListener('change', function () {
+
+    let files = [];
+
+    function syncInput() {
+      const dt = new DataTransfer();
+      files.forEach(function (f) { dt.items.add(f); });
+      input.files = dt.files;
+    }
+
+    function render() {
       cont.innerHTML = '';
-      if (!input.files || input.files.length === 0) {
-        box.classList.add('d-none');
-        return;
-      }
+      if (files.length === 0) { box.classList.add('d-none'); return; }
       box.classList.remove('d-none');
-      Array.from(input.files).slice(0, 6).forEach(function (f) {
-        if (!f.type.match(/^image\//)) return;
+      files.forEach(function (f, idx) {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;display:inline-block;';
+
         const url = URL.createObjectURL(f);
         const img = document.createElement('img');
         img.src = url;
         img.className = 'img-thumbnail';
-        img.style.cssText = 'max-height:100px;max-width:120px;object-fit:cover;';
+        img.style.cssText = 'max-height:100px;max-width:120px;object-fit:cover;display:block;';
         img.onload = function () { URL.revokeObjectURL(url); };
-        cont.appendChild(img);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '×';
+        btn.title = 'Remover foto';
+        btn.style.cssText = 'position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:#dc3545;color:#fff;font-size:1rem;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;';
+        btn.addEventListener('click', function () {
+          files.splice(idx, 1);
+          syncInput();
+          render();
+        });
+
+        wrap.appendChild(img);
+        wrap.appendChild(btn);
+        cont.appendChild(wrap);
       });
+    }
+
+    input.addEventListener('change', function () {
+      if (!input.files || input.files.length === 0) return;
+      Array.from(input.files).forEach(function (f) {
+        if (f.type.match(/^image\//) && files.length < 6) files.push(f);
+      });
+      syncInput();
+      render();
     });
   }
 

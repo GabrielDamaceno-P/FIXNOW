@@ -54,7 +54,7 @@ class ServicosControl
             $nome       = trim($_POST['nome']       ?? '');
             $catId      = (int)($_POST['categoria_id'] ?? 0) ?: null;
             $descricao  = trim($_POST['descricao']   ?? '');
-            $ativo      = (int)($_POST['ativo']      ?? 1);
+            $ativo      = isset($_POST['ativo']) ? 1 : 0;
             $sid        = (int)($_POST['servico_id'] ?? 0);
 
             if (!$nome) { $this->erro = 'O nome do serviço é obrigatório.'; return; }

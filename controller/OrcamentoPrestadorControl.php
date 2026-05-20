@@ -48,27 +48,38 @@ class OrcamentoPrestadorControl
             $this->processarPost();
         }
 
-        $genero = $_SESSION['tecnico_genero'] ?? 'Masculino';
-
-        // Chamados abertos na especialidade (fila + diretos) — status Pendente
-        $disponiveis = $this->chamadoDAO->listarDisponiveisPorCategoria($this->tecnicoId, $genero);
-
-        // Chamados aceitos aguardando orçamento (já atribuídos a este técnico)
-        $stmtAg = $this->pdo->prepare("
-            SELECT c.*, cl.nome AS cliente_nome
+        // Chamados disponíveis para orçamento:
+        // 1) Aceitos por este prestador (Aguardando Orçamento)
+        // 2) Solicitações diretas pendentes
+        // 3) Fila aberta — qualquer prestador aprovado pode orçar
+        $stmtDisp = $this->pdo->prepare("
+            SELECT c.*, cl.nome AS cliente_nome,
+                   CASE WHEN c.status = 'Aguardando Orçamento' THEN 2
+                        WHEN c.tecnico_id = ? THEN 1
+                        ELSE 0 END AS _ordem
             FROM chamado c
             INNER JOIN cliente cl ON cl.id = c.cliente_id
-            WHERE c.tecnico_id = ? AND c.status = 'Aguardando Orçamento'
-              AND NOT EXISTS (
-                SELECT 1 FROM orcamento o WHERE o.chamado_id = c.id AND o.tecnico_id = ? AND o.status = 'Pendente'
-              )
-            ORDER BY c.criado_em DESC
+            WHERE (
+                (c.tecnico_id = ? AND c.status IN ('Aguardando Orçamento', 'Pendente'))
+                OR (c.tecnico_id IS NULL AND c.status = 'Pendente')
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM orcamento o
+                WHERE o.chamado_id = c.id AND o.tecnico_id = ? AND o.status = 'Pendente'
+            )
+            ORDER BY _ordem DESC, c.criado_em ASC
         ");
-        $stmtAg->execute([$this->tecnicoId, $this->tecnicoId]);
-        $aguardando = $stmtAg->fetchAll();
-
-        // Aguardando orçamento aparece primeiro (são prioridade)
-        $this->chamadosDisponiveis = array_merge($aguardando, $disponiveis);
+        $stmtDisp->execute([$this->tecnicoId, $this->tecnicoId, $this->tecnicoId]);
+        $rows = $stmtDisp->fetchAll();
+        foreach ($rows as &$ch) {
+            $fotos = $this->chamadoDAO->listarFotos((int)$ch['id']);
+            $ch['fotos'] = array_column($fotos, 'foto_path');
+            if (empty($ch['fotos']) && !empty($ch['foto_path'])) {
+                $ch['fotos'] = [$ch['foto_path']];
+            }
+        }
+        unset($ch);
+        $this->chamadosDisponiveis = $rows;
 
         $this->meusOrcamentos = $this->orcamentoDAO->listarPorTecnico($this->tecnicoId);
     }
@@ -122,9 +133,9 @@ class OrcamentoPrestadorControl
                 if ($row) {
                     $chamado = $this->chamadoDAO->buscarPorId((int)$row['chamado_id']);
                     if ($chamado) {
+                        $valorFmt = number_format($valor, 2, ',', '.');
                         fixnow_notificar_cliente($this->pdo, $chamado->clienteId,
-                            'O orçamento do chamado #' . $chamado->id . ' foi atualizado para R$ ' .
-                            number_format($valor, 2, ',', '.') . '. Acesse o painel para revisar.', $chamado->id);
+                            "O orçamento do chamado #{$chamado->id} foi atualizado para R$ {$valorFmt}. Acesse o painel para revisar.", $chamado->id);
                     }
                 }
                 $this->mensagem = 'Orçamento atualizado com sucesso.';

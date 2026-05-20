@@ -4,7 +4,7 @@
 
 $host = 'localhost';
 $port = 3306;
-$dbname = 'projeto_fixnow';
+$dbname = 'tcc';
 $user = 'root';      // padrão XAMPP
 $pass = '';          // padrão XAMPP sem senha
 

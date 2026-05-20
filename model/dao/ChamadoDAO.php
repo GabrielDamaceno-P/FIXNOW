@@ -16,7 +16,7 @@ class ChamadoDAO
     public function listarPorCliente(int $clienteId): array
     {
         $stmt = $this->pdo->prepare("
-            SELECT c.*, t.nome AS tecnico_nome,
+            SELECT c.*, t.nome AS tecnico_nome, t.foto_perfil AS tecnico_foto,
                    p.id AS pagamento_id, p.status AS pag_status,
                    p.valor AS pag_valor, p.metodo AS pag_metodo,
                    a.nota AS avaliacao_nota

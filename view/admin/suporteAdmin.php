@@ -275,336 +275,376 @@ function chamadoStatusBadge(string $s): string {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../assets/css/style.css" rel="stylesheet">
   <style>
-    .thread-box { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: .5rem; padding: .85rem; background: #f8f9fa; border-radius: .5rem; border: 1px solid #dee2e6; }
-    .bubble { max-width: 75%; padding: .55rem .9rem; border-radius: 1rem; font-size: .875rem; line-height: 1.5; }
-    .bubble-user   { align-self: flex-start; background: #fff; color: #1f2937; border: 1px solid #dee2e6; border-bottom-left-radius: .25rem; }
-    .bubble-admin  { align-self: flex-end; background: #0d1b3d; color: #fff; border-bottom-right-radius: .25rem; }
-    .bubble-acao   { align-self: center; background: #fef9c3; color: #713f12; border: 1px solid #fde047; border-radius: 1rem; font-size: .78rem; padding: .35rem .9rem; font-style: italic; max-width: 90%; }
-    .bubble-meta   { font-size: .72rem; opacity: .6; margin-top: .2rem; }
-    .chamado-card  { background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: .5rem; padding: .85rem 1rem; }
-    .action-panel  { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: .5rem; padding: .85rem 1rem; }
-    [data-theme="dark"] .thread-box   { background: #1a1a2e; border-color: #333; }
-    [data-theme="dark"] .bubble-user  { background: #2a2a2a; border-color: #444; color: #eee; }
-    [data-theme="dark"] .bubble-acao  { background: #3a3010; color: #fde68a; border-color: #78630a; }
-    [data-theme="dark"] .chamado-card { background: #1e2a4a; border-color: #3b4f8a; }
-    [data-theme="dark"] .action-panel { background: #1a1a2e; border-color: #333; }
+    .page-hero{background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);border-radius:16px;padding:1.8rem 2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+    .page-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+    .page-hero h1{color:#fff;font-size:clamp(1.2rem,3vw,1.7rem);font-weight:800;margin:0 0 .25rem}
+    .page-hero p{color:rgba(255,255,255,.72);font-size:.9rem;margin:0}
+    .admin-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;padding:1.3rem;box-shadow:0 3px 10px rgba(13,27,61,.05)}
+    .secao-titulo{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:.9rem;padding-bottom:.6rem;border-bottom:2px solid #f0f3fa;display:flex;align-items:center;gap:.5rem}
+    .kpi-sup{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;padding:1rem 1.3rem;display:flex;align-items:center;gap:.8rem;box-shadow:0 3px 10px rgba(13,27,61,.05)}
+    .kpi-sup-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+    .kpi-sup-val{font-size:1.4rem;font-weight:800;line-height:1.1}
+    .kpi-sup-lbl{font-size:.76rem;color:#667085}
+    .thread-box{max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem;padding:.85rem;background:#f8fafc;border-radius:10px;border:1.5px solid #e8ecf3}
+    .bubble{max-width:75%;padding:.55rem .9rem;border-radius:1rem;font-size:.875rem;line-height:1.5}
+    .bubble-user{align-self:flex-start;background:#fff;color:#1f2937;border:1px solid #dee2e6;border-bottom-left-radius:.25rem}
+    .bubble-admin{align-self:flex-end;background:#0d1b3d;color:#fff;border-bottom-right-radius:.25rem}
+    .bubble-acao{align-self:center;background:#fef9c3;color:#713f12;border:1px solid #fde047;border-radius:1rem;font-size:.78rem;padding:.35rem .9rem;font-style:italic;max-width:90%}
+    .bubble-meta{font-size:.72rem;opacity:.6;margin-top:.2rem}
+    .chamado-card{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:.85rem 1rem}
+    .action-panel{background:#f8fafc;border:1.5px solid #e8ecf3;border-radius:10px;padding:.85rem 1rem}
+    [data-theme="dark"] .admin-card,.kpi-sup{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .admin-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .kpi-sup{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .kpi-sup-lbl{color:#8090b0}
+    [data-theme="dark"] .secao-titulo{color:#e4e8f4;border-bottom-color:#2e3650}
+    [data-theme="dark"] .thread-box{background:#1a1a2e;border-color:#333}
+    [data-theme="dark"] .bubble-user{background:#2a2a2a;border-color:#444;color:#eee}
+    [data-theme="dark"] .bubble-acao{background:#3a3010;color:#fde68a;border-color:#78630a}
+    [data-theme="dark"] .chamado-card{background:#1e2a4a;border-color:#3b4f8a}
+    [data-theme="dark"] .action-panel{background:#1a1a2e;border-color:#333}
   </style>
 </head>
 <body>
 <?= $navbarHtml ?>
 
-<main class="container py-5 mt-5">
-  <h2 class="mb-1">Central de Suporte</h2>
-  <p class="text-muted mb-4">Gerencie os tickets abertos por clientes e prestadores.</p>
+<main class="container py-4 mt-5">
 
-  <?php if ($mensagem): ?><div class="alert alert-success"><?= htmlspecialchars($mensagem) ?></div><?php endif; ?>
-  <?php if ($erro): ?><div class="alert alert-danger"><?= htmlspecialchars($erro) ?></div><?php endif; ?>
+  <div class="page-hero mb-4">
+    <div style="position:relative;z-index:1">
+      <h1>🎧 Central de Suporte</h1>
+      <p>Gerencie os tickets abertos por clientes e prestadores da plataforma.</p>
+    </div>
+  </div>
+
+  <?php if ($mensagem): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+      <?= htmlspecialchars($mensagem) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
+  <?php if ($erro): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+      <?= htmlspecialchars($erro) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
 
   <!-- KPIs -->
   <div class="row g-3 mb-4">
-    <div class="col-4"><div class="card shadow-sm border-0 text-center"><div class="card-body py-2">
-      <small class="text-muted">Abertos</small><h4 class="mb-0 text-danger"><?= $totAbertos ?></h4>
-    </div></div></div>
-    <div class="col-4"><div class="card shadow-sm border-0 text-center"><div class="card-body py-2">
-      <small class="text-muted">Em andamento</small><h4 class="mb-0 text-warning"><?= $totAndamento ?></h4>
-    </div></div></div>
-    <div class="col-4"><div class="card shadow-sm border-0 text-center"><div class="card-body py-2">
-      <small class="text-muted">Fechados</small><h4 class="mb-0 text-success"><?= $totFechados ?></h4>
-    </div></div></div>
+    <div class="col-4">
+      <div class="kpi-sup">
+        <div class="kpi-sup-icon" style="background:#fef2f2;">🔴</div>
+        <div>
+          <div class="kpi-sup-val" style="color:#dc2626;"><?= $totAbertos ?></div>
+          <div class="kpi-sup-lbl">Abertos</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="kpi-sup">
+        <div class="kpi-sup-icon" style="background:#fffbeb;">🟡</div>
+        <div>
+          <div class="kpi-sup-val" style="color:#d97706;"><?= $totAndamento ?></div>
+          <div class="kpi-sup-lbl">Em andamento</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="kpi-sup">
+        <div class="kpi-sup-icon" style="background:#f0fdf4;">🟢</div>
+        <div>
+          <div class="kpi-sup-val" style="color:#16a34a;"><?= $totFechados ?></div>
+          <div class="kpi-sup-lbl">Fechados</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Detalhe do ticket -->
   <?php if ($detalhe): ?>
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-        <div>
-          <h5 class="mb-1">Ticket #<?= (int)$detalhe['id'] ?>: <?= htmlspecialchars($detalhe['assunto']) ?></h5>
-          <div class="d-flex gap-2 flex-wrap">
-            <?php
-              $badgeSt = $detalhe['status'] === 'Aberto' ? 'danger' : ($detalhe['status'] === 'Em Andamento' ? 'warning text-dark' : 'success');
-            ?>
-            <span class="badge bg-<?= $badgeSt ?>"><?= htmlspecialchars($detalhe['status']) ?></span>
-            <span class="badge bg-<?= prioridadeBadge($detalhe['prioridade'] ?? 'Normal') ?>"><?= htmlspecialchars($detalhe['prioridade'] ?? 'Normal') ?></span>
-            <span class="badge bg-light text-dark border"><?= htmlspecialchars($detalhe['categoria'] ?? 'Outro') ?></span>
-            <span class="small text-muted"><?= ucfirst($detalhe['tipo_usuario'] ?? '—') ?>: <strong><?= htmlspecialchars($detalhe['usuario_nome'] ?? '—') ?></strong>
-            — <?= date('d/m/Y H:i', strtotime($detalhe['criado_em'])) ?></span>
-          </div>
-        </div>
-        <div class="d-flex gap-2">
-          <form method="post" class="d-flex gap-1">
-            <input type="hidden" name="acao" value="status">
-            <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-            <select name="status" class="form-select form-select-sm">
-              <?php foreach (['Aberto','Em Andamento'] as $s): ?>
-                <option value="<?= $s ?>" <?= $detalhe['status']===$s?'selected':'' ?>><?= $s ?></option>
-              <?php endforeach; ?>
-            </select>
-            <button class="btn btn-sm btn-outline-secondary">Salvar</button>
-          </form>
-          <a href="suporteAdmin.php?status=<?= urlencode($filtroStatus) ?>" class="btn btn-sm btn-outline-secondary">Voltar</a>
-        </div>
-      </div>
-
-      <!-- Chamado vinculado -->
-      <?php if ($chamadoDetalhe): ?>
-      <div class="chamado-card mb-3">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-          <div>
-            <div class="small text-muted mb-1"><i class="bi bi-wrench me-1"></i>Chamado vinculado</div>
-            <div class="fw-semibold">
-              #<?= (int)$chamadoDetalhe['id'] ?> — <?= htmlspecialchars($chamadoDetalhe['categoria']) ?>
-              <span class="badge bg-<?= chamadoStatusBadge($chamadoDetalhe['status']) ?> ms-1"><?= $chamadoDetalhe['status'] ?></span>
-            </div>
-            <div class="small mt-1">
-              <i class="bi bi-person me-1"></i><?= htmlspecialchars($chamadoDetalhe['cliente_nome'] ?? '—') ?>
-              <?php if ($chamadoDetalhe['tecnico_nome']): ?>
-                &nbsp;·&nbsp;<i class="bi bi-tools me-1"></i><?= htmlspecialchars($chamadoDetalhe['tecnico_nome']) ?>
-              <?php else: ?>
-                &nbsp;·&nbsp;<span class="text-muted fst-italic">Sem prestador</span>
-              <?php endif; ?>
-              <?php if ($chamadoDetalhe['preco_sugerido'] > 0): ?>
-                &nbsp;·&nbsp;<i class="bi bi-cash me-1"></i>R$ <?= number_format((float)$chamadoDetalhe['preco_sugerido'], 2, ',', '.') ?>
-              <?php endif; ?>
-            </div>
-            <div class="small text-muted mt-1">
-              <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars(mb_strimwidth($chamadoDetalhe['endereco_servico'], 0, 70, '...')) ?>
-            </div>
-          </div>
-          <div class="d-flex flex-column gap-1" style="min-width:180px">
-            <?php if (in_array($chamadoDetalhe['status'], ['Pendente','Em Andamento'])): ?>
-              <form method="post" onsubmit="return confirm('Cancelar este chamado? Essa ação não pode ser desfeita.');">
-                <input type="hidden" name="acao" value="cancelar_chamado">
-                <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-                <input type="hidden" name="chamado_id" value="<?= (int)$chamadoDetalhe['id'] ?>">
-                <button class="btn btn-sm btn-outline-danger w-100">
-                  <i class="bi bi-x-circle me-1"></i>Cancelar chamado
-                </button>
-              </form>
-            <?php endif; ?>
-            <?php if ($chamadoDetalhe['status'] === 'Em Andamento' && $chamadoDetalhe['tecnico_id']): ?>
-              <form method="post" onsubmit="return confirm('Devolver ao pool? O prestador atual será removido e outro precisará aceitar.');">
-                <input type="hidden" name="acao" value="devolver_chamado">
-                <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-                <input type="hidden" name="chamado_id" value="<?= (int)$chamadoDetalhe['id'] ?>">
-                <button class="btn btn-sm btn-outline-warning w-100">
-                  <i class="bi bi-arrow-repeat me-1"></i>Reatribuir prestador
-                </button>
-              </form>
-            <?php endif; ?>
-          </div>
-        </div>
-      </div>
-      <?php elseif (!empty($detalhe['chamado_id'])): ?>
-        <div class="alert alert-warning small py-2 mb-3">Chamado #<?= (int)$detalhe['chamado_id'] ?> não encontrado.</div>
-      <?php endif; ?>
-
-      <!-- Thread -->
-      <div class="thread-box mb-3" id="thread-box">
-        <?php if (!$mensagens): ?>
-          <p class="text-muted small mb-0">Nenhuma mensagem ainda.</p>
-        <?php else: ?>
-          <?php foreach ($mensagens as $m):
-            $isAcao  = str_starts_with($m['mensagem'], '[AÇÃO]');
-            $isAdmin = $m['autor_tipo'] === 'admin';
-            $textoExibido = $isAcao ? ltrim(substr($m['mensagem'], 6)) : $m['mensagem'];
+  <div class="admin-card mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+      <div>
+        <h5 class="mb-1" style="font-size:1rem;">Ticket #<?= (int)$detalhe['id'] ?>: <?= htmlspecialchars($detalhe['assunto']) ?></h5>
+        <div class="d-flex gap-2 flex-wrap">
+          <?php
+            $badgeSt = $detalhe['status'] === 'Aberto' ? 'danger' : ($detalhe['status'] === 'Em Andamento' ? 'warning text-dark' : 'success');
           ?>
-            <div>
-              <?php if ($isAcao): ?>
-                <div class="bubble bubble-acao">
-                  ⚙️ <?= nl2br(htmlspecialchars($textoExibido)) ?>
-                </div>
-                <div class="bubble-meta text-center">
-                  <?= date('d/m H:i', strtotime($m['criado_em'])) ?>
-                </div>
-              <?php else: ?>
-                <div class="bubble <?= $isAdmin ? 'bubble-admin' : 'bubble-user' ?>">
-                  <?= nl2br(htmlspecialchars($textoExibido)) ?>
-                </div>
-                <div class="bubble-meta <?= $isAdmin ? 'text-end' : '' ?>">
-                  <?= htmlspecialchars($m['autor_nome'] ?? ucfirst($m['autor_tipo'])) ?>
-                  (<?= ucfirst($m['autor_tipo']) ?>)
-                  · <?= date('d/m H:i', strtotime($m['criado_em'])) ?>
-                </div>
-              <?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        <?php endif; ?>
+          <span class="badge bg-<?= $badgeSt ?>" style="font-size:.72rem;"><?= htmlspecialchars($detalhe['status']) ?></span>
+          <span class="badge bg-<?= prioridadeBadge($detalhe['prioridade'] ?? 'Normal') ?>" style="font-size:.72rem;"><?= htmlspecialchars($detalhe['prioridade'] ?? 'Normal') ?></span>
+          <span class="badge" style="background:#f3f4f6;color:#374151;font-size:.72rem;"><?= htmlspecialchars($detalhe['categoria'] ?? 'Outro') ?></span>
+          <span class="text-muted" style="font-size:.78rem;"><?= ucfirst($detalhe['tipo_usuario'] ?? '—') ?>: <strong><?= htmlspecialchars($detalhe['usuario_nome'] ?? '—') ?></strong> — <?= date('d/m/Y H:i', strtotime($detalhe['criado_em'])) ?></span>
+        </div>
       </div>
-
-      <!-- Painel: Pagamento -->
-      <?php if (($detalhe['categoria'] ?? '') === 'Pagamento'): ?>
-      <div class="action-panel mb-3">
-        <div class="fw-semibold small mb-2"><i class="bi bi-cash-stack me-1 text-success"></i>Registrar estorno / ajuste de pagamento</div>
-        <form method="post" class="row g-2 align-items-end">
-          <input type="hidden" name="acao" value="estorno">
+      <div class="d-flex gap-2 flex-wrap">
+        <form method="post" class="d-flex gap-1">
+          <input type="hidden" name="acao" value="status">
           <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-          <div class="col-auto">
-            <label class="form-label form-label-sm mb-1">Valor (R$)</label>
-            <input type="number" name="valor_estorno" class="form-control form-control-sm"
-                   step="0.01" min="0" placeholder="0,00" style="width:120px">
-          </div>
-          <div class="col">
-            <label class="form-label form-label-sm mb-1">Observação</label>
-            <input type="text" name="nota_estorno" class="form-control form-control-sm"
-                   placeholder="Ex: Reembolso via PIX processado" maxlength="200">
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-sm btn-success">
-              <i class="bi bi-check-circle me-1"></i>Confirmar estorno
-            </button>
-          </div>
+          <select name="status" class="form-select form-select-sm">
+            <?php foreach (['Aberto','Em Andamento'] as $s): ?>
+              <option value="<?= $s ?>" <?= $detalhe['status']===$s?'selected':'' ?>><?= $s ?></option>
+            <?php endforeach; ?>
+          </select>
+          <button class="btn btn-sm btn-outline-secondary">Salvar</button>
         </form>
+        <a href="suporteAdmin.php?status=<?= urlencode($filtroStatus) ?>" class="btn btn-sm btn-outline-secondary">← Voltar</a>
       </div>
-      <?php endif; ?>
+    </div>
 
-      <!-- Painel: Conta / Prestador -->
-      <?php if ($detalhe['tecnico_id'] && $usuarioAtivo !== null): ?>
-      <div class="action-panel mb-3">
-        <div class="fw-semibold small mb-2"><i class="bi bi-person-lock me-1 text-primary"></i>Gerenciamento de conta</div>
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-          <span>Status atual:
-            <span class="badge bg-<?= $usuarioAtivo ? 'success' : 'danger' ?>">
-              <?= $usuarioAtivo ? 'Ativa' : 'Bloqueada' ?>
-            </span>
-          </span>
-          <?php if ($usuarioAtivo): ?>
-            <form method="post" onsubmit="return confirm('Bloquear este prestador? Ele não conseguirá acessar a plataforma.');">
-              <input type="hidden" name="acao" value="bloquear_usuario">
+    <!-- Chamado vinculado -->
+    <?php if ($chamadoDetalhe): ?>
+    <div class="chamado-card mb-3">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div style="font-size:.75rem;color:#6b7280;margin-bottom:.25rem;">🔧 Chamado vinculado</div>
+          <div class="fw-semibold" style="font-size:.9rem;">
+            #<?= (int)$chamadoDetalhe['id'] ?> — <?= htmlspecialchars($chamadoDetalhe['categoria']) ?>
+            <span class="badge bg-<?= chamadoStatusBadge($chamadoDetalhe['status']) ?> ms-1" style="font-size:.7rem;"><?= $chamadoDetalhe['status'] ?></span>
+          </div>
+          <div style="font-size:.8rem;margin-top:.2rem;color:#374151;">
+            👤 <?= htmlspecialchars($chamadoDetalhe['cliente_nome'] ?? '—') ?>
+            <?php if ($chamadoDetalhe['tecnico_nome']): ?>
+              &nbsp;·&nbsp;🔨 <?= htmlspecialchars($chamadoDetalhe['tecnico_nome']) ?>
+            <?php else: ?>
+              &nbsp;·&nbsp;<em class="text-muted">Sem prestador</em>
+            <?php endif; ?>
+            <?php if ($chamadoDetalhe['preco_sugerido'] > 0): ?>
+              &nbsp;·&nbsp;💰 R$ <?= number_format((float)$chamadoDetalhe['preco_sugerido'], 2, ',', '.') ?>
+            <?php endif; ?>
+          </div>
+          <div style="font-size:.78rem;color:#6b7280;margin-top:.2rem;">
+            📍 <?= htmlspecialchars(mb_strimwidth($chamadoDetalhe['endereco_servico'], 0, 70, '…')) ?>
+          </div>
+        </div>
+        <div class="d-flex flex-column gap-1" style="min-width:180px">
+          <?php if (in_array($chamadoDetalhe['status'], ['Pendente','Em Andamento'])): ?>
+            <form method="post" onsubmit="return confirm('Cancelar este chamado? Essa ação não pode ser desfeita.');">
+              <input type="hidden" name="acao" value="cancelar_chamado">
               <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-              <input type="hidden" name="tecnico_id" value="<?= (int)$detalhe['tecnico_id'] ?>">
-              <button class="btn btn-sm btn-danger"><i class="bi bi-lock me-1"></i>Bloquear conta</button>
+              <input type="hidden" name="chamado_id" value="<?= (int)$chamadoDetalhe['id'] ?>">
+              <button class="btn btn-sm btn-outline-danger w-100">✕ Cancelar chamado</button>
             </form>
-          <?php else: ?>
-            <form method="post" onsubmit="return confirm('Restaurar acesso deste prestador?');">
-              <input type="hidden" name="acao" value="desbloquear_usuario">
+          <?php endif; ?>
+          <?php if ($chamadoDetalhe['status'] === 'Em Andamento' && $chamadoDetalhe['tecnico_id']): ?>
+            <form method="post" onsubmit="return confirm('Devolver ao pool? O prestador atual será removido.');">
+              <input type="hidden" name="acao" value="devolver_chamado">
               <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-              <input type="hidden" name="tecnico_id" value="<?= (int)$detalhe['tecnico_id'] ?>">
-              <button class="btn btn-sm btn-success"><i class="bi bi-unlock me-1"></i>Restaurar acesso</button>
+              <input type="hidden" name="chamado_id" value="<?= (int)$chamadoDetalhe['id'] ?>">
+              <button class="btn btn-sm btn-outline-warning w-100">↩ Reatribuir prestador</button>
             </form>
           <?php endif; ?>
         </div>
       </div>
-      <?php endif; ?>
+    </div>
+    <?php elseif (!empty($detalhe['chamado_id'])): ?>
+      <div class="alert alert-warning small py-2 mb-3">Chamado #<?= (int)$detalhe['chamado_id'] ?> não encontrado.</div>
+    <?php endif; ?>
 
-      <!-- Enviar mensagem -->
-      <?php if ($detalhe['status'] !== 'Fechado'): ?>
-      <form method="post" id="form-resposta">
-        <input type="hidden" name="acao" value="mensagem">
-        <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
-        <div class="row g-2 align-items-end">
-          <div class="col">
-            <label class="form-label" id="label-resposta">Resposta</label>
-            <textarea name="mensagem" id="textarea-resposta" class="form-control" rows="3"
-              placeholder="Digite a resposta para o usuário..." required></textarea>
-          </div>
-          <div class="col-auto">
-            <label class="form-label">Mudar status</label>
-            <select name="status" id="select-status-resposta" class="form-select form-select-sm mb-2">
-              <option value="">Manter atual</option>
-              <?php foreach (['Em Andamento','Fechado'] as $s): ?>
-                <option value="<?= $s ?>"><?= $s ?></option>
-              <?php endforeach; ?>
-            </select>
-            <button type="submit" id="btn-enviar-resposta" class="btn btn-warning fw-semibold w-100">Enviar</button>
-          </div>
-        </div>
-        <div id="hint-fechamento" class="alert alert-warning small mt-2 mb-0 d-none">
-          <i class="bi bi-exclamation-triangle me-1"></i>
-          Ao fechar, descreva claramente como o problema foi resolvido. Isso ficará visível para o usuário.
-        </div>
-      </form>
+    <!-- Thread -->
+    <div class="thread-box mb-3" id="thread-box">
+      <?php if (!$mensagens): ?>
+        <p class="text-muted small mb-0">Nenhuma mensagem ainda.</p>
       <?php else: ?>
-        <p class="text-muted small mb-0"><i class="bi bi-lock me-1"></i>Este ticket está fechado.</p>
+        <?php foreach ($mensagens as $m):
+          $isAcao  = str_starts_with($m['mensagem'], '[AÇÃO]');
+          $isAdmin = $m['autor_tipo'] === 'admin';
+          $textoExibido = $isAcao ? ltrim(substr($m['mensagem'], 6)) : $m['mensagem'];
+        ?>
+          <div>
+            <?php if ($isAcao): ?>
+              <div class="bubble bubble-acao">⚙️ <?= nl2br(htmlspecialchars($textoExibido)) ?></div>
+              <div class="bubble-meta text-center"><?= date('d/m H:i', strtotime($m['criado_em'])) ?></div>
+            <?php else: ?>
+              <div class="bubble <?= $isAdmin ? 'bubble-admin' : 'bubble-user' ?>">
+                <?= nl2br(htmlspecialchars($textoExibido)) ?>
+              </div>
+              <div class="bubble-meta <?= $isAdmin ? 'text-end' : '' ?>">
+                <?= htmlspecialchars($m['autor_nome'] ?? ucfirst($m['autor_tipo'])) ?>
+                (<?= ucfirst($m['autor_tipo']) ?>) · <?= date('d/m H:i', strtotime($m['criado_em'])) ?>
+              </div>
+            <?php endif; ?>
+          </div>
+        <?php endforeach; ?>
       <?php endif; ?>
     </div>
+
+    <!-- Painel: Pagamento -->
+    <?php if (($detalhe['categoria'] ?? '') === 'Pagamento'): ?>
+    <div class="action-panel mb-3">
+      <div class="fw-semibold mb-2" style="font-size:.85rem;color:#16a34a;">💰 Registrar estorno / ajuste de pagamento</div>
+      <form method="post" class="row g-2 align-items-end">
+        <input type="hidden" name="acao" value="estorno">
+        <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
+        <div class="col-auto">
+          <label class="form-label form-label-sm mb-1" style="font-size:.8rem;">Valor (R$)</label>
+          <input type="number" name="valor_estorno" class="form-control form-control-sm"
+                 step="0.01" min="0" placeholder="0,00" style="width:120px">
+        </div>
+        <div class="col">
+          <label class="form-label form-label-sm mb-1" style="font-size:.8rem;">Observação</label>
+          <input type="text" name="nota_estorno" class="form-control form-control-sm"
+                 placeholder="Ex: Reembolso via PIX processado" maxlength="200">
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-sm btn-success fw-semibold">✔ Confirmar estorno</button>
+        </div>
+      </form>
+    </div>
+    <?php endif; ?>
+
+    <!-- Painel: Conta / Prestador -->
+    <?php if ($detalhe['tecnico_id'] && $usuarioAtivo !== null): ?>
+    <div class="action-panel mb-3">
+      <div class="fw-semibold mb-2" style="font-size:.85rem;color:#0d1b3d;">🔐 Gerenciamento de conta</div>
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span style="font-size:.85rem;">Status:
+          <span class="badge" style="background:<?= $usuarioAtivo ? '#dcfce7' : '#fee2e2' ?>;color:<?= $usuarioAtivo ? '#16a34a' : '#dc2626' ?>;font-size:.75rem;">
+            <?= $usuarioAtivo ? 'Ativa' : 'Bloqueada' ?>
+          </span>
+        </span>
+        <?php if ($usuarioAtivo): ?>
+          <form method="post" onsubmit="return confirm('Bloquear este prestador?');">
+            <input type="hidden" name="acao" value="bloquear_usuario">
+            <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
+            <input type="hidden" name="tecnico_id" value="<?= (int)$detalhe['tecnico_id'] ?>">
+            <button class="btn btn-sm btn-danger">🔒 Bloquear conta</button>
+          </form>
+        <?php else: ?>
+          <form method="post" onsubmit="return confirm('Restaurar acesso deste prestador?');">
+            <input type="hidden" name="acao" value="desbloquear_usuario">
+            <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
+            <input type="hidden" name="tecnico_id" value="<?= (int)$detalhe['tecnico_id'] ?>">
+            <button class="btn btn-sm btn-success">🔓 Restaurar acesso</button>
+          </form>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Enviar mensagem -->
+    <?php if ($detalhe['status'] !== 'Fechado'): ?>
+    <form method="post" id="form-resposta">
+      <input type="hidden" name="acao" value="mensagem">
+      <input type="hidden" name="suporte_id" value="<?= (int)$detalhe['id'] ?>">
+      <div class="row g-2 align-items-end">
+        <div class="col">
+          <label class="form-label" id="label-resposta" style="font-size:.85rem;font-weight:600;">Resposta</label>
+          <textarea name="mensagem" id="textarea-resposta" class="form-control" rows="3"
+            placeholder="Digite a resposta para o usuário..." required></textarea>
+        </div>
+        <div class="col-auto">
+          <label class="form-label" style="font-size:.85rem;font-weight:600;">Mudar status</label>
+          <select name="status" id="select-status-resposta" class="form-select form-select-sm mb-2">
+            <option value="">Manter atual</option>
+            <?php foreach (['Em Andamento','Fechado'] as $s): ?>
+              <option value="<?= $s ?>"><?= $s ?></option>
+            <?php endforeach; ?>
+          </select>
+          <button type="submit" id="btn-enviar-resposta" class="btn btn-warning fw-bold w-100">Enviar</button>
+        </div>
+      </div>
+      <div id="hint-fechamento" class="alert alert-warning small mt-2 mb-0 d-none">
+        ⚠️ Ao fechar, descreva claramente como o problema foi resolvido. Isso ficará visível para o usuário.
+      </div>
+    </form>
+    <?php else: ?>
+      <p class="text-muted small mb-0">🔒 Este ticket está fechado.</p>
+    <?php endif; ?>
   </div>
   <?php endif; ?>
 
   <!-- Filtros -->
-  <div class="card shadow-sm border-0 mb-3">
-    <div class="card-body py-2">
-      <form method="get" class="d-flex gap-2 flex-wrap align-items-end">
-        <?php if (isset($_GET['ver'])): ?><input type="hidden" name="ver" value="<?= (int)$_GET['ver'] ?>"><?php endif; ?>
-        <div>
-          <label class="form-label form-label-sm mb-1">Status</label>
-          <select name="status" class="form-select form-select-sm">
-            <option value="todos" <?= $filtroStatus==='todos'?'selected':'' ?>>Todos</option>
-            <?php foreach (['Aberto','Em Andamento','Fechado'] as $s): ?>
-              <option value="<?= $s ?>" <?= $filtroStatus===$s?'selected':'' ?>><?= $s ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div>
-          <label class="form-label form-label-sm mb-1">Prioridade</label>
-          <select name="prioridade" class="form-select form-select-sm">
-            <option value="">Todas</option>
-            <?php foreach ($prioridades as $p): ?>
-              <option value="<?= $p ?>" <?= $filtroPrio===$p?'selected':'' ?>><?= $p ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div>
-          <label class="form-label form-label-sm mb-1">Categoria</label>
-          <select name="categoria" class="form-select form-select-sm">
-            <option value="">Todas</option>
-            <?php foreach ($categorias as $c): ?>
-              <option value="<?= $c ?>" <?= $filtroCateg===$c?'selected':'' ?>><?= $c ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <button class="btn btn-sm btn-outline-secondary align-self-end">Filtrar</button>
-        <?php if ($filtroStatus !== 'todos' || $filtroPrio || $filtroCateg): ?>
-          <a href="suporteAdmin.php" class="btn btn-sm btn-outline-danger align-self-end">Limpar</a>
-        <?php endif; ?>
-      </form>
-    </div>
+  <div class="admin-card mb-3">
+    <div class="secao-titulo"><span>🔍</span> Filtros</div>
+    <form method="get" class="d-flex gap-2 flex-wrap align-items-end">
+      <?php if (isset($_GET['ver'])): ?><input type="hidden" name="ver" value="<?= (int)$_GET['ver'] ?>"><?php endif; ?>
+      <div>
+        <label class="form-label form-label-sm mb-1" style="font-size:.8rem;font-weight:600;">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="todos" <?= $filtroStatus==='todos'?'selected':'' ?>>Todos</option>
+          <?php foreach (['Aberto','Em Andamento','Fechado'] as $s): ?>
+            <option value="<?= $s ?>" <?= $filtroStatus===$s?'selected':'' ?>><?= $s ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div>
+        <label class="form-label form-label-sm mb-1" style="font-size:.8rem;font-weight:600;">Prioridade</label>
+        <select name="prioridade" class="form-select form-select-sm">
+          <option value="">Todas</option>
+          <?php foreach ($prioridades as $p): ?>
+            <option value="<?= $p ?>" <?= $filtroPrio===$p?'selected':'' ?>><?= $p ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div>
+        <label class="form-label form-label-sm mb-1" style="font-size:.8rem;font-weight:600;">Categoria</label>
+        <select name="categoria" class="form-select form-select-sm">
+          <option value="">Todas</option>
+          <?php foreach ($categorias as $c): ?>
+            <option value="<?= $c ?>" <?= $filtroCateg===$c?'selected':'' ?>><?= $c ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <button class="btn btn-sm btn-warning fw-semibold align-self-end">Filtrar</button>
+      <?php if ($filtroStatus !== 'todos' || $filtroPrio || $filtroCateg): ?>
+        <a href="suporteAdmin.php" class="btn btn-sm btn-outline-secondary align-self-end">Limpar</a>
+      <?php endif; ?>
+    </form>
   </div>
 
   <!-- Tabela de tickets -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <?php if (!$tickets): ?>
-        <p class="text-muted mb-0">Nenhum ticket encontrado.</p>
-      <?php else: ?>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle table-sm">
-            <thead class="table-primary">
-              <tr><th>#</th><th>Usuário</th><th>Tipo</th><th>Categoria</th><th>Prioridade</th><th>Assunto</th><th>Status</th><th>Data</th><th></th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($tickets as $tk):
-              $badgeSt = $tk['status']==='Aberto'?'danger':($tk['status']==='Em Andamento'?'warning text-dark':'success');
-              $badgePr = prioridadeBadge($tk['prioridade'] ?? 'Normal');
-            ?>
-              <tr>
-                <td><?= (int)$tk['id'] ?></td>
-                <td><?= htmlspecialchars($tk['usuario_nome'] ?? '—') ?></td>
-                <td><span class="badge bg-secondary"><?= ucfirst($tk['tipo_usuario'] ?? '—') ?></span></td>
-                <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($tk['categoria'] ?? 'Outro') ?></span></td>
-                <td><span class="badge bg-<?= $badgePr ?>"><?= htmlspecialchars($tk['prioridade'] ?? 'Normal') ?></span></td>
-                <td><?= htmlspecialchars(mb_strimwidth($tk['assunto'], 0, 45, '...')) ?></td>
-                <td><span class="badge bg-<?= $badgeSt ?>"><?= $tk['status'] ?></span></td>
-                <td><?= date('d/m/Y', strtotime($tk['criado_em'])) ?></td>
-                <td class="d-flex gap-1">
+  <div class="admin-card">
+    <div class="secao-titulo">
+      <span>🎫</span> Tickets
+      <span class="badge ms-auto" style="background:#e8ecf3;color:#0d1b3d;font-size:.75rem;"><?= count($tickets) ?></span>
+    </div>
+    <?php if (!$tickets): ?>
+      <div class="text-center py-5 text-muted">
+        <div style="font-size:2.5rem;margin-bottom:.5rem;">✅</div>
+        Nenhum ticket encontrado.
+      </div>
+    <?php else: ?>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle table-sm mb-0">
+          <thead class="table-primary">
+            <tr><th>#</th><th>Usuário</th><th>Tipo</th><th>Categoria</th><th>Prioridade</th><th>Assunto</th><th>Status</th><th>Data</th><th></th></tr>
+          </thead>
+          <tbody>
+          <?php foreach ($tickets as $tk):
+            $badgeSt = $tk['status']==='Aberto'?'danger':($tk['status']==='Em Andamento'?'warning text-dark':'success');
+            $badgePr = prioridadeBadge($tk['prioridade'] ?? 'Normal');
+          ?>
+            <tr>
+              <td class="text-muted" style="font-size:.82rem;"><?= (int)$tk['id'] ?></td>
+              <td class="fw-semibold" style="font-size:.85rem;"><?= htmlspecialchars($tk['usuario_nome'] ?? '—') ?></td>
+              <td><span class="badge bg-secondary" style="font-size:.7rem;"><?= ucfirst($tk['tipo_usuario'] ?? '—') ?></span></td>
+              <td><span class="badge" style="background:#f3f4f6;color:#374151;font-size:.7rem;"><?= htmlspecialchars($tk['categoria'] ?? 'Outro') ?></span></td>
+              <td><span class="badge bg-<?= $badgePr ?>" style="font-size:.7rem;"><?= htmlspecialchars($tk['prioridade'] ?? 'Normal') ?></span></td>
+              <td style="font-size:.83rem;"><?= htmlspecialchars(mb_strimwidth($tk['assunto'], 0, 45, '…')) ?></td>
+              <td><span class="badge bg-<?= $badgeSt ?>" style="font-size:.7rem;"><?= $tk['status'] ?></span></td>
+              <td class="text-muted" style="font-size:.78rem;"><?= date('d/m/Y', strtotime($tk['criado_em'])) ?></td>
+              <td>
+                <div class="d-flex gap-1">
                   <a href="suporteAdmin.php?ver=<?= (int)$tk['id'] ?>&status=<?= urlencode($filtroStatus) ?><?= $filtroPrio ? '&prioridade='.urlencode($filtroPrio) : '' ?><?= $filtroCateg ? '&categoria='.urlencode($filtroCateg) : '' ?>"
-                     class="btn btn-sm btn-outline-primary">Abrir</a>
+                     class="btn btn-sm btn-outline-primary" style="font-size:.78rem;">Abrir</a>
                   <?php if ($isMaster): ?>
                     <form method="post" class="d-inline" onsubmit="return confirm('Excluir este ticket?');">
                       <input type="hidden" name="acao" value="excluir">
                       <input type="hidden" name="suporte_id" value="<?= (int)$tk['id'] ?>">
-                      <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                      <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Excluir</button>
                     </form>
                   <?php endif; ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
-    </div>
+                </div>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
   </div>
+
 </main>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

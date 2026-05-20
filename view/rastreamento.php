@@ -19,7 +19,7 @@ $nomeCli     = $ctrl->clienteNome;
   <link href="../assets/css/style.css" rel="stylesheet">
   <style>
     #map {
-      height: 420px;
+      height: clamp(260px, 50vw, 420px);
       border-radius: 14px;
       box-shadow: 0 10px 28px rgba(0,0,0,.12);
       background: #dfe6ee;

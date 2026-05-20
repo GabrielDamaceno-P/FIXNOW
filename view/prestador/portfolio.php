@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once __DIR__ . '/../../controller/PortfolioControl.php';
 
@@ -12,7 +12,6 @@ $naoLidas   = $ctrl->naoLidas;
 $tecnicoNome = $_SESSION['tecnico_nome'] ?? 'Prestador';
 $tecnicoFoto = $_SESSION['tecnico_foto'] ?? '';
 
-// Agrupa fotos por categoria
 $fotosPorCat = ['__sem__' => []];
 foreach ($categorias as $c) $fotosPorCat[$c['id']] = [];
 foreach ($fotos as $f) {
@@ -20,6 +19,8 @@ foreach ($fotos as $f) {
     if ($cid && isset($fotosPorCat[$cid])) $fotosPorCat[$cid][] = $f;
     else $fotosPorCat['__sem__'][] = $f;
 }
+
+$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚'];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -29,113 +30,155 @@ foreach ($fotos as $f) {
   <title>Portfólio - Fix Now</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../assets/css/style.css" rel="stylesheet">
+  <style>
+    .page-header{background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);border-radius:16px;padding:1.8rem 2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+    .page-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+    .page-header h1{color:#fff;font-size:clamp(1.2rem,3vw,1.7rem);font-weight:800;margin:0 0 .25rem}
+    .page-header p{color:rgba(255,255,255,.72);font-size:.9rem;margin:0}
+    .form-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;padding:1.5rem;position:sticky;top:80px}
+    @media(max-width:991.98px){.form-card{position:relative;top:0}}
+    .form-card-titulo{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:1.1rem;padding-bottom:.7rem;border-bottom:2px solid #f0f3fa;display:flex;align-items:center;gap:.5rem}
+    .upload-zone{border:2px dashed #ced4da;border-radius:10px;padding:1.3rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+    .upload-zone:hover{border-color:#ffc107;background:#fffbf0}
+    .upload-zone input[type="file"]{display:none}
+    .upload-zone .ui{font-size:1.8rem;margin-bottom:.3rem}
+    .upload-zone p{font-size:.85rem;font-weight:600;margin:.1rem 0 0}
+    .upload-zone small{font-size:.75rem;color:#8090b0}
+    .tab-filtro{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.2rem}
+    .tab-btn{border:1.5px solid #e8ecf3;border-radius:50px;padding:.3rem .85rem;font-size:.8rem;font-weight:600;color:#495057;background:#fff;cursor:pointer;transition:all .18s;white-space:nowrap}
+    .tab-btn:hover,.tab-btn.ativo{background:#0d1b3d;border-color:#0d1b3d;color:#fff}
+    .foto-card{border-radius:12px;overflow:hidden;border:1.5px solid #e8ecf3;background:#fff;box-shadow:0 3px 10px rgba(13,27,61,.06);transition:transform .18s,box-shadow .18s}
+    .foto-card:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(13,27,61,.12)}
+    .foto-card img{width:100%;height:180px;object-fit:cover;cursor:pointer;display:block}
+    .foto-card-body{padding:.7rem .9rem}
+    .foto-card-footer{padding:.5rem .9rem .8rem;display:flex;gap:.4rem}
+    /* DARK */
+    [data-theme="dark"] .form-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .form-card-titulo{color:#e4e8f4;border-bottom-color:#2e3650}
+    [data-theme="dark"] .upload-zone{border-color:#2e3650}
+    [data-theme="dark"] .upload-zone:hover{background:#252d42;border-color:#ffc107}
+    [data-theme="dark"] .upload-zone p{color:#c8d0e0}
+    [data-theme="dark"] .tab-btn{background:#252d42;border-color:#2e3650;color:#c8d0e0}
+    [data-theme="dark"] .tab-btn:hover,[data-theme="dark"] .tab-btn.ativo{background:#ffc107;border-color:#ffc107;color:#0d1b3d}
+    [data-theme="dark"] .foto-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .foto-card-body .card-title{color:#e4e8f4}
+    [data-theme="dark"] .foto-card-body .card-text,[data-theme="dark"] .foto-card-body small{color:#8090b0 !important}
+  </style>
 </head>
 <body>
 <?php $paginaAtiva = 'portfolio'; require_once __DIR__ . '/../../includes/prestador_nav.php'; ?>
 
-<main class="container py-5 mt-5">
-  <h2 class="mb-4">Meu Portfólio</h2>
+<main class="container py-4 mt-5">
 
-  <?php if ($mensagem): ?><div class="alert alert-success"><?php echo htmlspecialchars($mensagem); ?></div><?php endif; ?>
-  <?php if ($erro): ?><div class="alert alert-danger"><?php echo htmlspecialchars($erro); ?></div><?php endif; ?>
+  <div class="page-header">
+    <div style="position:relative;z-index:1">
+      <h1>🖼 Meu Portfólio</h1>
+      <p>Mostre seu trabalho — as fotos ficam visíveis para clientes no catálogo.</p>
+    </div>
+  </div>
+
+  <?php if ($mensagem): ?><div class="alert alert-success alert-dismissible fade show"><?php echo htmlspecialchars($mensagem); ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
+  <?php if ($erro): ?><div class="alert alert-danger alert-dismissible fade show"><?php echo htmlspecialchars($erro); ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
 
   <div class="row g-4">
     <!-- Formulário -->
     <div class="col-lg-4">
-      <div class="card shadow-sm border-0 sticky-top" style="top:80px;">
-        <div class="card-body">
-          <h5 id="formTitulo">Adicionar fotos</h5>
-          <form method="post" enctype="multipart/form-data" class="js-guard-submit" id="formPortfolio">
-            <input type="hidden" name="acao" id="f_acao" value="adicionar">
-            <input type="hidden" name="foto_id" id="f_id" value="0">
+      <div class="form-card">
+        <div class="form-card-titulo"><span>📤</span> <span id="formTitulo">Adicionar fotos</span></div>
+        <form method="post" enctype="multipart/form-data" class="js-guard-submit" id="formPortfolio">
+          <input type="hidden" name="acao" id="f_acao" value="adicionar">
+          <input type="hidden" name="foto_id" id="f_id" value="0">
 
-            <div class="mb-3">
-              <label class="form-label">Fotos <span class="text-danger" id="fotoObrig">*</span></label>
-              <input type="file" name="fotos[]" id="f_foto" class="form-control" multiple
+          <div class="mb-3">
+            <label class="upload-zone w-100" for="f_foto">
+              <div class="ui">📷</div>
+              <p id="fotoLabel">Clique para selecionar fotos</p>
+              <small id="fotoHint">JPG, PNG ou WEBP &bull; Até 10 arquivos</small>
+              <input type="file" name="fotos[]" id="f_foto" multiple
                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-              <small class="text-muted" id="fotoHint">Selecione uma ou mais fotos (máx. 10).</small>
-            </div>
+            </label>
+          </div>
 
-            <?php if ($categorias): ?>
-            <div class="mb-3">
-              <label class="form-label">Categoria do serviço</label>
-              <select name="categoria_id" id="f_cat" class="form-select">
-                <option value="">— Sem categoria —</option>
-                <?php foreach ($categorias as $c): ?>
-                  <option value="<?php echo (int)$c['id']; ?>"><?php echo htmlspecialchars($c['nome']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <?php endif; ?>
+          <?php if ($categorias): ?>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:.88rem;">Categoria</label>
+            <select name="categoria_id" id="f_cat" class="form-select">
+              <option value="">— Sem categoria —</option>
+              <?php foreach ($categorias as $c): ?>
+                <option value="<?php echo (int)$c['id']; ?>"><?php echo htmlspecialchars($c['nome']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <?php endif; ?>
 
-            <div class="mb-3">
-              <label class="form-label">Título <span class="text-muted small">(opcional)</span></label>
-              <input type="text" name="titulo" id="f_titulo" class="form-control" maxlength="100">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Descrição <span class="text-muted small">(opcional)</span></label>
-              <textarea name="descricao" id="f_desc" class="form-control" rows="2" maxlength="255"></textarea>
-            </div>
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-warning fw-semibold">Salvar</button>
-              <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">Cancelar</button>
-            </div>
-          </form>
-        </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:.88rem;">Título <span class="text-muted fw-normal">(opcional)</span></label>
+            <input type="text" name="titulo" id="f_titulo" class="form-control" maxlength="100" placeholder="Ex: Instalação concluída">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" style="font-size:.88rem;">Descrição <span class="text-muted fw-normal">(opcional)</span></label>
+            <textarea name="descricao" id="f_desc" class="form-control" rows="2" maxlength="255" placeholder="Contexto do trabalho realizado..."></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning fw-bold flex-grow-1">Salvar</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">Cancelar</button>
+          </div>
+        </form>
       </div>
     </div>
 
-    <!-- Galeria por categoria -->
+    <!-- Galeria -->
     <div class="col-lg-8">
       <?php if (!$fotos): ?>
-        <div class="alert alert-info">Nenhuma foto no portfólio ainda.</div>
+        <div class="text-center py-5 text-muted">
+          <div style="font-size:3rem;margin-bottom:.6rem;">🖼</div>
+          <h5 class="fw-bold" style="color:#0d1b3d;">Portfólio vazio</h5>
+          <p style="font-size:.9rem;">Adicione fotos dos seus trabalhos para atrair mais clientes.</p>
+        </div>
       <?php else: ?>
 
-        <?php if ($categorias): ?>
-        <!-- Tabs de categoria -->
-        <ul class="nav nav-pills mb-3 flex-wrap gap-1" id="portfolio-tabs">
-          <li class="nav-item">
-            <button class="nav-link active" data-tab="todos">Todos (<?php echo count($fotos); ?>)</button>
-          </li>
-          <?php foreach ($categorias as $c): ?>
-            <?php $cnt = count($fotosPorCat[$c['id']] ?? []); ?>
-            <?php if ($cnt > 0): ?>
-            <li class="nav-item">
-              <button class="nav-link" data-tab="cat-<?php echo (int)$c['id']; ?>">
-                <?php echo htmlspecialchars($c['nome']); ?> (<?php echo $cnt; ?>)
-              </button>
-            </li>
-            <?php endif; ?>
-          <?php endforeach; ?>
+        <!-- Filtros de categoria -->
+        <div class="tab-filtro" id="portfolio-tabs">
+          <button class="tab-btn ativo" data-tab="todos">🗂 Todos (<?php echo count($fotos); ?>)</button>
+          <?php foreach ($categorias as $c):
+            $cnt = count($fotosPorCat[$c['id']] ?? []);
+            if ($cnt > 0):
+              $ico = $catIcons[$c['nome']] ?? '🔩';
+          ?>
+            <button class="tab-btn" data-tab="cat-<?php echo (int)$c['id']; ?>">
+              <?php echo $ico . ' ' . htmlspecialchars($c['nome']); ?> (<?php echo $cnt; ?>)
+            </button>
+          <?php endif; endforeach; ?>
           <?php if (!empty($fotosPorCat['__sem__'])): ?>
-          <li class="nav-item">
-            <button class="nav-link" data-tab="sem-cat">Sem categoria (<?php echo count($fotosPorCat['__sem__']); ?>)</button>
-          </li>
+            <button class="tab-btn" data-tab="sem-cat">Sem categoria (<?php echo count($fotosPorCat['__sem__']); ?>)</button>
           <?php endif; ?>
-        </ul>
-        <?php endif; ?>
+        </div>
 
         <div class="row g-3" id="galeria">
-        <?php foreach ($fotos as $f): ?>
-          <div class="col-sm-6 foto-item"
-               data-cat="<?php echo $f['categoria_id'] ? 'cat-' . (int)$f['categoria_id'] : 'sem-cat'; ?>">
-            <div class="card shadow-sm border-0 h-100">
-              <img src="../../<?php echo htmlspecialchars($f['foto_path']); ?>" class="card-img-top" alt="Portfólio"
-                   style="height:180px;object-fit:cover;cursor:pointer;"
+          <?php foreach ($fotos as $f): ?>
+          <div class="col-sm-6 foto-item" data-cat="<?php echo $f['categoria_id'] ? 'cat-'.(int)$f['categoria_id'] : 'sem-cat'; ?>">
+            <div class="foto-card">
+              <img src="../../<?php echo htmlspecialchars($f['foto_path']); ?>" alt="Portfólio"
                    onclick="window.open('../../<?php echo htmlspecialchars($f['foto_path']); ?>','_blank')"
                    loading="lazy">
-              <div class="card-body py-2">
+              <div class="foto-card-body">
                 <?php if (!empty($f['categoria_nome'])): ?>
-                  <span class="badge bg-primary mb-1"><?php echo htmlspecialchars($f['categoria_nome']); ?></span>
+                  <span class="badge mb-1" style="background:#0d1b3d;color:#ffc107;font-size:.7rem;">
+                    <?php echo ($catIcons[$f['categoria_nome']] ?? '🔩') . ' ' . htmlspecialchars($f['categoria_nome']); ?>
+                  </span>
                 <?php endif; ?>
-                <?php if ($f['titulo']): ?><h6 class="card-title mb-1 mt-1"><?php echo htmlspecialchars($f['titulo']); ?></h6><?php endif; ?>
-                <?php if ($f['descricao']): ?><p class="card-text small text-muted mb-1"><?php echo htmlspecialchars($f['descricao']); ?></p><?php endif; ?>
-                <small class="text-muted"><?php echo date('d/m/Y', strtotime($f['criado_em'])); ?></small>
+                <?php if ($f['titulo']): ?>
+                  <h6 class="card-title mb-0 mt-1" style="font-size:.88rem;"><?php echo htmlspecialchars($f['titulo']); ?></h6>
+                <?php endif; ?>
+                <?php if ($f['descricao']): ?>
+                  <p class="card-text small text-muted mt-1 mb-0" style="font-size:.78rem;"><?php echo htmlspecialchars($f['descricao']); ?></p>
+                <?php endif; ?>
+                <small class="text-muted d-block mt-1" style="font-size:.74rem;">📅 <?php echo date('d/m/Y', strtotime($f['criado_em'])); ?></small>
               </div>
-              <div class="card-footer bg-transparent d-flex gap-1">
+              <div class="foto-card-footer">
                 <button class="btn btn-sm btn-outline-warning flex-grow-1"
                   onclick="editarFoto(<?php echo (int)$f['id']; ?>,'<?php echo addslashes($f['titulo'] ?? ''); ?>','<?php echo addslashes($f['descricao'] ?? ''); ?>',<?php echo (int)($f['categoria_id'] ?? 0); ?>)">
-                  Editar info
+                  Editar
                 </button>
                 <form method="post" class="d-inline flex-grow-1" onsubmit="return confirm('Remover foto?')">
                   <input type="hidden" name="acao" value="excluir">
@@ -145,7 +188,7 @@ foreach ($fotos as $f) {
               </div>
             </div>
           </div>
-        <?php endforeach; ?>
+          <?php endforeach; ?>
         </div>
 
       <?php endif; ?>
@@ -158,44 +201,39 @@ foreach ($fotos as $f) {
 <script src="../../assets/js/main.js"></script>
 <script>
 function editarFoto(id, titulo, desc, catId) {
-  document.getElementById('f_id').value = id;
-  document.getElementById('f_acao').value = 'editar';
-  document.getElementById('f_titulo').value = titulo;
-  document.getElementById('f_desc').value = desc;
+  document.getElementById('f_id').value      = id;
+  document.getElementById('f_acao').value    = 'editar';
+  document.getElementById('f_titulo').value  = titulo;
+  document.getElementById('f_desc').value    = desc;
   var catSel = document.getElementById('f_cat');
   if (catSel) catSel.value = catId || '';
   var fotoInput = document.getElementById('f_foto');
   fotoInput.required = false;
-  fotoInput.disabled = true;
-  document.getElementById('fotoObrig').style.display = 'none';
-  document.getElementById('fotoHint').textContent = 'Upload desativado ao editar informações.';
+  fotoInput.disabled = false;
+  document.getElementById('fotoLabel').textContent = 'Selecionar nova foto (opcional)';
+  document.getElementById('fotoHint').textContent  = 'Deixe em branco para manter a foto atual.';
   document.getElementById('formTitulo').textContent = 'Editar foto #' + id;
   document.getElementById('formPortfolio').scrollIntoView({behavior:'smooth'});
 }
 function resetForm() {
-  document.getElementById('f_id').value = 0;
+  document.getElementById('f_id').value   = 0;
   document.getElementById('f_acao').value = 'adicionar';
   document.getElementById('formPortfolio').reset();
   var fotoInput = document.getElementById('f_foto');
   fotoInput.required = true;
   fotoInput.disabled = false;
-  document.getElementById('fotoObrig').style.display = '';
-  document.getElementById('fotoHint').textContent = 'Selecione uma ou mais fotos (máx. 10).';
+  document.getElementById('fotoLabel').textContent = 'Clique para selecionar fotos';
+  document.getElementById('fotoHint').textContent  = 'JPG, PNG ou WEBP • Até 10 arquivos';
   document.getElementById('formTitulo').textContent = 'Adicionar fotos';
 }
 
-// Filtro por categoria (tabs)
-document.querySelectorAll('#portfolio-tabs .nav-link').forEach(function(btn) {
+document.querySelectorAll('#portfolio-tabs .tab-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    document.querySelectorAll('#portfolio-tabs .nav-link').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
+    document.querySelectorAll('#portfolio-tabs .tab-btn').forEach(b => b.classList.remove('ativo'));
+    this.classList.add('ativo');
     var tab = this.dataset.tab;
     document.querySelectorAll('.foto-item').forEach(function(item) {
-      if (tab === 'todos' || item.dataset.cat === tab) {
-        item.style.display = '';
-      } else {
-        item.style.display = 'none';
-      }
+      item.style.display = (tab === 'todos' || item.dataset.cat === tab) ? '' : 'none';
     });
   });
 });

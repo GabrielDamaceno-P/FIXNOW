@@ -8,32 +8,62 @@ ob_start();
 require_once __DIR__ . '/_navbar.php';
 $navbarHtml = ob_get_clean();
 
-// acesso: somente admin
-
-$mensagem = '';
-$erro = '';
+$mensagem   = '';
+$erro       = '';
+$abrirModal = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
     $tid  = (int)($_POST['tecnico_id'] ?? 0);
-    if ($tid > 0) {
-        if ($acao === 'aprovar') {
-            $up = $pdo->prepare("UPDATE tecnico SET ativo=1, status_cadastro='Aprovado' WHERE id=? AND status_cadastro='Pendente'");
-            $up->execute([$tid]);
-            if ($up->rowCount() > 0) {
-                fixnow_notificar_prestador($pdo, $tid, 'Seu cadastro foi aprovado pela Fix Now! Você já pode acessar o painel e aceitar chamados.');
-                $mensagem = 'Prestador aprovado.';
-            } else { $erro = 'Não foi possível aprovar (cadastro já processado).'; }
-        } elseif ($acao === 'recusar') {
-            $up = $pdo->prepare("UPDATE tecnico SET ativo=0, status_cadastro='Recusado' WHERE id=? AND status_cadastro='Pendente'");
-            $up->execute([$tid]);
-            if ($up->rowCount() > 0) {
-                fixnow_notificar_prestador($pdo, $tid, 'Seu cadastro foi recusado pela Fix Now. Entre em contato com o suporte.');
-                $mensagem = 'Cadastro recusado.';
-            } else { $erro = 'Não foi possível recusar (cadastro já processado).'; }
-        } elseif ($acao === 'excluir' && $isMaster) {
-            $pdo->prepare('DELETE FROM tecnico WHERE id=?')->execute([$tid]);
-            $mensagem = 'Prestador excluído.';
+
+    if ($acao === 'aprovar' && $tid > 0) {
+        $up = $pdo->prepare("UPDATE tecnico SET ativo=1, status_cadastro='Aprovado' WHERE id=? AND status_cadastro='Pendente'");
+        $up->execute([$tid]);
+        if ($up->rowCount() > 0) {
+            fixnow_notificar_prestador($pdo, $tid, 'Seu cadastro foi aprovado pela Fix Now! Você já pode acessar o painel e aceitar chamados.');
+            $mensagem = 'Prestador aprovado.';
+        } else { $erro = 'Não foi possível aprovar (cadastro já processado).'; }
+
+    } elseif ($acao === 'recusar' && $tid > 0) {
+        $up = $pdo->prepare("UPDATE tecnico SET ativo=0, status_cadastro='Recusado' WHERE id=? AND status_cadastro='Pendente'");
+        $up->execute([$tid]);
+        if ($up->rowCount() > 0) {
+            fixnow_notificar_prestador($pdo, $tid, 'Seu cadastro foi recusado pela Fix Now. Entre em contato com o suporte.');
+            $mensagem = 'Cadastro recusado.';
+        } else { $erro = 'Não foi possível recusar (cadastro já processado).'; }
+
+    } elseif ($acao === 'excluir' && $isMaster && $tid > 0) {
+        $pdo->prepare('DELETE FROM tecnico WHERE id=?')->execute([$tid]);
+        $mensagem = 'Prestador excluído.';
+
+    } elseif ($acao === 'cadastrar_prestador') {
+        $nome          = trim($_POST['p_nome']          ?? '');
+        $email         = strtolower(trim($_POST['p_email'] ?? ''));
+        $telefone      = trim($_POST['p_telefone']      ?? '');
+        $genero        = $_POST['p_genero']        ?? 'Masculino';
+        $especialidade = trim($_POST['p_especialidade'] ?? '');
+        $cpf           = preg_replace('/\D/', '', $_POST['p_cpf'] ?? '');
+        $abrirModal    = 'modalNovoPrestador';
+
+        if (!$nome || !$email || !$telefone) {
+            $erro = 'Preencha nome, e-mail e telefone.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $erro = 'E-mail inválido.';
+        } else {
+            $chk = $pdo->prepare("SELECT id FROM tecnico WHERE email = ?");
+            $chk->execute([$email]);
+            if ($chk->fetch()) {
+                $erro = 'Este e-mail já está cadastrado.';
+            } else {
+                $senhaTemp = bin2hex(random_bytes(5));
+                $hash = password_hash($senhaTemp, PASSWORD_BCRYPT);
+                $foto = 'assets/img/perfil/default-prestador.jpg';
+                $pdo->prepare("INSERT INTO tecnico (nome, email, senha, telefone, genero, especialidade, cpf, foto_perfil, ativo, status_cadastro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'Aprovado')")
+                    ->execute([$nome, $email, $hash, $telefone, $genero,
+                               $especialidade ?: null, $cpf ?: null, $foto]);
+                $mensagem = 'Prestador <strong>' . htmlspecialchars($nome) . '</strong> cadastrado e já aprovado! Senha temporária: <code class="user-select-all fw-bold">' . htmlspecialchars($senhaTemp) . '</code> — anote e repasse ao prestador.';
+                $abrirModal = '';
+            }
         }
     }
 }
@@ -42,7 +72,7 @@ $filtro       = trim($_GET['busca'] ?? '');
 $filtroStatus = $_GET['status'] ?? '';
 $statusOpcoes = ['Pendente', 'Aprovado', 'Recusado'];
 
-$where = [];
+$where  = [];
 $params = [];
 if ($filtro !== '') {
     $where[] = '(t.nome LIKE ? OR t.email LIKE ?)';
@@ -67,6 +97,8 @@ $stmt = $pdo->prepare("
 $stmt->execute($params);
 $tecnicos = $stmt->fetchAll();
 $pendentesCount = count(array_filter($tecnicos, fn($t) => $t['status_cadastro'] === 'Pendente'));
+
+$categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -76,31 +108,62 @@ $pendentesCount = count(array_filter($tecnicos, fn($t) => $t['status_cadastro'] 
   <title>Prestadores - Admin Fix Now</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../assets/css/style.css" rel="stylesheet">
+  <style>
+    .page-hero{background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);border-radius:16px;padding:1.8rem 2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+    .page-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+    .page-hero h1{color:#fff;font-size:clamp(1.2rem,3vw,1.7rem);font-weight:800;margin:0 0 .25rem}
+    .page-hero p{color:rgba(255,255,255,.72);font-size:.9rem;margin:0}
+    .admin-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;padding:1.3rem;box-shadow:0 3px 10px rgba(13,27,61,.05)}
+    .secao-titulo{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:.9rem;padding-bottom:.6rem;border-bottom:2px solid #f0f3fa;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+    .bg-pink{background-color:#e91e8c!important}
+    [data-theme="dark"] .admin-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .secao-titulo{color:#e4e8f4;border-bottom-color:#2e3650}
+  </style>
 </head>
 <body>
 <?= $navbarHtml ?>
 
-<main class="container py-5 mt-5">
-  <h2 class="mb-1">Prestadores</h2>
-  <p class="text-muted mb-4">Visualize, aprove, recuse e remova prestadores da plataforma.</p>
+<main class="container py-4 mt-5">
 
-  <?php if ($mensagem): ?><div class="alert alert-success"><?= htmlspecialchars($mensagem) ?></div><?php endif; ?>
-  <?php if ($erro): ?><div class="alert alert-danger"><?= htmlspecialchars($erro) ?></div><?php endif; ?>
+  <div class="page-hero mb-4">
+    <div style="position:relative;z-index:1">
+      <h1>🔧 Prestadores</h1>
+      <p>Visualize, cadastre, aprove, recuse e remova prestadores da plataforma.</p>
+    </div>
+  </div>
 
-  <?php if ($pendentesCount > 0 && $filtroStatus !== 'Pendente'): ?>
-    <div class="alert alert-warning d-flex align-items-center gap-2">
-      <strong><?= $pendentesCount ?> prestador<?= $pendentesCount > 1 ? 'es' : '' ?> aguardando aprovação.</strong>
-      <a href="prestadores.php?status=Pendente" class="btn btn-sm btn-warning ms-2">Ver pendentes</a>
+  <?php if ($mensagem): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+      🔑 <?= $mensagem ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
+  <?php if ($erro): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+      <?= htmlspecialchars($erro) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
 
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h5 class="mb-0">Prestadores <span class="badge bg-secondary"><?= count($tecnicos) ?></span></h5>
+  <?php if ($pendentesCount > 0 && $filtroStatus !== 'Pendente'): ?>
+    <div class="d-flex align-items-center gap-3 p-3 mb-4" style="background:rgba(251,191,36,.12);border:1.5px solid #fde68a;border-radius:14px;">
+      <span style="font-size:1.4rem;">⚠️</span>
+      <div class="flex-grow-1">
+        <strong><?= $pendentesCount ?> prestador<?= $pendentesCount > 1 ? 'es' : '' ?> aguardando aprovação.</strong>
+      </div>
+      <a href="prestadores.php?status=Pendente" class="btn btn-sm btn-warning fw-semibold">Ver pendentes</a>
+    </div>
+  <?php endif; ?>
+
+  <div class="admin-card">
+    <div class="secao-titulo">
+      <span>📋</span>
+      <span>Prestadores</span>
+      <span class="badge" style="background:#e8ecf3;color:#0d1b3d;font-size:.75rem;"><?= count($tecnicos) ?></span>
+      <div class="ms-auto d-flex gap-2 flex-wrap align-items-center">
         <form method="get" class="d-flex gap-2 flex-wrap">
-          <input type="text" name="busca" class="form-control form-control-sm" placeholder="Nome ou e-mail..."
-            value="<?= htmlspecialchars($filtro) ?>" style="width:180px;">
+          <input type="text" name="busca" class="form-control form-control-sm" placeholder="Nome ou e-mail…"
+            value="<?= htmlspecialchars($filtro) ?>" style="width:170px;">
           <select name="status" class="form-select form-select-sm" style="width:140px;">
             <option value="">Todos os status</option>
             <?php foreach ($statusOpcoes as $st): ?>
@@ -112,81 +175,98 @@ $pendentesCount = count(array_filter($tecnicos, fn($t) => $t['status_cadastro'] 
             <a href="prestadores.php" class="btn btn-sm btn-outline-danger">Limpar</a>
           <?php endif; ?>
         </form>
+        <button class="btn btn-sm btn-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNovoPrestador">
+          + Novo Prestador
+        </button>
       </div>
+    </div>
 
-      <?php if (!$tecnicos): ?>
-        <p class="text-muted mb-0">Nenhum prestador encontrado.</p>
-      <?php else: ?>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle table-sm">
-            <thead class="table-primary">
-              <tr>
-                <th>#</th><th>Nome</th><th>E-mail</th><th>Gênero</th><th>Categorias</th><th>Telefone</th>
-                <th>Avaliação</th><th>Status</th><th>Cadastrado em</th><th></th>
-              </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($tecnicos as $t):
-              $badgeSt = match($t['status_cadastro']) { 'Aprovado'=>'success','Pendente'=>'warning text-dark',default=>'danger' };
-            ?>
-              <tr>
-                <td><?= (int)$t['id'] ?></td>
-                <td class="fw-semibold"><?= htmlspecialchars($t['nome']) ?></td>
-                <td><?= htmlspecialchars($t['email'] ?? '—') ?></td>
-                <td>
-                  <?php
-                    $genBadge = match($t['genero'] ?? '') {
-                      'Feminino'  => 'bg-pink text-white',
-                      'Masculino' => 'bg-primary',
-                      default     => 'bg-secondary'
-                    };
-                  ?>
-                  <span class="badge <?= $genBadge ?>"><?= htmlspecialchars($t['genero'] ?? '—') ?></span>
-                </td>
-                <td><?= htmlspecialchars($t['categorias_servico'] ?? '—') ?></td>
-                <td><?= htmlspecialchars($t['telefone']) ?></td>
-                <td>⭐ <?= number_format((float)$t['avaliacao_media'], 1, ',', '.') ?></td>
-                <td><span class="badge bg-<?= $badgeSt ?>"><?= htmlspecialchars($t['status_cadastro']) ?></span></td>
-                <td><?= date('d/m/Y', strtotime($t['criado_em'])) ?></td>
-                <td>
-                  <div class="d-flex gap-1 flex-wrap">
-                    <?php if ($t['status_cadastro'] === 'Pendente'): ?>
-                      <?php if (!empty($t['documento_path'])): ?>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                          data-bs-toggle="modal" data-bs-target="#modalDoc"
-                          data-nome="<?= htmlspecialchars($t['nome'], ENT_QUOTES) ?>"
-                          data-genero="<?= htmlspecialchars($t['genero'] ?? '', ENT_QUOTES) ?>"
-                          data-doc="<?= htmlspecialchars('../../' . $t['documento_path'], ENT_QUOTES) ?>">
-                          <i class="bi bi-file-earmark-person me-1"></i>Ver doc
-                        </button>
-                      <?php else: ?>
-                        <span class="badge bg-warning text-dark">Sem documento</span>
-                      <?php endif; ?>
-                      <form method="post" class="d-inline">
-                        <input type="hidden" name="acao" value="aprovar">
-                        <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
-                        <button class="btn btn-sm btn-success">Aprovar</button>
-                      </form>
-                      <form method="post" class="d-inline" onsubmit="return confirm('Recusar este cadastro?');">
-                        <input type="hidden" name="acao" value="recusar">
-                        <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
-                        <button class="btn btn-sm btn-outline-danger">Recusar</button>
-                      </form>
+    <?php if (!$tecnicos): ?>
+      <div class="text-center py-5 text-muted">
+        <div style="font-size:2.5rem;margin-bottom:.5rem;">🔍</div>
+        Nenhum prestador encontrado.
+      </div>
+    <?php else: ?>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle table-sm mb-0">
+          <thead class="table-primary">
+            <tr>
+              <th>#</th><th>Nome</th><th>E-mail</th><th>Gênero</th><th>Categorias</th>
+              <th>Telefone</th><th>Avaliação</th><th>Status</th><th>Cadastrado em</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php foreach ($tecnicos as $t):
+            $badgeSt = match($t['status_cadastro']) {
+              'Aprovado' => 'background:#dcfce7;color:#16a34a;',
+              'Pendente' => 'background:#fef9c3;color:#92400e;',
+              default    => 'background:#fee2e2;color:#dc2626;'
+            };
+            $genColor = match($t['genero'] ?? '') {
+              'Feminino'  => 'background:#fce7f3;color:#be185d;',
+              'Masculino' => 'background:#eff6ff;color:#1d4ed8;',
+              default     => 'background:#f3f4f6;color:#374151;'
+            };
+          ?>
+            <tr>
+              <td class="text-muted" style="font-size:.82rem;"><?= (int)$t['id'] ?></td>
+              <td>
+                <div class="fw-semibold" style="font-size:.88rem;"><?= htmlspecialchars($t['nome']) ?></div>
+                <?php if ($t['destaque']): ?>
+                  <span class="badge" style="font-size:.66rem;background:#fef9c3;color:#713f12;">★ Destaque</span>
+                <?php endif; ?>
+              </td>
+              <td style="font-size:.83rem;"><?= htmlspecialchars($t['email'] ?? '—') ?></td>
+              <td>
+                <span class="badge" style="font-size:.72rem;<?= $genColor ?>"><?= htmlspecialchars($t['genero'] ?? '—') ?></span>
+              </td>
+              <td class="text-muted" style="font-size:.78rem;"><?= htmlspecialchars($t['categorias_servico'] ?? '—') ?></td>
+              <td style="font-size:.83rem;"><?= htmlspecialchars($t['telefone']) ?></td>
+              <td style="font-size:.83rem;">⭐ <?= number_format((float)$t['avaliacao_media'], 1, ',', '.') ?></td>
+              <td>
+                <span class="badge" style="font-size:.7rem;<?= $badgeSt ?>"><?= htmlspecialchars($t['status_cadastro']) ?></span>
+              </td>
+              <td class="text-muted" style="font-size:.78rem;"><?= date('d/m/Y', strtotime($t['criado_em'])) ?></td>
+              <td>
+                <div class="d-flex gap-1 flex-wrap">
+                  <?php if ($t['status_cadastro'] === 'Pendente'): ?>
+                    <?php if (!empty($t['documento_path'])): ?>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:.78rem;"
+                        data-bs-toggle="modal" data-bs-target="#modalDoc"
+                        data-nome="<?= htmlspecialchars($t['nome'], ENT_QUOTES) ?>"
+                        data-genero="<?= htmlspecialchars($t['genero'] ?? '', ENT_QUOTES) ?>"
+                        data-doc="<?= htmlspecialchars('../../' . $t['documento_path'], ENT_QUOTES) ?>">
+                        Ver doc
+                      </button>
+                    <?php else: ?>
+                      <span class="badge" style="font-size:.7rem;background:#fef9c3;color:#92400e;">Sem documento</span>
                     <?php endif; ?>
+                    <form method="post" class="d-inline">
+                      <input type="hidden" name="acao" value="aprovar">
+                      <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
+                      <button class="btn btn-sm btn-success" style="font-size:.78rem;">Aprovar</button>
+                    </form>
+                    <form method="post" class="d-inline" onsubmit="return confirm('Recusar este cadastro?');">
+                      <input type="hidden" name="acao" value="recusar">
+                      <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
+                      <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Recusar</button>
+                    </form>
+                  <?php endif; ?>
+                  <?php if ($isMaster): ?>
                     <form method="post" class="d-inline" onsubmit="return confirm('Excluir este prestador e todos os seus dados?');">
                       <input type="hidden" name="acao" value="excluir">
                       <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
-                      <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                      <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Excluir</button>
                     </form>
-                  </div>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
-    </div>
+                  <?php endif; ?>
+                </div>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
   </div>
 </main>
 
@@ -194,16 +274,70 @@ $pendentesCount = count(array_filter($tecnicos, fn($t) => $t['status_cadastro'] 
 <div class="modal fade" id="modalDoc" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg">
-      <div class="modal-header">
+      <div class="modal-header" style="background:linear-gradient(135deg,#0d1b3d,#1a2b63);color:#fff;">
         <div>
           <h5 class="modal-title mb-0" id="modalDocNome"></h5>
-          <small class="text-muted">Gênero declarado: <span id="modalDocGenero" class="fw-semibold"></span></small>
+          <small style="opacity:.75;">Gênero declarado: <span id="modalDocGenero" class="fw-semibold"></span></small>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center p-2">
         <img id="modalDocImg" src="" alt="Documento" class="img-fluid rounded" style="max-height:75vh;">
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Novo Prestador -->
+<div class="modal fade" id="modalNovoPrestador" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header" style="background:linear-gradient(135deg,#0d1b3d,#1a2b63);color:#fff;">
+        <h5 class="modal-title">🔧 Cadastrar Novo Prestador</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post">
+        <input type="hidden" name="acao" value="cadastrar_prestador">
+        <div class="modal-body row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Nome completo <span class="text-danger">*</span></label>
+            <input type="text" name="p_nome" class="form-control" required maxlength="120" placeholder="Nome do prestador">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">E-mail <span class="text-danger">*</span></label>
+            <input type="email" name="p_email" class="form-control" required maxlength="150" placeholder="prestador@email.com">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Telefone <span class="text-danger">*</span></label>
+            <input type="text" name="p_telefone" class="form-control" required maxlength="20" placeholder="(11) 99999-9999">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Gênero</label>
+            <select name="p_genero" class="form-select">
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Especialidade <span class="text-muted fw-normal">(opcional)</span></label>
+            <input type="text" name="p_especialidade" class="form-control" maxlength="100" placeholder="Ex: Eletricista residencial">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">CPF <span class="text-muted fw-normal">(opcional)</span></label>
+            <input type="text" name="p_cpf" class="form-control" maxlength="14" placeholder="000.000.000-00">
+          </div>
+          <div class="col-12">
+            <div class="alert alert-info mb-0 py-2" style="font-size:.85rem;">
+              🔑 Uma <strong>senha temporária aleatória</strong> será gerada. O prestador é cadastrado já como <strong>Aprovado</strong> — verifique a documentação offline antes de usar esta opção.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning fw-bold">Cadastrar Prestador</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -219,6 +353,8 @@ document.getElementById('modalDoc').addEventListener('show.bs.modal', function(e
   document.getElementById('modalDocImg').src = btn.dataset.doc;
 });
 </script>
-<style>.bg-pink { background-color: #e91e8c !important; }</style>
+<?php if ($abrirModal): ?>
+<script>new bootstrap.Modal(document.getElementById('<?= $abrirModal ?>')).show();</script>
+<?php endif; ?>
 </body>
 </html>

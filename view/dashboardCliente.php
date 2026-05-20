@@ -48,31 +48,147 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/stars-avaliacao.css" rel="stylesheet">
+  <style>
+    .chamado-card{border-left-width:4px!important;transition:box-shadow .15s}
+    .chamado-card:hover{box-shadow:0 6px 18px rgba(13,27,61,.1)!important}
+    .chamado-desc{font-size:.9rem;font-weight:600;color:#0d1b3d;margin-bottom:.25rem}
+    .chamado-preco .val{font-size:1rem;font-weight:700;color:#0d1b3d}
+    .chamado-preco .lbl{font-size:.72rem;color:#9ca3af}
+    .chamado-separator{border-top:1px solid #f0f3fa;margin-top:.5rem;padding-top:.5rem}
+    .chamado-id{font-size:.78rem;color:#9ca3af;font-weight:600}
+    .chamado-data{font-size:.78rem;color:#6b7280}
+    .chamado-tec-nome{font-size:.82rem;color:#6b7280}
+    .chamado-aguarda{font-size:.8rem;color:#9ca3af}
+    .chamado-avaliado{font-size:.75rem;color:#9ca3af}
+
+    [data-theme="dark"] .chamado-card{background:#1e2538!important;border-color:#2e3650!important}
+    [data-theme="dark"] .chamado-card .chamado-desc{color:#e4e8f4}
+    [data-theme="dark"] .chamado-card .chamado-preco .val{color:#e4e8f4}
+    [data-theme="dark"] .chamado-card .chamado-preco .lbl{color:#6b7280}
+    [data-theme="dark"] .chamado-card .chamado-separator{border-top-color:#2e3650}
+    [data-theme="dark"] .chamado-card .chamado-id{color:#5a6a8a}
+    [data-theme="dark"] .chamado-card .chamado-data{color:#8090b0}
+    [data-theme="dark"] .chamado-card .chamado-tec-nome{color:#8090b0}
+    [data-theme="dark"] .chamado-card .chamado-aguarda{color:#5a6a8a}
+    [data-theme="dark"] .chamado-card .chamado-avaliado{color:#6b7280}
+  </style>
 </head>
 <body>
 <?php $paginaAtiva = 'dashboard'; $_navDepth = 1; require_once __DIR__ . '/../includes/cliente_nav.php'; ?>
 
 <main class="container py-5 mt-5">
+  <?php
+    $primeiroNome    = explode(' ', trim($clienteNome))[0];
+    $emAndamentoCount = count(array_filter($chamados, fn($c) => $c->status === 'Em Andamento'));
+    $proximoChamado   = null;
+    foreach ($chamados as $c) { if ($c->status === 'Em Andamento') { $proximoChamado = $c; break; } }
+  ?>
+
+  <!-- 1. Hero personalizado -->
   <section class="fn-hero p-4 p-lg-5 mb-4">
     <div class="row align-items-center g-3">
-      <div class="col-lg-8">
-        <h1 class="h3 mb-2">Bem-vindo(a) ao Fix Now</h1>
-        <p class="mb-0 text-white-50">Conectamos você aos melhores técnicos com agilidade, confiança e atendimento humanizado.</p>
+      <div class="col-auto">
+        <?php if ($clienteFoto): ?>
+          <img src="../<?php echo htmlspecialchars($clienteFoto); ?>" alt="Foto"
+               class="rounded-circle border border-white border-2"
+               style="width:64px;height:64px;object-fit:cover;">
+        <?php else: ?>
+          <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center fw-bold text-white"
+               style="width:64px;height:64px;font-size:1.5rem;">
+            <?php echo htmlspecialchars(mb_substr($primeiroNome, 0, 1)); ?>
+          </div>
+        <?php endif; ?>
       </div>
-      <div class="col-lg-4 text-lg-end">
-        <a href="#encontrar-prestador" class="btn btn-light btn-lg px-4">Encontrar prestador</a>
+      <div class="col">
+        <p class="text-white-50 small mb-0">Bem-vindo de volta</p>
+        <h1 class="h3 mb-1">Olá, <?php echo htmlspecialchars($primeiroNome); ?>! 👋</h1>
+        <p class="mb-0 text-white-50 small">Conectamos você aos melhores técnicos com agilidade e confiança.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-2 mt-lg-0">
+        <a href="cliente/solicitar.php" class="btn btn-light btn-lg px-4">+ Nova solicitação</a>
       </div>
     </div>
   </section>
 
-  <section class="row g-3 mb-4">
-    <div class="col-md-6">
-      <div class="card fn-stat-card h-100"><div class="card-body"><p class="text-muted mb-1">Serviços solicitados</p><h3 class="mb-0"><?php echo (int)$stats['total_chamados']; ?></h3></div></div>
+  <!-- 2. Cards de estatísticas visuais -->
+  <section class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="rounded-3 d-flex align-items-center justify-content-center text-primary"
+               style="width:52px;height:52px;background:rgba(13,110,253,.1);font-size:1.4rem;">📋</div>
+          <div>
+            <p class="text-muted mb-0 small">Solicitados</p>
+            <h3 class="mb-0 fw-bold"><?php echo (int)$stats['total_chamados']; ?></h3>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="col-md-6">
-      <div class="card fn-stat-card h-100"><div class="card-body"><p class="text-muted mb-1">Serviços concluídos</p><h3 class="mb-0"><?php echo (int)$stats['concluidos']; ?></h3></div></div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="rounded-3 d-flex align-items-center justify-content-center text-warning"
+               style="width:52px;height:52px;background:rgba(255,193,7,.15);font-size:1.4rem;">⏳</div>
+          <div>
+            <p class="text-muted mb-0 small">Em Andamento</p>
+            <h3 class="mb-0 fw-bold"><?php echo $emAndamentoCount; ?></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="rounded-3 d-flex align-items-center justify-content-center text-success"
+               style="width:52px;height:52px;background:rgba(25,135,84,.1);font-size:1.4rem;">✅</div>
+          <div>
+            <p class="text-muted mb-0 small">Concluídos</p>
+            <h3 class="mb-0 fw-bold"><?php echo (int)$stats['concluidos']; ?></h3>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
+
+  <!-- 5. Dica contextual em destaque -->
+  <div class="alert border-0 shadow-sm d-flex align-items-start gap-2 mb-4"
+       style="background:rgba(255,193,7,.12);border-left:4px solid #ffc107 !important;">
+    <span style="font-size:1.2rem;line-height:1.4">💡</span>
+    <span class="small"><?php echo htmlspecialchars($dica); ?></span>
+  </div>
+
+  <!-- 3. Próximo atendimento em destaque -->
+  <?php if ($proximoChamado): ?>
+  <div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #0d6efd !important;">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+               style="width:48px;height:48px;font-size:1.3rem;">🔧</div>
+          <div>
+            <p class="text-muted small mb-0">Próximo atendimento</p>
+            <h5 class="mb-0 fw-semibold"><?php echo htmlspecialchars($proximoChamado->categoria); ?></h5>
+            <small class="text-muted">
+              <?php echo htmlspecialchars(mb_strimwidth($proximoChamado->descricao, 0, 60, '...')); ?>
+              <?php if ($proximoChamado->tecnicoNome): ?>
+                · Técnico: <strong><?php echo htmlspecialchars($proximoChamado->tecnicoNome); ?></strong>
+              <?php endif; ?>
+              <?php if ($proximoChamado->dataAgendamento): ?>
+                · <?php echo date('d/m/Y H:i', strtotime($proximoChamado->dataAgendamento)); ?>
+              <?php endif; ?>
+            </small>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="rastreamento.php?chamado=<?php echo $proximoChamado->id; ?>"
+             class="btn btn-sm btn-outline-primary">📍 Rastrear</a>
+          <a href="chat.php?chamado=<?php echo $proximoChamado->id; ?>"
+             class="btn btn-sm btn-outline-secondary">💬 Chat</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <?php if ($orcamentosPendentes): ?>
   <div class="card shadow-sm border-0 border-warning border-start border-3 mb-4">
@@ -113,42 +229,67 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   </div>
   <?php endif; ?>
 
+  <?php
+    $baseUrl  = 'dashboardCliente.php';
+    $soMulher = $filtroPrestadoraMulher ? '&so_mulher=1' : '';
+    $catIcons = [
+      'Suporte TI'   => '💻', 'Elétrica'    => '⚡', 'Hidráulica' => '🔧',
+      'Pintura'      => '🎨', 'Marcenaria'  => '🪵', 'Limpeza'    => '🧹',
+      'Refrigeração' => '❄️',  'Jardinagem'  => '🌿',
+    ];
+  ?>
   <section id="encontrar-prestador" class="mb-5">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
       <div>
         <h2 class="mb-0">Encontre um prestador</h2>
-        <p class="text-muted mb-0 small">Escolha um prestador e veja os horários disponíveis para agendar.</p>
+        <p class="text-muted mb-0 small">
+          <?php echo count($servicos); ?> prestador<?php echo count($servicos) !== 1 ? 'es' : ''; ?> disponíve<?php echo count($servicos) !== 1 ? 'is' : 'l'; ?>
+          <?php echo $filtroCategoria ? ' em <strong>' . htmlspecialchars($filtroCategoria) . '</strong>' : ''; ?>
+        </p>
       </div>
-    </div>
-    <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
-      <?php
-        $baseUrl = 'dashboardCliente.php';
-        $soMulher = $filtroPrestadoraMulher ? '&so_mulher=1' : '';
-      ?>
-      <a href="<?php echo $baseUrl . ($soMulher ? '?so_mulher=1' : ''); ?>#encontrar-prestador"
-         class="btn btn-sm <?php echo $filtroCategoria === '' ? 'btn-primary' : 'btn-outline-secondary'; ?>">Todos</a>
-      <?php foreach ($categorias as $cat): ?>
-        <?php $catParam = '?categoria=' . urlencode($cat['nome']) . ($filtroPrestadoraMulher ? '&so_mulher=1' : ''); ?>
-        <a href="<?php echo $baseUrl . $catParam; ?>#encontrar-prestador"
-           class="btn btn-sm <?php echo $filtroCategoria === $cat['nome'] ? 'btn-primary' : 'btn-outline-secondary'; ?>">
-          <?php echo htmlspecialchars($cat['nome']); ?>
-        </a>
-      <?php endforeach; ?>
-
-      <?php if ($clienteGenero === 'Feminino'): ?>
-        <span class="vr mx-1 d-none d-sm-block"></span>
-        <?php
-          $toggleUrl = $baseUrl . ($filtroCategoria ? '?categoria=' . urlencode($filtroCategoria) : '?');
-          $toggleUrl .= ($filtroCategoria ? '&' : '') . ($filtroPrestadoraMulher ? '' : 'so_mulher=1');
-          $toggleUrl .= '#encontrar-prestador';
-        ?>
-        <a href="<?php echo $toggleUrl; ?>"
-           class="btn btn-sm <?php echo $filtroPrestadoraMulher ? 'btn-pink' : 'btn-outline-pink'; ?>"
-           title="Mostrar somente prestadoras mulheres">
-          <i class="bi bi-gender-female me-1"></i>Somente mulheres
+      <?php if ($filtroCategoria || $filtroPrestadoraMulher): ?>
+        <a href="dashboardCliente.php#encontrar-prestador" class="btn btn-sm btn-outline-danger">
+          ✕ Limpar filtros
         </a>
       <?php endif; ?>
     </div>
+
+    <!-- Filtros de categoria -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <a href="<?php echo $baseUrl . ($soMulher ? '?so_mulher=1' : ''); ?>#encontrar-prestador"
+         class="btn btn-sm d-flex align-items-center gap-1 <?php echo $filtroCategoria === '' ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+        🔍 Todos
+      </a>
+      <?php foreach ($categorias as $cat): ?>
+        <?php
+          $catParam = '?categoria=' . urlencode($cat['nome']) . ($filtroPrestadoraMulher ? '&so_mulher=1' : '');
+          $icon = $catIcons[$cat['nome']] ?? '🔧';
+          $ativo = $filtroCategoria === $cat['nome'];
+        ?>
+        <a href="<?php echo $baseUrl . $catParam; ?>#encontrar-prestador"
+           class="btn btn-sm d-flex align-items-center gap-1 <?php echo $ativo ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+          <?php echo $icon; ?> <?php echo htmlspecialchars($cat['nome']); ?>
+        </a>
+      <?php endforeach; ?>
+    </div>
+
+    <!-- Filtro somente mulheres (exclusivo para clientes femininas) -->
+    <?php if ($clienteGenero === 'Feminino'): ?>
+      <?php
+        $toggleUrl  = $baseUrl . ($filtroCategoria ? '?categoria=' . urlencode($filtroCategoria) : '?');
+        $toggleUrl .= ($filtroCategoria ? '&' : '') . ($filtroPrestadoraMulher ? '' : 'so_mulher=1');
+        $toggleUrl .= '#encontrar-prestador';
+      ?>
+      <div class="mb-4">
+        <a href="<?php echo $toggleUrl; ?>"
+           class="btn btn-sm <?php echo $filtroPrestadoraMulher ? 'btn-pink' : 'btn-outline-pink'; ?>">
+          <i class="bi bi-gender-female me-1"></i>
+          <?php echo $filtroPrestadoraMulher ? '✓ Somente prestadoras mulheres' : 'Somente prestadoras mulheres'; ?>
+        </a>
+      </div>
+    <?php else: ?>
+      <div class="mb-4"></div>
+    <?php endif; ?>
     <?php if (!$servicos): ?>
       <div class="alert alert-info">
         Nenhum prestador encontrado<?php echo $filtroCategoria ? ' para a categoria <strong>' . htmlspecialchars($filtroCategoria) . '</strong>' : ''; ?>
@@ -229,7 +370,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
     $chamadosComOrcamentoPendente = array_flip(array_column($orcamentosPendentes, 'chamado_id'));
   ?>
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Meus chamados</h2>
+    <h2 class="mb-0">Meus chamados</h2>
   </div>
 
   <?php if ($mensagem): ?>
@@ -241,137 +382,165 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   <?php endif; ?>
   <?php if ($erro): ?><div class="alert alert-danger"><?php echo htmlspecialchars($erro); ?></div><?php endif; ?>
 
-
   <?php if (!$chamados): ?>
-    <div class="alert alert-info">Você ainda não possui chamados abertos.</div>
+    <div class="card border-0 shadow-sm text-center py-5">
+      <div class="card-body">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">📋</div>
+        <h5 class="fw-bold mb-1">Nenhum chamado ainda</h5>
+        <p class="text-muted small mb-3">Abra seu primeiro chamado e encontre o prestador ideal.</p>
+        <a href="cliente/solicitar.php" class="btn btn-warning fw-semibold">+ Nova solicitação</a>
+      </div>
+    </div>
   <?php else: ?>
-    <div class="table-responsive">
-      <table class="table table-striped align-middle">
-        <thead class="table-primary">
-          <tr>
-            <th>#</th><th>Categoria</th><th>Descrição</th><th>Técnico</th>
-            <th>Preço</th><th>Pagamento</th><th>Status</th><th>Agendado</th><th>Data</th><th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($chamados as $c): ?>
-          <?php if (isset($chamadosComOrcamentoPendente[$c->id])) continue; ?>
-          <?php
-            $badge = 'secondary';
-            if ($c->status === 'Pendente')              $badge = 'warning text-dark';
-            if ($c->status === 'Aguardando Orçamento')  $badge = 'info text-dark';
-            if ($c->status === 'Em Andamento')          $badge = 'primary';
-            if ($c->status === 'Concluído')             $badge = 'success';
-            if ($c->status === 'Negado')                $badge = 'dark';
+    <div class="d-flex flex-column gap-3">
+    <?php foreach ($chamados as $c): ?>
+      <?php if (isset($chamadosComOrcamentoPendente[$c->id])) continue; ?>
+      <?php
+        $podePagar     = $c->status === 'Concluído' && $c->pagamentoId && $c->pagStatus === 'Pendente';
+        $jaAvaliado    = $c->avaliacaoNota !== null;
+        $podeAvaliar   = $c->status === 'Concluído' && !empty($c->tecnicoNome) && !$jaAvaliado;
+        $podeReagendar = in_array($c->status, ['Pendente','Aguardando Orçamento','Em Andamento']);
+        $valorFmt      = 'R$ ' . number_format((float)($c->pagValor ?? $c->precoSugerido), 2, ',', '.');
 
-            $podePagar    = $c->status === 'Concluído' && $c->pagamentoId && $c->pagStatus === 'Pendente';
-            $jaAvaliado   = $c->avaliacaoNota !== null;
-            $podeAvaliar  = $c->status === 'Concluído' && !empty($c->tecnicoNome) && !$jaAvaliado;
-            $podeReagendar = in_array($c->status, ['Pendente','Aguardando Orçamento','Em Andamento']);
-            $valorFmt = 'R$ ' . number_format((float)($c->pagValor ?? $c->precoSugerido), 2, ',', '.');
-          ?>
-          <tr>
-            <td><?php echo $c->id; ?></td>
-            <td><?php echo htmlspecialchars($c->categoria); ?></td>
-            <td><?php echo htmlspecialchars(mb_strimwidth($c->descricao, 0, 55, '...')); ?></td>
-            <td><?php echo htmlspecialchars($c->tecnicoNome ?? 'A definir'); ?></td>
-            <td>
-              <?php if ($c->precoSugerido > 0): ?>
-                R$ <?php echo number_format($c->precoSugerido, 2, ',', '.'); ?>
-              <?php else: ?>
-                <span class="text-muted">A definir</span>
-              <?php endif; ?>
-            </td>
-            <td>
-              <?php if (!$c->pagamentoId): ?>
-                <span class="text-muted">—</span>
-              <?php elseif ($c->pagStatus === 'Pago'): ?>
-                <span class="badge bg-success">Pago</span>
-              <?php else: ?>
-                <span class="badge bg-warning text-dark"><?php echo htmlspecialchars($c->pagStatus); ?></span>
-              <?php endif; ?>
-            </td>
-            <td><span class="badge bg-<?php echo $badge; ?>"><?php echo htmlspecialchars($c->status); ?></span></td>
-            <td>
-              <?php if ($c->dataAgendamento): ?>
-                <?php echo date('d/m/Y H:i', strtotime($c->dataAgendamento)); ?>
-              <?php else: ?>
-                <span class="text-muted">—</span>
-              <?php endif; ?>
-            </td>
-            <td><?php echo date('d/m/Y H:i', strtotime($c->criadoEm)); ?></td>
-            <td>
-              <div class="d-flex flex-wrap gap-1 align-items-center">
-              <?php if ($c->status === 'Em Andamento'): ?>
-              <a class="btn btn-sm btn-outline-warning" href="rastreamento.php?chamado=<?php echo $c->id; ?>">📍 Rastrear</a>
-              <?php endif; ?>
-              <?php if ($c->status === 'Pendente' && empty($c->tecnicoId)): ?>
-                <button type="button" class="btn btn-sm btn-outline-secondary"
-                  data-bs-toggle="modal" data-bs-target="#modalAlterarChamado"
-                  data-chamado-id="<?php echo $c->id; ?>"
-                  data-descricao="<?php echo htmlspecialchars($c->descricao, ENT_QUOTES); ?>"
-                  data-endereco="<?php echo htmlspecialchars($c->enderecoServico, ENT_QUOTES); ?>">Alterar</button>
-                <form method="post" class="d-inline js-guard-submit" onsubmit="return confirm('Cancelar este agendamento?');">
-                  <input type="hidden" name="cancelar_chamado_id" value="<?php echo $c->id; ?>">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
-                </form>
-              <?php endif; ?>
-              <?php if ($podeReagendar): ?>
-                <button type="button" class="btn btn-sm btn-outline-primary"
-                  data-bs-toggle="modal" data-bs-target="#modalReagendarChamado"
-                  data-chamado-id="<?php echo $c->id; ?>"
-                  data-tecnico-id="<?php echo (int)($c->tecnicoId ?? 0); ?>"
-                  data-data-atual="<?php echo htmlspecialchars($c->dataAgendamento ?? ''); ?>">Reagendar</button>
-              <?php endif; ?>
+        [$statusBg, $statusTxt] = match($c->status) {
+          'Pendente'            => ['#fff3cd', '#92400e'],
+          'Aguardando Orçamento'=> ['#cff4fc', '#055160'],
+          'Em Andamento'        => ['#dbeafe', '#1d4ed8'],
+          'Concluído'           => ['#dcfce7', '#15803d'],
+          'Negado'              => ['#f3f4f6', '#374151'],
+          default               => ['#f3f4f6', '#374151'],
+        };
+
+        $accentColor = match($c->status) {
+          'Em Andamento' => '#1d4ed8',
+          'Concluído'    => '#15803d',
+          'Negado'       => '#9ca3af',
+          default        => '#f59e0b',
+        };
+      ?>
+      <div class="card border-0 shadow-sm chamado-card" style="border-left-color:<?= $accentColor ?>!important">
+        <div class="card-body p-3">
+
+          <!-- Linha 1: ID + Categoria + Status + Data -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="chamado-id">#<?= $c->id ?></span>
+              <span class="badge rounded-pill" style="background:#e8ecf3;color:#0d1b3d;font-size:.75rem">
+                <?= htmlspecialchars($c->categoria) ?>
+              </span>
+              <span class="badge rounded-pill" style="background:<?= $statusBg ?>;color:<?= $statusTxt ?>;font-size:.75rem">
+                <?= htmlspecialchars($c->status) ?>
+              </span>
               <?php if ($podePagar): ?>
-                <button type="button" class="btn btn-sm btn-success"
-                  data-bs-open-pagamento
-                  data-pagamento-id="<?php echo $c->pagamentoId; ?>"
-                  data-chamado-id="<?php echo $c->id; ?>"
-                  data-valor="<?php echo htmlspecialchars($valorFmt); ?>">Pagar</button>
+                <span class="badge rounded-pill" style="background:#fef9c3;color:#92400e;font-size:.72rem">💳 Pagamento pendente</span>
+              <?php elseif ($c->pagamentoId && $c->pagStatus === 'Pago'): ?>
+                <span class="badge rounded-pill" style="background:#dcfce7;color:#15803d;font-size:.72rem">✓ Pago</span>
               <?php endif; ?>
-              <?php if ($podeAvaliar): ?>
-                <button type="button" class="btn btn-sm btn-outline-warning"
-                  data-bs-open-avaliacao
-                  data-chamado-id="<?php echo $c->id; ?>"
-                  data-tecnico-nome="<?php echo htmlspecialchars($c->tecnicoNome ?? ''); ?>">Avaliar prestador</button>
-              <?php elseif ($jaAvaliado): ?>
-                <span class="badge bg-warning text-dark">Avaliado: <?php echo $c->avaliacaoNota; ?>/5</span>
+            </div>
+            <?php if ($c->dataAgendamento): ?>
+              <span class="chamado-data">🗓 <?= date('d/m/Y H:i', strtotime($c->dataAgendamento)) ?></span>
+            <?php endif; ?>
+          </div>
+
+          <!-- Linha 2: Descrição + Técnico + Preço -->
+          <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+            <div class="flex-grow-1 min-w-0">
+              <p class="chamado-desc mb-1"><?= htmlspecialchars(mb_strimwidth($c->descricao, 0, 80, '…')) ?></p>
+
+              <?php if ($c->tecnicoNome): ?>
+                <div class="d-flex align-items-center gap-2">
+                  <?php if (!empty($c->tecnicoFoto)): ?>
+                    <img src="../<?= htmlspecialchars($c->tecnicoFoto) ?>" alt=""
+                         class="rounded-circle flex-shrink-0" style="width:24px;height:24px;object-fit:cover">
+                  <?php else: ?>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:24px;height:24px;background:#0d1b3d;color:#fff;font-size:.65rem;font-weight:700">
+                      <?= mb_substr($c->tecnicoNome, 0, 1) ?>
+                    </div>
+                  <?php endif; ?>
+                  <span class="chamado-tec-nome"><?= htmlspecialchars($c->tecnicoNome) ?></span>
+                </div>
+              <?php else: ?>
+                <span class="chamado-aguarda">🔍 Aguardando prestador</span>
               <?php endif; ?>
-              <a href="chat.php?chamado=<?php echo $c->id; ?>" class="btn btn-sm btn-outline-primary">💬 Chat</a>
+
+              <?php if ($jaAvaliado): ?>
+                <div class="mt-1">
+                  <span style="color:#f59e0b;font-size:.8rem"><?= str_repeat('★', (int)$c->avaliacaoNota) . str_repeat('☆', 5 - (int)$c->avaliacaoNota) ?></span>
+                  <span class="chamado-avaliado"> avaliado</span>
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <?php if ($c->precoSugerido > 0): ?>
+              <div class="chamado-preco text-end flex-shrink-0">
+                <div class="val">R$ <?= number_format($c->precoSugerido, 2, ',', '.') ?></div>
+                <div class="lbl">valor estimado</div>
               </div>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-        </tbody>
-      </table>
+            <?php endif; ?>
+          </div>
+
+          <!-- Linha 3: Ações -->
+          <div class="chamado-separator d-flex flex-wrap gap-1">
+            <?php if ($c->status === 'Em Andamento'): ?>
+              <a class="btn btn-sm btn-outline-warning" href="rastreamento.php?chamado=<?= $c->id ?>">📍 Rastrear</a>
+            <?php endif; ?>
+            <?php if ($c->status === 'Pendente' && empty($c->tecnicoId)): ?>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                data-bs-toggle="modal" data-bs-target="#modalAlterarChamado"
+                data-chamado-id="<?= $c->id ?>"
+                data-descricao="<?= htmlspecialchars($c->descricao, ENT_QUOTES) ?>"
+                data-endereco="<?= htmlspecialchars($c->enderecoServico, ENT_QUOTES) ?>">Alterar</button>
+              <form method="post" class="d-inline js-guard-submit" onsubmit="return confirm('Cancelar este agendamento?');">
+                <input type="hidden" name="cancelar_chamado_id" value="<?= $c->id ?>">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+              </form>
+            <?php endif; ?>
+            <?php if ($podeReagendar): ?>
+              <button type="button" class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="modal" data-bs-target="#modalReagendarChamado"
+                data-chamado-id="<?= $c->id ?>"
+                data-tecnico-id="<?= (int)($c->tecnicoId ?? 0) ?>"
+                data-data-atual="<?= htmlspecialchars($c->dataAgendamento ?? '') ?>">Reagendar</button>
+            <?php endif; ?>
+            <?php if ($podePagar): ?>
+              <button type="button" class="btn btn-sm btn-success fw-semibold"
+                data-bs-open-pagamento
+                data-pagamento-id="<?= $c->pagamentoId ?>"
+                data-chamado-id="<?= $c->id ?>"
+                data-valor="<?= htmlspecialchars($valorFmt) ?>">💳 Pagar</button>
+            <?php endif; ?>
+            <?php if ($podeAvaliar): ?>
+              <button type="button" class="btn btn-sm btn-outline-warning"
+                data-bs-open-avaliacao
+                data-chamado-id="<?= $c->id ?>"
+                data-tecnico-nome="<?= htmlspecialchars($c->tecnicoNome ?? '') ?>">⭐ Avaliar prestador</button>
+            <?php endif; ?>
+            <a href="chat.php?chamado=<?= $c->id ?>" class="btn btn-sm btn-outline-primary">💬 Chat</a>
+          </div>
+
+        </div>
+      </div>
+    <?php endforeach; ?>
     </div>
   <?php endif; ?>
 
-  <section class="row g-3 mt-2">
-    <?php if ($depoimento): ?>
-    <div class="col-md-6">
-      <div class="card h-100 border-0 shadow-sm">
-        <div class="card-body d-flex flex-column gap-2">
-          <div class="d-flex align-items-center gap-2"><span class="fs-5">💬</span><h3 class="h6 mb-0">O que dizem sobre a Fix Now</h3></div>
-          <p class="text-muted mb-1 fst-italic">"<?php echo htmlspecialchars($depoimento['comentario']); ?>"</p>
-          <div class="mt-auto d-flex align-items-center gap-2">
-            <span class="text-warning" style="font-size:.85rem;"><?php echo str_repeat('★', (int)$depoimento['nota']); ?></span>
+  <?php if ($depoimento): ?>
+  <section class="mt-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-start gap-3">
+        <span class="fs-4">💬</span>
+        <div>
+          <p class="text-muted fst-italic mb-1">"<?php echo htmlspecialchars($depoimento['comentario']); ?>"</p>
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-warning small"><?php echo str_repeat('★', (int)$depoimento['nota']); ?></span>
             <small class="text-muted">— <?php echo htmlspecialchars(mb_substr($depoimento['cliente_nome'], 0, 1) . str_repeat('*', max(0, mb_strlen($depoimento['cliente_nome']) - 2)) . mb_substr($depoimento['cliente_nome'], -1)); ?>, cliente Fix Now</small>
           </div>
         </div>
       </div>
     </div>
-    <?php endif; ?>
-    <div class="col-md-<?php echo $depoimento ? '6' : '12'; ?>">
-      <div class="card h-100 border-0 shadow-sm" style="border-left: 3px solid #ffc107 !important;">
-        <div class="card-body d-flex flex-column gap-2">
-          <div class="d-flex align-items-center gap-2"><span class="fs-5">💡</span><h3 class="h6 mb-0">Dica para você</h3></div>
-          <p class="text-muted mb-0"><?php echo htmlspecialchars($dica); ?></p>
-        </div>
-      </div>
-    </div>
   </section>
+  <?php endif; ?>
 </main>
 
 <!-- Modal Pagamento -->
@@ -480,34 +649,48 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
 
 <!-- Modal Avaliação -->
 <div class="modal fade" id="modalAvaliacao" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Avaliar atendimento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content overflow-hidden">
+      <!-- Header gradiente -->
+      <div style="background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);padding:1.4rem 1.5rem;position:relative;">
+        <button type="button" class="btn-close btn-close-white position-absolute" style="top:.85rem;right:1rem;" data-bs-dismiss="modal"></button>
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size:1.6rem;">⭐</span>
+          <div>
+            <h5 class="mb-0 fw-bold text-white">Avaliar atendimento</h5>
+            <p class="mb-0" style="font-size:.8rem;color:rgba(255,255,255,.7);" data-avaliacao-resumo></p>
+          </div>
+        </div>
       </div>
-      <div class="modal-body">
-        <p class="small text-muted mb-3" data-avaliacao-resumo></p>
+
+      <div class="modal-body p-4">
         <form method="post" id="form-avaliacao" class="js-guard-submit">
           <input type="hidden" name="avaliar_chamado_id" value="">
           <input type="hidden" name="nota_avaliacao" value="5">
-          <div class="mb-3">
-            <label class="form-label d-block">Nota</label>
-            <div class="fn-stars-wrap">
-              <div class="d-flex align-items-center gap-2 flex-wrap">
-                <div class="fn-stars" data-fn-stars></div>
-                <span class="fn-star-legend" data-fn-stars-legend>Excelente</span>
-              </div>
+
+          <!-- Estrelas grandes centralizadas -->
+          <div class="mb-4 text-center">
+            <div class="mb-2" style="font-size:.85rem;font-weight:600;color:#6b7280;">Como você avalia o atendimento?</div>
+            <div class="fn-stars-wrap d-flex flex-column align-items-center gap-2">
+              <div class="fn-stars" data-fn-stars style="font-size:2.2rem;"></div>
+              <span class="fn-star-legend badge px-3 py-2" data-fn-stars-legend
+                    style="background:#0d1b3d;color:#ffc107;font-size:.85rem;font-weight:700;border-radius:50px;">Excelente</span>
             </div>
           </div>
-          <div class="mb-0">
-            <label class="form-label">Comentário (opcional)</label>
-            <textarea name="comentario_avaliacao" class="form-control" rows="3" maxlength="255" placeholder="Conte como foi o atendimento."></textarea>
+
+          <!-- Comentário -->
+          <div class="mb-1">
+            <label class="form-label fw-semibold" style="font-size:.88rem;">Comentário <span class="text-muted fw-normal">(opcional)</span></label>
+            <textarea name="comentario_avaliacao" class="form-control" rows="3" maxlength="255"
+              placeholder="Conte como foi o atendimento, o que gostou ou o que poderia melhorar..."></textarea>
+            <div class="form-text">Sua avaliação ajuda outros clientes a escolher o prestador ideal.</div>
           </div>
         </form>
       </div>
-      <div class="modal-footer">
-        <button type="submit" class="btn btn-warning fw-semibold" form="form-avaliacao">Enviar avaliação</button>
+
+      <div class="modal-footer border-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary flex-grow-1" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-warning fw-bold flex-grow-1" form="form-avaliacao">Enviar avaliação</button>
       </div>
     </div>
   </div>

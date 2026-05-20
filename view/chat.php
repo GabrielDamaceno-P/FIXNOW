@@ -43,10 +43,16 @@ $statusBadge = match($chamado->status ?? '') {
       display: flex;
       flex-direction: column;
       height: calc(100dvh - 200px);
-      min-height: 360px;
+      min-height: 320px;
     }
     @supports not (height: 100dvh) {
       .chat-wrap { height: calc(100vh - 200px); }
+    }
+    @media (max-width: 991.98px) {
+      .chat-wrap { height: calc(100dvh - 280px); min-height: 280px; }
+    }
+    @media (max-width: 575.98px) {
+      .chat-wrap { height: calc(100dvh - 320px); min-height: 240px; }
     }
     .chat-messages {
       flex: 1;
@@ -136,7 +142,7 @@ $statusBadge = match($chamado->status ?? '') {
 
   <div class="row g-4">
     <!-- Painel lateral do chamado -->
-    <div class="col-lg-3">
+    <div class="col-12 col-lg-3">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="fw-bold mb-3">Chamado #<?php echo $chamadoId; ?></h6>
@@ -162,7 +168,7 @@ $statusBadge = match($chamado->status ?? '') {
     </div>
 
     <!-- Área de chat -->
-    <div class="col-lg-9">
+    <div class="col-12 col-lg-9">
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-transparent border-bottom d-flex align-items-center gap-2 py-3">
           <span class="fs-5">💬</span>

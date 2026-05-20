@@ -60,42 +60,82 @@ $tecnicos = $pdo->query("
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../assets/css/style.css" rel="stylesheet">
   <style>
-    .card-destaque { border: 2px solid #ffc107 !important; box-shadow: 0 6px 20px rgba(255,152,0,.2) !important; }
-    .metric-box { background: var(--fix-surface, #f8f9fa); border-radius: 8px; padding: .5rem .75rem; text-align: center; }
-    .metric-box .val { font-size: 1.15rem; font-weight: 700; line-height: 1; }
-    .metric-box .lbl { font-size: .68rem; color: #6c757d; margin-top: 2px; }
+    .page-hero{background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);border-radius:16px;padding:1.8rem 2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+    .page-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+    .page-hero h1{color:#fff;font-size:clamp(1.2rem,3vw,1.7rem);font-weight:800;margin:0 0 .25rem}
+    .page-hero p{color:rgba(255,255,255,.72);font-size:.9rem;margin:0}
+    .dest-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;box-shadow:0 3px 10px rgba(13,27,61,.05);transition:transform .18s,box-shadow .18s;overflow:hidden}
+    .dest-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(13,27,61,.1)}
+    .dest-card.em-destaque{border-color:#fbbf24;box-shadow:0 4px 16px rgba(251,191,36,.25)}
+    .dest-card-header{padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid #f0f3fa}
+    .dest-card-body{padding:.85rem 1rem}
+    .dest-card-footer{padding:.7rem 1rem;border-top:1px solid #f0f3fa}
+    .metric-box{background:#f8fafc;border-radius:10px;padding:.55rem .65rem;text-align:center;border:1px solid #f0f3fa}
+    .metric-box .val{font-size:1.05rem;font-weight:800;line-height:1.1}
+    .metric-box .lbl{font-size:.68rem;color:#6b7280;margin-top:2px}
+    .dest-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0}
+    .dest-avatar-init{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0d1b3d,#1a2b63);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.1rem;flex-shrink:0}
+    [data-theme="dark"] .dest-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .dest-card.em-destaque{border-color:#fbbf24}
+    [data-theme="dark"] .dest-card-header,[data-theme="dark"] .dest-card-footer{border-color:#2e3650}
+    [data-theme="dark"] .metric-box{background:#252e45;border-color:#2e3650}
+    [data-theme="dark"] .metric-box .lbl{color:#8090b0}
   </style>
 </head>
 <body>
 <?= $navbarHtml ?>
 
-<main class="container py-5 mt-5">
-  <h2 class="mb-1">Definir Destaques</h2>
-  <p class="text-muted mb-3">Analise as métricas de cada prestador e decida quem merece o selo de destaque.</p>
+<main class="container py-4 mt-5">
 
-  <!-- Benefícios do destaque -->
-  <div class="alert alert-warning border-0 mb-4" style="background:rgba(255,193,7,.12)">
-    <div class="fw-semibold mb-1"><i class="bi bi-star-fill text-warning me-1"></i>Benefícios do Prestador em Destaque</div>
-    <ul class="mb-0 small ps-3">
-      <li>Aparece <strong>primeiro</strong> no catálogo e no dashboard dos clientes</li>
-      <li>Exibe o badge <strong>★ Destaque Fix Now</strong> no card de apresentação</li>
-      <li>Destaque visual com borda dourada nos cards</li>
-      <li>Comissão reduzida: <strong>15%</strong> (em vez de 20%) sobre pagamentos</li>
-      <li>Recebe notificação ao ser promovido</li>
-    </ul>
+  <div class="page-hero mb-4">
+    <div style="position:relative;z-index:1">
+      <h1>⭐ Prestadores em Destaque</h1>
+      <p>Analise as métricas de cada prestador e gerencie o selo de destaque.</p>
+    </div>
   </div>
 
-  <?php if ($mensagem): ?><div class="alert alert-success"><?= htmlspecialchars($mensagem) ?></div><?php endif; ?>
-  <?php if ($erro): ?><div class="alert alert-danger"><?= htmlspecialchars($erro) ?></div><?php endif; ?>
+  <!-- Benefícios -->
+  <div class="d-flex gap-3 align-items-start p-3 mb-4" style="background:rgba(251,191,36,.1);border:1.5px solid #fde68a;border-radius:14px;">
+    <span style="font-size:1.5rem;flex-shrink:0;">⭐</span>
+    <div>
+      <div class="fw-bold mb-1" style="color:#92400e;">Benefícios do Prestador em Destaque</div>
+      <ul class="mb-0 ps-3" style="font-size:.83rem;color:#78350f;line-height:1.7;">
+        <li>Aparece <strong>primeiro</strong> no catálogo e no dashboard dos clientes</li>
+        <li>Exibe o badge <strong>★ Destaque Fix Now</strong> no card de apresentação</li>
+        <li>Borda dourada de destaque nos cards</li>
+        <li>Comissão reduzida: <strong>15%</strong> (em vez de 20%) sobre pagamentos</li>
+        <li>Recebe notificação ao ser promovido ou removido</li>
+      </ul>
+    </div>
+  </div>
 
-  <div class="d-flex gap-2 mb-4 flex-wrap">
+  <?php if ($mensagem): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+      <?= htmlspecialchars($mensagem) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
+  <?php if ($erro): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+      <?= htmlspecialchars($erro) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
+
+  <!-- Filtros -->
+  <div class="d-flex gap-2 mb-4 flex-wrap align-items-center">
+    <span class="text-muted" style="font-size:.84rem;">Exibir:</span>
     <a href="destaques.php?filtro=aprovados" class="btn btn-sm <?= $filtro === 'aprovados' ? 'btn-primary' : 'btn-outline-primary' ?>">Aprovados</a>
     <a href="destaques.php?filtro=todos"     class="btn btn-sm <?= $filtro === 'todos'     ? 'btn-primary' : 'btn-outline-primary' ?>">Todos</a>
     <a href="destaques.php?filtro=destaque"  class="btn btn-sm <?= $filtro === 'destaque'  ? 'btn-warning text-dark' : 'btn-outline-warning' ?>">★ Em Destaque</a>
+    <span class="ms-auto text-muted" style="font-size:.82rem;"><?= count($tecnicos) ?> prestador<?= count($tecnicos) !== 1 ? 'es' : '' ?></span>
   </div>
 
   <?php if (!$tecnicos): ?>
-    <div class="alert alert-info">Nenhum prestador encontrado.</div>
+    <div class="text-center py-5 text-muted">
+      <div style="font-size:3rem;margin-bottom:.5rem;">🔍</div>
+      Nenhum prestador encontrado com os filtros selecionados.
+    </div>
   <?php else: ?>
     <div class="row g-3">
       <?php foreach ($tecnicos as $t):
@@ -104,39 +144,35 @@ $tecnicos = $pdo->query("
         $chamados   = (int)$t['total_chamados'];
         $receita    = (float)$t['receita_total'];
         $media      = (float)$t['avaliacao_media'];
+        $taxaConc   = $chamados > 0 ? round($concluidos / $chamados * 100) : 0;
       ?>
       <div class="col-md-6 col-lg-4">
-        <div class="card border-0 h-100 <?= $isDestaque ? 'card-destaque' : 'shadow-sm' ?>">
-          <div class="card-body d-flex flex-column gap-3">
+        <div class="dest-card <?= $isDestaque ? 'em-destaque' : '' ?>">
 
-            <!-- Cabeçalho -->
-            <div class="d-flex align-items-center gap-3">
-              <?php
-                $fotoPath = __DIR__ . '/../../' . ltrim($t['foto_perfil'] ?? '', '/');
-                if ($t['foto_perfil'] && file_exists($fotoPath)):
-              ?>
-                <img src="../../<?= htmlspecialchars($t['foto_perfil']) ?>" alt=""
-                     width="52" height="52" class="rounded-circle border" style="object-fit:cover;flex-shrink:0">
-              <?php else: ?>
-                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                     style="width:52px;height:52px;">
-                  <?= htmlspecialchars(mb_substr($t['nome'], 0, 1)) ?>
-                </div>
-              <?php endif; ?>
-              <div class="flex-grow-1 min-w-0">
-                <div class="fw-semibold text-truncate"><?= htmlspecialchars($t['nome']) ?></div>
-                <div class="small text-muted"><?= htmlspecialchars($t['especialidade'] ?? '—') ?></div>
-                <div class="d-flex gap-1 mt-1 flex-wrap">
-                  <?php if ($isDestaque): ?>
-                    <span class="badge bg-warning text-dark">★ Destaque</span>
-                  <?php endif; ?>
-                  <span class="badge bg-light text-dark border"><?= htmlspecialchars($t['genero'] ?? '—') ?></span>
-                </div>
+          <div class="dest-card-header">
+            <?php
+              $fotoPath = __DIR__ . '/../../' . ltrim($t['foto_perfil'] ?? '', '/');
+              if ($t['foto_perfil'] && file_exists($fotoPath)):
+            ?>
+              <img src="../../<?= htmlspecialchars($t['foto_perfil']) ?>" alt=""
+                   class="dest-avatar border">
+            <?php else: ?>
+              <div class="dest-avatar-init"><?= htmlspecialchars(mb_substr($t['nome'], 0, 1)) ?></div>
+            <?php endif; ?>
+            <div class="flex-grow-1 min-w-0">
+              <div class="fw-bold text-truncate" style="font-size:.92rem;"><?= htmlspecialchars($t['nome']) ?></div>
+              <div class="text-muted text-truncate" style="font-size:.78rem;"><?= htmlspecialchars($t['especialidade'] ?? '—') ?></div>
+              <div class="d-flex gap-1 mt-1 flex-wrap">
+                <?php if ($isDestaque): ?>
+                  <span class="badge" style="background:#fef9c3;color:#713f12;font-size:.68rem;">★ Destaque</span>
+                <?php endif; ?>
+                <span class="badge" style="background:#f3f4f6;color:#374151;font-size:.67rem;"><?= htmlspecialchars($t['genero'] ?? '—') ?></span>
               </div>
             </div>
+          </div>
 
-            <!-- Métricas -->
-            <div class="row g-2">
+          <div class="dest-card-body">
+            <div class="row g-2 mb-3">
               <div class="col-4">
                 <div class="metric-box">
                   <div class="val text-success"><?= $concluidos ?></div>
@@ -145,54 +181,53 @@ $tecnicos = $pdo->query("
               </div>
               <div class="col-4">
                 <div class="metric-box">
-                  <div class="val text-warning">⭐ <?= number_format($media, 1, ',', '.') ?></div>
+                  <div class="val" style="color:#ca8a04;">⭐ <?= number_format($media, 1, ',', '.') ?></div>
                   <div class="lbl">Avaliação</div>
                 </div>
               </div>
               <div class="col-4">
                 <div class="metric-box">
-                  <div class="val text-primary" style="font-size:.95rem">R$ <?= number_format($receita, 0, ',', '.') ?></div>
+                  <div class="val" style="color:#0d1b3d;font-size:.88rem;">R$ <?= number_format($receita, 0, ',', '.') ?></div>
                   <div class="lbl">Receita paga</div>
                 </div>
               </div>
             </div>
 
-            <!-- Barra de progresso de chamados -->
             <?php if ($chamados > 0): ?>
             <div>
-              <div class="d-flex justify-content-between small text-muted mb-1">
+              <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:#6b7280;">
                 <span>Taxa de conclusão</span>
-                <span><?= $chamados > 0 ? round($concluidos / $chamados * 100) : 0 ?>%</span>
+                <span class="fw-bold"><?= $taxaConc ?>%</span>
               </div>
-              <div class="progress" style="height:6px">
-                <div class="progress-bar bg-success" style="width:<?= $chamados > 0 ? round($concluidos / $chamados * 100) : 0 ?>%"></div>
+              <div class="progress" style="height:6px;border-radius:6px;">
+                <div class="progress-bar bg-success" style="width:<?= $taxaConc ?>%;border-radius:6px;"></div>
               </div>
             </div>
             <?php endif; ?>
-
-            <!-- Ação -->
-            <div class="mt-auto">
-              <?php if ($isDestaque): ?>
-                <form method="post">
-                  <input type="hidden" name="acao" value="remover_destaque">
-                  <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
-                  <button type="submit" class="btn btn-sm btn-outline-danger w-100">Remover destaque</button>
-                </form>
-              <?php else: ?>
-                <form method="post">
-                  <input type="hidden" name="acao" value="destacar">
-                  <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
-                  <button type="submit" class="btn btn-sm btn-warning fw-semibold w-100">★ Marcar como destaque</button>
-                </form>
-              <?php endif; ?>
-            </div>
-
           </div>
+
+          <div class="dest-card-footer">
+            <?php if ($isDestaque): ?>
+              <form method="post">
+                <input type="hidden" name="acao" value="remover_destaque">
+                <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
+                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Remover destaque</button>
+              </form>
+            <?php else: ?>
+              <form method="post">
+                <input type="hidden" name="acao" value="destacar">
+                <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
+                <button type="submit" class="btn btn-sm btn-warning fw-semibold w-100">★ Marcar como destaque</button>
+              </form>
+            <?php endif; ?>
+          </div>
+
         </div>
       </div>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
+
 </main>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

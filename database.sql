@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS projeto_fixnow
+CREATE DATABASE IF NOT EXISTS tcc
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE projeto_fixnow;
+USE tcc;
 
 -- ─────────────────────────────────────────────
 --  TABELAS
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS chamado (
   prest_feminino            TINYINT(1)   NOT NULL DEFAULT 0,
   lat_servico               DECIMAL(10,7) NULL,
   lng_servico               DECIMAL(10,7) NULL,
-  status                    ENUM('Pendente','Em Andamento','Concluído','Negado') NOT NULL DEFAULT 'Pendente',
+  status                    ENUM('Pendente','Aguardando Orçamento','Em Andamento','Concluído','Negado') NOT NULL DEFAULT 'Pendente',
   criado_em                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em             TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   em_deslocamento           TINYINT(1)   NOT NULL DEFAULT 0,

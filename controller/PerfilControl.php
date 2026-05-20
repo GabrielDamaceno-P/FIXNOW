@@ -91,15 +91,8 @@ class PerfilControl
         $nome     = trim($_POST['nome']     ?? '');
         $telefone = trim($_POST['telefone'] ?? '');
         $genero   = $_POST['genero']         ?? '';
-        $cpfRaw   = trim($_POST['cpf']      ?? '');
-        $cpfDigits = fixnow_only_digits($cpfRaw);
-
         if (!$nome || !$telefone) {
             $this->erro = 'Nome e telefone são obrigatórios.'; return;
-        }
-
-        if ($cpfDigits && !fixnow_validar_cpf($cpfDigits)) {
-            $this->erro = 'CPF inválido.'; return;
         }
 
         $fotoPath = null;
@@ -118,7 +111,6 @@ class PerfilControl
             $dto->telefone    = $telefone;
             $dto->genero      = $genero ?: $dto->genero;
             $dto->especialidade = $especialidade;
-            if ($cpfDigits) $dto->cpf = $cpfDigits;
             if ($fotoPath) $dto->fotoPerfil = $fotoPath;
             $this->tecnicoDAO->atualizar($dto);
             $_SESSION['tecnico_nome'] = $nome;
@@ -133,7 +125,6 @@ class PerfilControl
             $dto->genero   = $genero ?: $dto->genero;
             $dto->endereco = $endereco;
             $dto->cep      = $cep;
-            if ($cpfDigits) $dto->cpf = $cpfDigits;
             if ($fotoPath) $dto->fotoPerfil = $fotoPath;
             $this->clienteDAO->atualizar($dto);
             $_SESSION['cliente_nome']  = $nome;

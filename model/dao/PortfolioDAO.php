@@ -50,10 +50,15 @@ class PortfolioDAO
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function atualizar(int $id, int $tecnicoId, ?string $titulo, ?string $descricao, ?int $categoriaId = null): void
+    public function atualizar(int $id, int $tecnicoId, ?string $titulo, ?string $descricao, ?int $categoriaId = null, ?string $novoFotoPath = null): void
     {
-        $this->pdo->prepare('UPDATE portfolio_foto SET titulo=?, descricao=?, categoria_id=? WHERE id=? AND tecnico_id=?')
-            ->execute([$titulo ?: null, $descricao ?: null, $categoriaId, $id, $tecnicoId]);
+        if ($novoFotoPath) {
+            $this->pdo->prepare('UPDATE portfolio_foto SET titulo=?, descricao=?, categoria_id=?, foto_path=? WHERE id=? AND tecnico_id=?')
+                ->execute([$titulo ?: null, $descricao ?: null, $categoriaId, $novoFotoPath, $id, $tecnicoId]);
+        } else {
+            $this->pdo->prepare('UPDATE portfolio_foto SET titulo=?, descricao=?, categoria_id=? WHERE id=? AND tecnico_id=?')
+                ->execute([$titulo ?: null, $descricao ?: null, $categoriaId, $id, $tecnicoId]);
+        }
     }
 
     public function excluir(int $id, int $tecnicoId): ?string

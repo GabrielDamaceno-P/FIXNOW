@@ -29,7 +29,7 @@
 
     var wrapper = senha.closest('.input-group') || senha;
 
-    // Container externo (posicionamento para o checklist flutuante)
+    // Container da barra de força e do checklist flutuante
     var container = document.createElement('div');
     container.style.cssText = 'position:relative;margin-top:6px;';
 
@@ -42,7 +42,7 @@
     container.appendChild(barOuter);
     wrapper.insertAdjacentElement('afterend', container);
 
-    // Checklist flutuante — não desloca outros campos
+    // Checklist flutuante — design original
     var checker = document.createElement('div');
     checker.id = 'senha-requisitos';
     checker.style.cssText = 'display:none;position:absolute;z-index:1050;top:calc(100% + 4px);left:0;width:100%;padding:8px 10px;border-radius:6px;background:var(--bs-body-bg,#fff);border:1px solid #dee2e6;box-shadow:0 4px 12px rgba(0,0,0,.2);';
@@ -88,7 +88,6 @@
         }
       });
 
-      // Barra de força
       if (v.length === 0) {
         bar.style.width = '0';
       } else {
@@ -96,7 +95,6 @@
         bar.style.background = barColors[score - 1] || barColors[0];
       }
 
-      // Validação Bootstrap
       if (v.length === 0) {
         senha.classList.remove('is-valid', 'is-invalid');
       } else if (allOk) {
@@ -113,8 +111,10 @@
       atualizar();
     });
 
-    senha.addEventListener('blur', function () {
-      if (senha.value.length === 0) checker.style.display = 'none';
+    document.addEventListener('click', function (e) {
+      if (!senha.contains(e.target) && !checker.contains(e.target)) {
+        checker.style.display = 'none';
+      }
     });
 
     senha.addEventListener('input', atualizar);

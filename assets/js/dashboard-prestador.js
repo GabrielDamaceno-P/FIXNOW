@@ -49,29 +49,75 @@
     var modalEl = document.getElementById('modalClientePerfil');
     if (!modalEl || typeof bootstrap === 'undefined') return;
     var modal = new bootstrap.Modal(modalEl);
-    var foto = modalEl.querySelector('[data-cliente-modal-foto]');
-    var nome = modalEl.querySelector('[data-cliente-modal-nome]');
-    var tel = modalEl.querySelector('[data-cliente-modal-tel]');
-    var end = modalEl.querySelector('[data-cliente-modal-end]');
-    var resumo = modalEl.querySelector('[data-cliente-modal-resumo]');
-    var problema = modalEl.querySelector('[data-cliente-modal-problema]');
+    var foto       = modalEl.querySelector('[data-cliente-modal-foto]');
+    var nome       = modalEl.querySelector('[data-cliente-modal-nome]');
+    var tel        = modalEl.querySelector('[data-cliente-modal-tel]');
+    var end        = modalEl.querySelector('[data-cliente-modal-end]');
+    var resumo     = modalEl.querySelector('[data-cliente-modal-resumo]');
+    var carouselEl = document.getElementById('carouselProblema');
+    var inner      = modalEl.querySelector('[data-cliente-modal-problema-inner]');
+    var btnPrev    = document.getElementById('btnCarouselPrev');
+    var btnNext    = document.getElementById('btnCarouselNext');
+    var counter    = document.getElementById('carouselProblemaCounter');
+    var carousel   = carouselEl ? new bootstrap.Carousel(carouselEl, { ride: false, wrap: true }) : null;
+
+    function buildCarousel(fotos) {
+      inner.innerHTML = '';
+      if (!fotos || fotos.length === 0) {
+        var div = document.createElement('div');
+        div.className = 'carousel-item active';
+        var img = document.createElement('img');
+        img.src = fallbackSvg('Sem foto do problema');
+        img.className = 'd-block w-100 fn-profile-problem-photo';
+        img.alt = 'Sem foto';
+        div.appendChild(img);
+        inner.appendChild(div);
+        btnPrev.style.display = 'none';
+        btnNext.style.display = 'none';
+        counter.style.display = 'none';
+        return;
+      }
+      fotos.forEach(function (path, i) {
+        var div = document.createElement('div');
+        div.className = 'carousel-item' + (i === 0 ? ' active' : '');
+        var img = document.createElement('img');
+        img.src = '../../' + path;
+        img.className = 'd-block w-100 fn-profile-problem-photo';
+        img.alt = 'Foto ' + (i + 1);
+        img.onerror = function () { img.src = fallbackSvg('Imagem indisponível'); };
+        div.appendChild(img);
+        inner.appendChild(div);
+      });
+      var multiple = fotos.length > 1;
+      btnPrev.style.display = multiple ? '' : 'none';
+      btnNext.style.display = multiple ? '' : 'none';
+      if (multiple) {
+        counter.style.display = '';
+        counter.textContent = '1 / ' + fotos.length;
+        carouselEl.addEventListener('slid.bs.carousel', function (e) {
+          counter.textContent = (e.to + 1) + ' / ' + fotos.length;
+        }, { once: false });
+      } else {
+        counter.style.display = 'none';
+      }
+    }
 
     document.querySelectorAll('.js-open-cliente-perfil').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var clienteFoto = btn.getAttribute('data-cliente-foto') || '';
-        var problemaFoto = btn.getAttribute('data-problema-foto') || '';
+        var fotosRaw    = btn.getAttribute('data-problema-fotos') || '[]';
+        var fotos       = [];
+        try { fotos = JSON.parse(fotosRaw); } catch (e) { fotos = []; }
+
         foto.src = clienteFoto ? '../../' + clienteFoto : fallbackSvg('Sem foto do cliente');
-        problema.src = problemaFoto ? '../../' + problemaFoto : fallbackSvg('Sem foto do problema');
-        nome.textContent = btn.getAttribute('data-cliente-nome') || 'Cliente';
-        tel.textContent = btn.getAttribute('data-cliente-telefone') || 'Não informado';
-        end.textContent = btn.getAttribute('data-cliente-endereco') || 'Não informado';
+        foto.onerror = function () { foto.src = fallbackSvg('Foto indisponível'); };
+        nome.textContent   = btn.getAttribute('data-cliente-nome') || 'Cliente';
+        tel.textContent    = btn.getAttribute('data-cliente-telefone') || 'Não informado';
+        end.textContent    = btn.getAttribute('data-cliente-endereco') || 'Não informado';
         resumo.textContent = btn.getAttribute('data-resumo') || 'Sem resumo informado.';
-        foto.onerror = function () {
-          foto.src = fallbackSvg('Foto indisponível');
-        };
-        problema.onerror = function () {
-          problema.src = fallbackSvg('Imagem indisponível');
-        };
+
+        buildCarousel(fotos);
+        if (carousel) carousel.to(0);
         modal.show();
       });
     });

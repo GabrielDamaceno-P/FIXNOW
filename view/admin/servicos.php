@@ -90,127 +90,170 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria WHERE ativo = 1 ORDER 
   <title>Serviços - Admin Fix Now</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../assets/css/style.css" rel="stylesheet">
+  <style>
+    .page-hero{background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);border-radius:16px;padding:1.8rem 2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+    .page-hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+    .page-hero h1{color:#fff;font-size:clamp(1.2rem,3vw,1.7rem);font-weight:800;margin:0 0 .25rem}
+    .page-hero p{color:rgba(255,255,255,.72);font-size:.9rem;margin:0}
+    .admin-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;padding:1.3rem;box-shadow:0 3px 10px rgba(13,27,61,.05)}
+    .secao-titulo{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:.9rem;padding-bottom:.6rem;border-bottom:2px solid #f0f3fa;display:flex;align-items:center;gap:.5rem}
+    .form-label{font-size:.85rem;font-weight:600;margin-bottom:.3rem}
+    [data-theme="dark"] .admin-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .secao-titulo{color:#e4e8f4;border-bottom-color:#2e3650}
+  </style>
 </head>
 <body>
 <?= $navbarHtml ?>
 
-<main class="container py-5 mt-5">
-  <h2 class="mb-1">Gerenciar Serviços</h2>
-  <p class="text-muted mb-4">Cadastre, edite e exclua serviços de qualquer prestador da plataforma.</p>
+<main class="container py-4 mt-5">
 
-  <?php if ($mensagem): ?><div class="alert alert-success"><?= htmlspecialchars($mensagem) ?></div><?php endif; ?>
-  <?php if ($erro): ?><div class="alert alert-danger"><?= htmlspecialchars($erro) ?></div><?php endif; ?>
+  <div class="page-hero mb-4">
+    <div style="position:relative;z-index:1">
+      <h1>🔩 Serviços</h1>
+      <p>Cadastre, edite e exclua serviços de qualquer prestador da plataforma.</p>
+    </div>
+  </div>
+
+  <?php if ($mensagem): ?>
+    <div class="alert alert-success alert-dismissible fade show">
+      <?= htmlspecialchars($mensagem) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
+  <?php if ($erro): ?>
+    <div class="alert alert-danger alert-dismissible fade show">
+      <?= htmlspecialchars($erro) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
 
   <div class="row g-4">
+    <!-- Formulário -->
     <div class="col-lg-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h5><?= $editando ? 'Editar Serviço #' . (int)$editando['id'] : 'Novo Serviço' ?></h5>
-          <form method="post">
-            <input type="hidden" name="acao" value="<?= $editando ? 'editar' : 'criar' ?>">
-            <?php if ($editando): ?><input type="hidden" name="servico_id" value="<?= (int)$editando['id'] ?>"><?php endif; ?>
+      <div class="admin-card">
+        <div class="secao-titulo">
+          <span><?= $editando ? '✏️' : '➕' ?></span>
+          <?= $editando ? 'Editar Serviço #' . (int)$editando['id'] : 'Novo Serviço' ?>
+        </div>
+        <form method="post">
+          <input type="hidden" name="acao" value="<?= $editando ? 'editar' : 'criar' ?>">
+          <?php if ($editando): ?><input type="hidden" name="servico_id" value="<?= (int)$editando['id'] ?>"><?php endif; ?>
 
-            <div class="mb-2">
-              <label class="form-label">Prestador <span class="text-danger">*</span></label>
-              <select name="tecnico_id" class="form-select" required>
-                <option value="">-- Selecione --</option>
-                <?php foreach ($tecnicos as $t): ?>
-                  <option value="<?= (int)$t['id'] ?>"
-                    <?= ((int)($editando['tecnico_id'] ?? 0)) === (int)$t['id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($t['nome']) ?> (<?= htmlspecialchars($t['especialidade']) ?>)
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Nome <span class="text-danger">*</span></label>
-              <input type="text" name="nome" class="form-control" maxlength="150" required
-                value="<?= htmlspecialchars($editando['nome'] ?? '') ?>">
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Categoria</label>
-              <select name="categoria_id" class="form-select">
-                <option value="">-- Nenhuma --</option>
-                <?php foreach ($categorias as $cat): ?>
-                  <option value="<?= (int)$cat['id'] ?>"
-                    <?= ((int)($editando['categoria_id'] ?? 0)) === (int)$cat['id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($cat['nome']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Descrição</label>
-              <textarea name="descricao" class="form-control" rows="2" maxlength="500"><?= htmlspecialchars($editando['descricao'] ?? '') ?></textarea>
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Preço (R$) <span class="text-danger">*</span></label>
-              <input type="number" name="preco" class="form-control" min="0" step="0.01" required
-                value="<?= number_format((float)($editando['preco'] ?? 0), 2, '.', '') ?>">
-            </div>
-            <div class="mb-3 form-check">
+          <div class="mb-2">
+            <label class="form-label">Prestador <span class="text-danger">*</span></label>
+            <select name="tecnico_id" class="form-select form-select-sm" required>
+              <option value="">— Selecione —</option>
+              <?php foreach ($tecnicos as $t): ?>
+                <option value="<?= (int)$t['id'] ?>"
+                  <?= ((int)($editando['tecnico_id'] ?? 0)) === (int)$t['id'] ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($t['nome']) ?> (<?= htmlspecialchars($t['especialidade']) ?>)
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Nome do serviço <span class="text-danger">*</span></label>
+            <input type="text" name="nome" class="form-control form-control-sm" maxlength="150" required
+              value="<?= htmlspecialchars($editando['nome'] ?? '') ?>" placeholder="Ex: Instalação de tomada">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Categoria</label>
+            <select name="categoria_id" class="form-select form-select-sm">
+              <option value="">— Nenhuma —</option>
+              <?php foreach ($categorias as $cat): ?>
+                <option value="<?= (int)$cat['id'] ?>"
+                  <?= ((int)($editando['categoria_id'] ?? 0)) === (int)$cat['id'] ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($cat['nome']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Descrição</label>
+            <textarea name="descricao" class="form-control form-control-sm" rows="2" maxlength="500"
+              placeholder="Descrição opcional do serviço"><?= htmlspecialchars($editando['descricao'] ?? '') ?></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Preço (R$) <span class="text-danger">*</span></label>
+            <input type="number" name="preco" class="form-control form-control-sm" min="0" step="0.01" required
+              value="<?= number_format((float)($editando['preco'] ?? 0), 2, '.', '') ?>">
+          </div>
+          <div class="mb-4">
+            <div class="form-check form-switch">
               <input type="checkbox" name="ativo" id="chk_ativo" class="form-check-input" value="1"
                 <?= (!$editando || $editando['ativo']) ? 'checked' : '' ?>>
-              <label class="form-check-label" for="chk_ativo">Ativo (visível no catálogo)</label>
+              <label class="form-check-label" for="chk_ativo" style="font-size:.85rem;font-weight:600;">Visível no catálogo</label>
             </div>
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-warning fw-semibold"><?= $editando ? 'Salvar' : 'Cadastrar' ?></button>
-              <?php if ($editando): ?><a href="servicos.php" class="btn btn-outline-secondary">Cancelar</a><?php endif; ?>
-            </div>
-          </form>
-        </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning fw-bold">
+              <?= $editando ? 'Salvar' : 'Cadastrar' ?>
+            </button>
+            <?php if ($editando): ?><a href="servicos.php" class="btn btn-outline-secondary">Cancelar</a><?php endif; ?>
+          </div>
+        </form>
       </div>
     </div>
 
+    <!-- Tabela -->
     <div class="col-lg-8">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Serviços cadastrados <span class="badge bg-secondary"><?= count($todosServicos) ?></span></h5>
-            <form method="get" class="d-flex gap-2">
-              <input type="text" name="busca" class="form-control form-control-sm" placeholder="Buscar..."
-                value="<?= htmlspecialchars($filtro) ?>" style="width:180px;">
-              <button class="btn btn-sm btn-outline-secondary">Buscar</button>
-              <?php if ($filtro): ?><a href="servicos.php" class="btn btn-sm btn-outline-danger">Limpar</a><?php endif; ?>
-            </form>
-          </div>
-          <?php if (!$servicos): ?>
-            <p class="text-muted mb-0">Nenhum serviço encontrado.</p>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle table-sm">
-                <thead class="table-primary">
-                  <tr><th>#</th><th>Nome</th><th>Prestador</th><th>Categoria</th><th>Preço</th><th>Ativo</th><th></th></tr>
-                </thead>
-                <tbody>
-                <?php foreach ($servicos as $s): ?>
-                  <tr>
-                    <td><?= (int)$s['id'] ?></td>
-                    <td>
-                      <div class="fw-semibold"><?= htmlspecialchars($s['nome']) ?></div>
-                      <?php if ($s['descricao']): ?><div class="small text-muted"><?= htmlspecialchars(mb_strimwidth($s['descricao'], 0, 50, '...')) ?></div><?php endif; ?>
-                    </td>
-                    <td><?= htmlspecialchars($s['tecnico_nome']) ?></td>
-                    <td><?= htmlspecialchars($s['categoria_nome'] ?? '—') ?></td>
-                    <td>R$ <?= number_format((float)$s['preco'], 2, ',', '.') ?></td>
-                    <td><span class="badge <?= $s['ativo'] ? 'bg-success' : 'bg-secondary' ?>"><?= $s['ativo'] ? 'Sim' : 'Não' ?></span></td>
-                    <td>
-                      <div class="d-flex gap-1">
-                        <a href="servicos.php?editar=<?= (int)$s['id'] ?>" class="btn btn-sm btn-outline-primary">Editar</a>
-                        <form method="post" class="d-inline" onsubmit="return confirm('Excluir este serviço?');">
-                          <input type="hidden" name="acao" value="excluir">
-                          <input type="hidden" name="servico_id" value="<?= (int)$s['id'] ?>">
-                          <button class="btn btn-sm btn-outline-danger">Excluir</button>
-                        </form>
-                      </div>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php endif; ?>
+      <div class="admin-card">
+        <div class="secao-titulo d-flex align-items-center">
+          <span>📋</span>
+          <span>Serviços cadastrados</span>
+          <span class="badge ms-1" style="background:#e8ecf3;color:#0d1b3d;font-size:.75rem;"><?= count($todosServicos) ?></span>
+          <form method="get" class="ms-auto d-flex gap-2">
+            <input type="text" name="busca" class="form-control form-control-sm" placeholder="Buscar serviço ou prestador…"
+              value="<?= htmlspecialchars($filtro) ?>" style="width:210px;">
+            <button class="btn btn-sm btn-outline-secondary">Buscar</button>
+            <?php if ($filtro): ?><a href="servicos.php" class="btn btn-sm btn-outline-danger">Limpar</a><?php endif; ?>
+          </form>
         </div>
+        <?php if (!$servicos): ?>
+          <div class="text-center py-5 text-muted">
+            <div style="font-size:2.5rem;margin-bottom:.5rem;">🔍</div>
+            Nenhum serviço encontrado.
+          </div>
+        <?php else: ?>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm mb-0">
+              <thead class="table-primary">
+                <tr><th>#</th><th>Serviço</th><th>Prestador</th><th>Categoria</th><th>Preço</th><th>Ativo</th><th></th></tr>
+              </thead>
+              <tbody>
+              <?php foreach ($servicos as $s): ?>
+                <tr>
+                  <td class="text-muted" style="font-size:.82rem;"><?= (int)$s['id'] ?></td>
+                  <td>
+                    <div class="fw-semibold" style="font-size:.88rem;"><?= htmlspecialchars($s['nome']) ?></div>
+                    <?php if ($s['descricao']): ?>
+                      <div class="text-muted" style="font-size:.75rem;"><?= htmlspecialchars(mb_strimwidth($s['descricao'], 0, 50, '…')) ?></div>
+                    <?php endif; ?>
+                  </td>
+                  <td style="font-size:.83rem;"><?= htmlspecialchars($s['tecnico_nome']) ?></td>
+                  <td style="font-size:.83rem;"><?= htmlspecialchars($s['categoria_nome'] ?? '—') ?></td>
+                  <td class="fw-semibold" style="font-size:.83rem;">R$ <?= number_format((float)$s['preco'], 2, ',', '.') ?></td>
+                  <td>
+                    <span class="badge" style="font-size:.7rem;background:<?= $s['ativo'] ? '#dcfce7' : '#f3f4f6' ?>;color:<?= $s['ativo'] ? '#16a34a' : '#6b7280' ?>;">
+                      <?= $s['ativo'] ? '✔ Sim' : 'Não' ?>
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="servicos.php?editar=<?= (int)$s['id'] ?>" class="btn btn-sm btn-outline-primary" style="font-size:.78rem;">Editar</a>
+                      <form method="post" class="d-inline" onsubmit="return confirm('Excluir este serviço?');">
+                        <input type="hidden" name="acao" value="excluir">
+                        <input type="hidden" name="servico_id" value="<?= (int)$s['id'] ?>">
+                        <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Excluir</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

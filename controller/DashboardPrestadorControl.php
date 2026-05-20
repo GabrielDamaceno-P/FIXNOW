@@ -116,7 +116,8 @@ class DashboardPrestadorControl
                         fixnow_notificar_cliente($this->pdo, (int)$row['cliente_id'],
                             "Seu chamado #{$cid} foi aceito! Aguarde o envio do orçamento.", $cid);
                     }
-                    $this->mensagem = 'Chamado aceito. Envie o orçamento ao cliente.';
+                    header("Location: orcamento.php?chamado={$cid}&aceito=1");
+                    exit;
                 } else {
                     $this->erro = 'Não foi possível aceitar este chamado (já atribuído ou indisponível).';
                 }
@@ -158,7 +159,8 @@ class DashboardPrestadorControl
                         fixnow_notificar_cliente($this->pdo, (int)$row['cliente_id'],
                             "Sua solicitação direta #{$cid} foi aceita! Aguarde o envio do orçamento.", $cid);
                     }
-                    $this->mensagem = 'Solicitação aceita. Envie o orçamento ao cliente.';
+                    header("Location: orcamento.php?chamado={$cid}&aceito=1");
+                    exit;
                 } else {
                     $this->erro = 'Não foi possível aceitar esta solicitação.';
                 }
@@ -316,5 +318,22 @@ class DashboardPrestadorControl
         ");
         $stmtAg->execute([$this->tecnicoId, $this->tecnicoId]);
         $this->chamadosAguardando = $stmtAg->fetchAll();
+
+        $this->anexarFotos($this->chamadosDisponiveis);
+        $this->anexarFotos($this->solicitacoesDiretas);
+        $this->anexarFotos($this->chamadosAguardando);
+        $this->anexarFotos($this->emAndamento);
+    }
+
+    private function anexarFotos(array &$lista): void
+    {
+        foreach ($lista as &$item) {
+            $rows = $this->chamadoDAO->listarFotos((int)$item['id']);
+            $item['fotos'] = array_column($rows, 'foto_path');
+            if (empty($item['fotos']) && !empty($item['foto_path'])) {
+                $item['fotos'] = [$item['foto_path']];
+            }
+        }
+        unset($item);
     }
 }
