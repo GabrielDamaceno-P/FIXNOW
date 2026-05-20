@@ -464,7 +464,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
                 <span class="chamado-aguarda">🔍 Aguardando prestador</span>
               <?php endif; ?>
 
-              <?php if ($jaAvaliado): ?>
+              <?php if ($jaAvaliado && $c->status === 'Concluído'): ?>
                 <div class="mt-1">
                   <span style="color:#f59e0b;font-size:.8rem"><?= str_repeat('★', (int)$c->avaliacaoNota) . str_repeat('☆', 5 - (int)$c->avaliacaoNota) ?></span>
                   <span class="chamado-avaliado"> avaliado</span>

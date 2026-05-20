@@ -8,9 +8,11 @@ ob_start();
 require_once __DIR__ . '/_navbar.php';
 $navbarHtml = ob_get_clean();
 
-$mensagem   = '';
-$erro       = '';
-$abrirModal = '';
+$mensagem          = '';
+$erro              = '';
+$abrirModal        = '';
+$senhaGerada       = '';
+$clienteCadastrado = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? 'excluir';
@@ -47,9 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $foto = 'assets/img/perfil/default-cliente.jpg';
                 $pdo->prepare("INSERT INTO cliente (nome, email, senha, telefone, genero, cpf, cep, endereco, foto_perfil) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
                     ->execute([$nome, $email, $hash, $telefone, $genero,
-                               $cpf ?: null, $cep ?: null, $endereco ?: null, $foto]);
-                $mensagem = 'Cliente <strong>' . htmlspecialchars($nome) . '</strong> cadastrado! Senha temporária: <code class="user-select-all fw-bold">' . htmlspecialchars($senhaTemp) . '</code> — anote e repasse ao cliente.';
-                $abrirModal = '';
+                               $cpf ?: null, $cep ?: '', $endereco ?: '', $foto]);
+                $senhaGerada       = $senhaTemp;
+                $clienteCadastrado = ['nome' => $nome, 'email' => $email];
+                $abrirModal        = 'modalSenhaTemp';
             }
         }
     }
@@ -96,12 +99,6 @@ $clientes = $stmt->fetchAll();
     </div>
   </div>
 
-  <?php if ($mensagem): ?>
-    <div class="alert alert-success alert-dismissible fade show">
-      🔑 <?= $mensagem ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  <?php endif; ?>
   <?php if ($erro): ?>
     <div class="alert alert-danger alert-dismissible fade show">
       <?= htmlspecialchars($erro) ?>
@@ -204,7 +201,7 @@ $clientes = $stmt->fetchAll();
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Telefone <span class="text-danger">*</span></label>
-            <input type="text" name="c_telefone" class="form-control" required maxlength="20" placeholder="(11) 99999-9999">
+            <input type="text" name="c_telefone" class="form-control" required maxlength="15" inputmode="numeric" placeholder="(11) 99999-9999">
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Gênero</label>
@@ -242,9 +239,78 @@ $clientes = $stmt->fetchAll();
   </div>
 </div>
 
+<!-- Modal Senha Temporária -->
+<?php if ($senhaGerada): ?>
+<div class="modal fade" id="modalSenhaTemp" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content overflow-hidden">
+      <div style="background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);padding:1.3rem 1.5rem;">
+        <h5 class="text-white fw-bold mb-0">✅ Cliente cadastrado com sucesso</h5>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-3" style="font-size:.9rem;">
+          Repasse as credenciais abaixo ao cliente — por WhatsApp, e-mail ou pessoalmente.
+        </p>
+
+        <div class="mb-3">
+          <div class="form-label fw-semibold" style="font-size:.83rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Cliente</div>
+          <div class="fw-bold"><?= htmlspecialchars($clienteCadastrado['nome']) ?></div>
+          <div class="text-muted" style="font-size:.9rem;"><?= htmlspecialchars($clienteCadastrado['email']) ?></div>
+        </div>
+
+        <div class="mb-1">
+          <div class="form-label fw-semibold" style="font-size:.83rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Senha temporária</div>
+          <div class="d-flex align-items-center gap-2">
+            <code id="senha-temp-val"
+                  style="font-size:1.4rem;font-weight:900;letter-spacing:.15em;color:#0d1b3d;background:#f0f3fa;border-radius:8px;padding:.45rem 1rem;flex-grow:1;display:block;text-align:center;">
+              <?= htmlspecialchars($senhaGerada) ?>
+            </code>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-copiar-senha" title="Copiar senha" style="white-space:nowrap;">
+              📋 Copiar
+            </button>
+          </div>
+          <div class="form-text mt-1">O cliente poderá alterar a senha após o primeiro acesso.</div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-warning fw-bold w-100" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
+<script src="../../assets/js/forms-helpers.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var copiarBtn = document.getElementById('btn-copiar-senha');
+  if (copiarBtn) {
+    copiarBtn.addEventListener('click', function () {
+      var texto = document.getElementById('senha-temp-val').textContent.trim();
+      navigator.clipboard.writeText(texto).then(function () {
+        copiarBtn.textContent = '✅ Copiado!';
+        setTimeout(function () { copiarBtn.innerHTML = '📋 Copiar'; }, 2000);
+      });
+    });
+  }
+
+  var tel = document.querySelector('input[name="c_telefone"]');
+  if (!tel) return;
+  tel.addEventListener('input', function () {
+    var d = this.value.replace(/\D/g, '').slice(0, 11);
+    var out = '';
+    if (d.length > 0)  out = '(' + d.slice(0, 2);
+    if (d.length >= 2) out += ') ';
+    if (d.length > 2)  out += d.slice(2, d.length > 10 ? 7 : 6);
+    if (d.length > 10) out += '-' + d.slice(7, 11);
+    else if (d.length > 6) out += '-' + d.slice(6, 10);
+    this.value = out;
+  });
+});
+</script>
 <?php if ($abrirModal): ?>
 <script>new bootstrap.Modal(document.getElementById('<?= $abrirModal ?>')).show();</script>
 <?php endif; ?>

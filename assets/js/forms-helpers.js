@@ -174,8 +174,8 @@
   }
 
   function bindMasks() {
-    document.querySelectorAll('input[name="telefone"].js-mask').forEach(maskTelefone);
-    document.querySelectorAll('input[name="cep"].js-mask:not(#js-cep)').forEach(maskCep);
+    document.querySelectorAll('input.js-mask[name*="telefone"]').forEach(maskTelefone);
+    document.querySelectorAll('input.js-mask[name*="cep"]:not(#js-cep)').forEach(maskCep);
   }
 
   function bindCepAutocomplete() {
