@@ -8,15 +8,20 @@ ob_start();
 require_once __DIR__ . '/_navbar.php';
 $navbarHtml = ob_get_clean();
 
-$mensagem   = '';
-$erro       = '';
-$abrirModal = '';
+$mensagem            = '';
+$erro                = '';
+$abrirModal          = '';
+$senhaGerada         = '';
+$prestadorCadastrado = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
     $tid  = (int)($_POST['tecnico_id'] ?? 0);
 
-    if ($acao === 'aprovar' && $tid > 0) {
+    if ($acao === 'limpar_senha_temp') {
+        unset($_SESSION['admin_temp_senha_prestador']);
+
+    } elseif ($acao === 'aprovar' && $tid > 0) {
         $up = $pdo->prepare("UPDATE tecnico SET ativo=1, status_cadastro='Aprovado' WHERE id=? AND status_cadastro='Pendente'");
         $up->execute([$tid]);
         if ($up->rowCount() > 0) {
@@ -61,12 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare("INSERT INTO tecnico (nome, email, senha, telefone, genero, especialidade, cpf, foto_perfil, ativo, status_cadastro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'Aprovado')")
                     ->execute([$nome, $email, $hash, $telefone, $genero,
                                $especialidade ?: null, $cpf ?: null, $foto]);
-                $mensagem = 'Prestador <strong>' . htmlspecialchars($nome) . '</strong> cadastrado e já aprovado! Senha temporária: <code class="user-select-all fw-bold">' . htmlspecialchars($senhaTemp) . '</code> — anote e repasse ao prestador.';
-                $abrirModal = '';
+                $senhaGerada         = $senhaTemp;
+                $prestadorCadastrado = ['nome' => $nome, 'email' => $email];
+                $_SESSION['admin_temp_senha_prestador'] = ['nome' => $nome, 'email' => $email, 'senha' => $senhaTemp];
+                $abrirModal          = 'modalSenhaTemp';
             }
         }
     }
 }
+
+$tempSenhaPrestador = $_SESSION['admin_temp_senha_prestador'] ?? [];
 
 $filtro       = trim($_GET['busca'] ?? '');
 $filtroStatus = $_GET['status'] ?? '';
@@ -134,7 +143,7 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
 
   <?php if ($mensagem): ?>
     <div class="alert alert-success alert-dismissible fade show">
-      🔑 <?= $mensagem ?>
+      <?= htmlspecialchars($mensagem) ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
@@ -143,6 +152,25 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
       <?= htmlspecialchars($erro) ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+  <?php endif; ?>
+
+  <?php if ($tempSenhaPrestador && !$senhaGerada): ?>
+  <div class="d-flex align-items-center gap-3 p-3 mb-3 flex-wrap" style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;">
+    <span style="font-size:1.2rem;">🔑</span>
+    <div style="flex:1;min-width:0;">
+      <strong style="font-size:.9rem;">Senha temporária pendente</strong>
+      <div class="text-muted" style="font-size:.82rem;">
+        <?= htmlspecialchars($tempSenhaPrestador['nome']) ?> — <?= htmlspecialchars($tempSenhaPrestador['email']) ?>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#modalSenhaTemp">
+      👁 Ver senha
+    </button>
+    <form method="post" class="d-inline">
+      <input type="hidden" name="acao" value="limpar_senha_temp">
+      <button type="submit" class="btn btn-sm btn-outline-secondary">✓ Já anotei</button>
+    </form>
+  </div>
   <?php endif; ?>
 
   <?php if ($pendentesCount > 0 && $filtroStatus !== 'Pendente'): ?>
@@ -309,7 +337,7 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Telefone <span class="text-danger">*</span></label>
-            <input type="text" name="p_telefone" class="form-control" required maxlength="20" placeholder="(11) 99999-9999">
+            <input type="text" name="p_telefone" class="form-control" required maxlength="15" inputmode="numeric" placeholder="(11) 99999-9999">
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold">Gênero</label>
@@ -342,10 +370,83 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
   </div>
 </div>
 
+<!-- Modal Senha Temporária -->
+<?php
+$_mdNome  = $prestadorCadastrado['nome']  ?? $tempSenhaPrestador['nome']  ?? '';
+$_mdEmail = $prestadorCadastrado['email'] ?? $tempSenhaPrestador['email'] ?? '';
+$_mdSenha = $senhaGerada                  ?: ($tempSenhaPrestador['senha'] ?? '');
+?>
+<div class="modal fade" id="modalSenhaTemp" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg overflow-hidden">
+      <div style="background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);padding:1.3rem 1.5rem;">
+        <h5 class="text-white fw-bold mb-0">✅ Prestador cadastrado com sucesso</h5>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted mb-3" style="font-size:.9rem;">
+          Repasse as credenciais abaixo ao prestador — por WhatsApp, e-mail ou pessoalmente.
+        </p>
+        <div class="mb-3">
+          <div class="form-label fw-semibold" style="font-size:.83rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Prestador</div>
+          <div class="fw-bold"><?= htmlspecialchars($_mdNome) ?></div>
+          <div class="text-muted" style="font-size:.9rem;"><?= htmlspecialchars($_mdEmail) ?></div>
+        </div>
+        <div class="mb-1">
+          <div class="form-label fw-semibold" style="font-size:.83rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Senha temporária</div>
+          <div class="d-flex align-items-center gap-2">
+            <code id="senha-temp-val"
+                  style="font-size:1.4rem;font-weight:900;letter-spacing:.15em;color:#0d1b3d;background:#f0f3fa;border-radius:8px;padding:.45rem 1rem;flex-grow:1;display:block;text-align:center;">
+              <?= htmlspecialchars($_mdSenha) ?>
+            </code>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-copiar-senha" title="Copiar senha" style="white-space:nowrap;">
+              📋 Copiar
+            </button>
+          </div>
+          <div class="form-text mt-1">O prestador poderá alterar a senha após o primeiro acesso.</div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">Fechar</button>
+        <form method="post" class="flex-fill">
+          <input type="hidden" name="acao" value="limpar_senha_temp">
+          <button type="submit" class="btn btn-warning fw-bold w-100">✓ Já anotei</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+  var tel = document.querySelector('input[name="p_telefone"]');
+  if (tel) {
+    tel.addEventListener('input', function () {
+      var d = this.value.replace(/\D/g, '').slice(0, 11);
+      var out = '';
+      if (d.length > 0)  out = '(' + d.slice(0, 2);
+      if (d.length >= 2) out += ') ';
+      if (d.length > 2)  out += d.slice(2, d.length > 10 ? 7 : 6);
+      if (d.length > 10) out += '-' + d.slice(7, 11);
+      else if (d.length > 6) out += '-' + d.slice(6, 10);
+      this.value = out;
+    });
+  }
+
+  var copiarBtn = document.getElementById('btn-copiar-senha');
+  if (copiarBtn) {
+    copiarBtn.addEventListener('click', function () {
+      var texto = document.getElementById('senha-temp-val').textContent.trim();
+      navigator.clipboard.writeText(texto).then(function () {
+        copiarBtn.textContent = '✅ Copiado!';
+        setTimeout(function () { copiarBtn.innerHTML = '📋 Copiar'; }, 2000);
+      });
+    });
+  }
+});
+
 document.getElementById('modalDoc').addEventListener('show.bs.modal', function(e) {
   var btn = e.relatedTarget;
   document.getElementById('modalDocNome').textContent = btn.dataset.nome;
@@ -354,7 +455,12 @@ document.getElementById('modalDoc').addEventListener('show.bs.modal', function(e
 });
 </script>
 <?php if ($abrirModal): ?>
-<script>new bootstrap.Modal(document.getElementById('<?= $abrirModal ?>')).show();</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('<?= $abrirModal ?>');
+  if (el) bootstrap.Modal.getOrCreateInstance(el).show();
+});
+</script>
 <?php endif; ?>
 </body>
 </html>

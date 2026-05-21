@@ -17,7 +17,10 @@ $clienteCadastrado = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? 'excluir';
 
-    if ($acao === 'excluir' && $isMaster) {
+    if ($acao === 'limpar_senha_temp') {
+        unset($_SESSION['admin_temp_senha_cliente']);
+
+    } elseif ($acao === 'excluir' && $isMaster) {
         $cid = (int)($_POST['cliente_id'] ?? 0);
         if ($cid > 0) {
             $pdo->prepare('DELETE FROM cliente WHERE id = ?')->execute([$cid]);
@@ -52,11 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                $cpf ?: null, $cep ?: '', $endereco ?: '', $foto]);
                 $senhaGerada       = $senhaTemp;
                 $clienteCadastrado = ['nome' => $nome, 'email' => $email];
+                $_SESSION['admin_temp_senha_cliente'] = ['nome' => $nome, 'email' => $email, 'senha' => $senhaTemp];
                 $abrirModal        = 'modalSenhaTemp';
             }
         }
     }
 }
+
+$tempSenhaCliente = $_SESSION['admin_temp_senha_cliente'] ?? [];
 
 $filtro = trim($_GET['busca'] ?? '');
 if ($filtro !== '') {
@@ -104,6 +110,25 @@ $clientes = $stmt->fetchAll();
       <?= htmlspecialchars($erro) ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+  <?php endif; ?>
+
+  <?php if ($tempSenhaCliente && !$senhaGerada): ?>
+  <div class="d-flex align-items-center gap-3 p-3 mb-3 flex-wrap" style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;">
+    <span style="font-size:1.2rem;">🔑</span>
+    <div style="flex:1;min-width:0;">
+      <strong style="font-size:.9rem;">Senha temporária pendente</strong>
+      <div class="text-muted" style="font-size:.82rem;">
+        <?= htmlspecialchars($tempSenhaCliente['nome']) ?> — <?= htmlspecialchars($tempSenhaCliente['email']) ?>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#modalSenhaTemp">
+      👁 Ver senha
+    </button>
+    <form method="post" class="d-inline">
+      <input type="hidden" name="acao" value="limpar_senha_temp">
+      <button type="submit" class="btn btn-sm btn-outline-secondary">✓ Já anotei</button>
+    </form>
+  </div>
   <?php endif; ?>
 
   <div class="admin-card">
@@ -240,8 +265,12 @@ $clientes = $stmt->fetchAll();
 </div>
 
 <!-- Modal Senha Temporária -->
-<?php if ($senhaGerada): ?>
-<div class="modal fade" id="modalSenhaTemp" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+<?php
+$_mdNome  = $clienteCadastrado['nome']  ?? $tempSenhaCliente['nome']  ?? '';
+$_mdEmail = $clienteCadastrado['email'] ?? $tempSenhaCliente['email'] ?? '';
+$_mdSenha = $senhaGerada                ?: ($tempSenhaCliente['senha'] ?? '');
+?>
+<div class="modal fade" id="modalSenhaTemp" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content overflow-hidden">
       <div style="background:linear-gradient(135deg,#0d1b3d 0%,#1a2b63 60%,#c95e00 100%);padding:1.3rem 1.5rem;">
@@ -254,8 +283,8 @@ $clientes = $stmt->fetchAll();
 
         <div class="mb-3">
           <div class="form-label fw-semibold" style="font-size:.83rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Cliente</div>
-          <div class="fw-bold"><?= htmlspecialchars($clienteCadastrado['nome']) ?></div>
-          <div class="text-muted" style="font-size:.9rem;"><?= htmlspecialchars($clienteCadastrado['email']) ?></div>
+          <div class="fw-bold"><?= htmlspecialchars($_mdNome) ?></div>
+          <div class="text-muted" style="font-size:.9rem;"><?= htmlspecialchars($_mdEmail) ?></div>
         </div>
 
         <div class="mb-1">
@@ -263,7 +292,7 @@ $clientes = $stmt->fetchAll();
           <div class="d-flex align-items-center gap-2">
             <code id="senha-temp-val"
                   style="font-size:1.4rem;font-weight:900;letter-spacing:.15em;color:#0d1b3d;background:#f0f3fa;border-radius:8px;padding:.45rem 1rem;flex-grow:1;display:block;text-align:center;">
-              <?= htmlspecialchars($senhaGerada) ?>
+              <?= htmlspecialchars($_mdSenha) ?>
             </code>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-copiar-senha" title="Copiar senha" style="white-space:nowrap;">
               📋 Copiar
@@ -272,13 +301,16 @@ $clientes = $stmt->fetchAll();
           <div class="form-text mt-1">O cliente poderá alterar a senha após o primeiro acesso.</div>
         </div>
       </div>
-      <div class="modal-footer border-0 pt-0">
-        <button type="button" class="btn btn-warning fw-bold w-100" data-bs-dismiss="modal">Entendido</button>
+      <div class="modal-footer border-0 pt-0 gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">Fechar</button>
+        <form method="post" class="flex-fill">
+          <input type="hidden" name="acao" value="limpar_senha_temp">
+          <button type="submit" class="btn btn-warning fw-bold w-100">✓ Já anotei</button>
+        </form>
       </div>
     </div>
   </div>
 </div>
-<?php endif; ?>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -312,7 +344,12 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php if ($abrirModal): ?>
-<script>new bootstrap.Modal(document.getElementById('<?= $abrirModal ?>')).show();</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('<?= $abrirModal ?>');
+  if (el) bootstrap.Modal.getOrCreateInstance(el).show();
+});
+</script>
 <?php endif; ?>
 </body>
 </html>

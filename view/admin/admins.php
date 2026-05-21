@@ -47,7 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $genero    = $_POST['genero'] ?? 'Prefiro não informar';
         $novaSenha = $_POST['nova_senha'] ?? '';
 
-        if ($id <= 0 || $nome === '' || $email === '' || $tel === '') {
+        if ($id === $primaryAdminId && !$isCurrentPrimary) {
+            $erro = 'Somente o administrador primário pode editar a própria conta.';
+        } elseif ($id <= 0 || $nome === '' || $email === '' || $tel === '') {
             $erro = 'Preencha todos os campos obrigatórios.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $erro = 'E-mail inválido.';
@@ -65,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($acao === 'excluir') {
         $id = (int)($_POST['id'] ?? 0);
-        if ($id > 0 && $id !== $adminId) {
+        if ($id === $primaryAdminId) {
+            $erro = 'O administrador primário não pode ser excluído.';
+        } elseif ($id > 0 && $id !== $adminId) {
             $mensagem = $adminDAO->excluir($id) ? 'Administrador excluído.' : 'Não encontrado.';
         } else {
             $erro = 'Não é possível excluir a própria conta.';
@@ -200,6 +204,9 @@ if (isset($_GET['editar'])) {
                 <td>
                   <div class="fw-semibold" style="font-size:.88rem;">
                     <?= htmlspecialchars($a['nome']) ?>
+                    <?php if ((int)$a['id'] === $primaryAdminId): ?>
+                      <span class="badge ms-1" style="background:#fef3c7;color:#b45309;font-size:.68rem;">👑 primário</span>
+                    <?php endif; ?>
                     <?php if ((int)$a['id'] === $adminId): ?>
                       <span class="badge ms-1" style="background:#dcfce7;color:#16a34a;font-size:.68rem;">você</span>
                     <?php endif; ?>
@@ -210,8 +217,17 @@ if (isset($_GET['editar'])) {
                 <td class="text-muted" style="font-size:.78rem;"><?= date('d/m/Y', strtotime($a['criado_em'])) ?></td>
                 <td>
                   <div class="d-flex gap-1">
-                    <a href="admins.php?editar=<?= (int)$a['id'] ?>" class="btn btn-sm btn-outline-primary" style="font-size:.78rem;">Editar</a>
-                    <?php if ((int)$a['id'] !== $adminId): ?>
+                    <?php
+                      $isPrimario = (int)$a['id'] === $primaryAdminId;
+                      $podeEditar = !$isPrimario || $isCurrentPrimary;
+                      $podeExcluir = !$isPrimario && (int)$a['id'] !== $adminId;
+                    ?>
+                    <?php if ($podeEditar): ?>
+                      <a href="admins.php?editar=<?= (int)$a['id'] ?>" class="btn btn-sm btn-outline-primary" style="font-size:.78rem;">Editar</a>
+                    <?php else: ?>
+                      <span class="btn btn-sm btn-outline-secondary disabled" style="font-size:.78rem;" title="Somente o admin primário pode editar a própria conta">🔒</span>
+                    <?php endif; ?>
+                    <?php if ($podeExcluir): ?>
                       <form method="post" class="d-inline" onsubmit="return confirm('Excluir este administrador?');">
                         <input type="hidden" name="acao" value="excluir">
                         <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">

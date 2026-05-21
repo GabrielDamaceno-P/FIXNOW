@@ -107,10 +107,14 @@ class PerfilControl
             $especialidade = trim($_POST['especialidade'] ?? '');
             $dto = $this->tecnicoDAO->buscarPorId($this->usuarioId);
             if (!$dto) return;
-            $dto->nome        = $nome;
-            $dto->telefone    = $telefone;
-            $dto->genero      = $genero ?: $dto->genero;
+            $dto->nome          = $nome;
+            $dto->telefone      = $telefone;
+            $dto->genero        = $genero ?: $dto->genero;
             $dto->especialidade = $especialidade;
+            if (!$dto->cpf) {
+                $cpfInput = preg_replace('/\D/', '', $_POST['cpf'] ?? '');
+                if ($cpfInput) $dto->cpf = $cpfInput;
+            }
             if ($fotoPath) $dto->fotoPerfil = $fotoPath;
             $this->tecnicoDAO->atualizar($dto);
             $_SESSION['tecnico_nome'] = $nome;
@@ -125,6 +129,10 @@ class PerfilControl
             $dto->genero   = $genero ?: $dto->genero;
             $dto->endereco = $endereco;
             $dto->cep      = $cep;
+            if (!$dto->cpf) {
+                $cpfInput = preg_replace('/\D/', '', $_POST['cpf'] ?? '');
+                if ($cpfInput) $dto->cpf = $cpfInput;
+            }
             if ($fotoPath) $dto->fotoPerfil = $fotoPath;
             $this->clienteDAO->atualizar($dto);
             $_SESSION['cliente_nome']  = $nome;

@@ -49,6 +49,32 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
   <link href="../assets/css/style.css" rel="stylesheet">
   <link href="../assets/css/stars-avaliacao.css" rel="stylesheet">
   <style>
+    /* cards de prestador */
+    .svc-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;box-shadow:0 3px 10px rgba(13,27,61,.06);display:flex;flex-direction:column;height:100%;overflow:hidden;transition:box-shadow .15s,transform .15s}
+    .svc-card:hover{box-shadow:0 8px 24px rgba(13,27,61,.12);transform:translateY(-2px)}
+    .svc-card.destaque{border-color:#fbbf24;box-shadow:0 4px 16px rgba(251,191,36,.2)}
+    .svc-destaque-bar{background:linear-gradient(90deg,#b45309,#d97706);padding:.35rem 1rem}
+    .svc-card-body{padding:1.25rem;flex:1;display:flex;flex-direction:column}
+    .svc-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e8ecf3}
+    .svc-avatar-init{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0d1b3d,#1a2b63);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.1rem;flex-shrink:0}
+    .svc-nome{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:.1rem}
+    .svc-espec{font-size:.78rem;color:#6b7280}
+    .svc-rating{font-size:.82rem;font-weight:600;color:#d97706}
+    .svc-rating .sem-aval{color:#9ca3af;font-weight:400}
+    .svc-divider{border-top:1px solid #f0f3fa;margin:.85rem 0}
+    .svc-badge{background:#f0f3fa;color:#374151;font-size:.72rem;font-weight:600;padding:.22rem .6rem;border-radius:20px;white-space:nowrap}
+    .svc-price{font-size:1.05rem;font-weight:800;color:#1d4ed8}
+    .svc-price-range{font-size:.83rem;font-weight:400;color:#6b7280}
+    .svc-price-combinar{font-size:.85rem;color:#9ca3af;font-style:italic}
+    .svc-footer{display:flex;gap:.5rem;padding:0 1.25rem 1.25rem}
+    [data-theme="dark"] .svc-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .svc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    [data-theme="dark"] .svc-nome{color:#e4e8f4}
+    [data-theme="dark"] .svc-divider{border-top-color:#2e3650}
+    [data-theme="dark"] .svc-badge{background:#252e45;color:#a0aec0}
+    [data-theme="dark"] .svc-avatar{border-color:#2e3650}
+    [data-theme="dark"] .svc-price{color:#60a5fa}
+
     .chamado-card{border-left-width:4px!important;transition:box-shadow .15s}
     .chamado-card:hover{box-shadow:0 6px 18px rgba(13,27,61,.1)!important}
     .chamado-desc{font-size:.9rem;font-weight:600;color:#0d1b3d;margin-bottom:.25rem}
@@ -299,65 +325,68 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
       <div class="row g-4">
         <?php foreach ($servicos as $s): ?>
           <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 <?php echo $s['destaque'] ? 'shadow' : 'shadow-sm'; ?>"
-                 style="<?php echo $s['destaque'] ? 'border: 2px solid #ffc107 !important; box-shadow: 0 8px 24px rgba(255,122,0,.15) !important;' : ''; ?>">
-              <div class="card-body d-flex flex-column">
+            <div class="svc-card <?php echo $s['destaque'] ? 'destaque' : ''; ?>">
 
-                <?php if ($s['destaque']): ?>
-                  <span class="badge bg-warning text-dark mb-2" style="width:fit-content;">★ Destaque Fix Now</span>
-                <?php endif; ?>
+              <?php if ($s['destaque']): ?>
+                <div class="svc-destaque-bar">
+                  <span style="color:#fff;font-size:.75rem;font-weight:700;">⭐ Destaque Fix Now</span>
+                </div>
+              <?php endif; ?>
 
-                <!-- Cabeçalho: foto + nome + avaliação -->
-                <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="svc-card-body">
+
+                <!-- Foto + nome + avaliação -->
+                <div class="d-flex align-items-center gap-3">
                   <?php if ($s['foto_perfil']): ?>
-                    <img src="../<?php echo htmlspecialchars($s['foto_perfil']); ?>" alt="Foto"
-                         width="52" height="52" class="rounded-circle object-fit-cover flex-shrink-0">
+                    <img src="../<?php echo htmlspecialchars($s['foto_perfil']); ?>" alt="" class="svc-avatar">
                   <?php else: ?>
-                    <span class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                          style="width:52px;height:52px;font-size:1.1rem;">
-                      <?php echo htmlspecialchars(mb_substr($s['tecnico_nome'], 0, 1)); ?>
-                    </span>
+                    <div class="svc-avatar-init"><?php echo htmlspecialchars(mb_strtoupper(mb_substr($s['tecnico_nome'], 0, 1))); ?></div>
                   <?php endif; ?>
-                  <div>
-                    <div class="fw-semibold"><?php echo htmlspecialchars($s['tecnico_nome']); ?></div>
+                  <div style="min-width:0">
+                    <div class="svc-nome text-truncate"><?php echo htmlspecialchars($s['tecnico_nome']); ?></div>
                     <?php if ($s['media_nota'] > 0): ?>
-                      <div class="small text-warning">★ <?php echo number_format((float)$s['media_nota'], 1); ?></div>
+                      <div class="svc-rating">★ <?php echo number_format((float)$s['media_nota'], 1); ?></div>
                     <?php else: ?>
-                      <div class="small text-muted">Sem avaliações</div>
+                      <div class="svc-rating"><span class="sem-aval">Sem avaliações</span></div>
                     <?php endif; ?>
                   </div>
                 </div>
 
-                <!-- Badges de serviços/categorias -->
+                <div class="svc-divider"></div>
+
+                <!-- Categorias -->
                 <div class="d-flex flex-wrap gap-1 mb-3">
                   <?php foreach ($s['servicos'] as $sv): ?>
-                    <span class="badge bg-light text-secondary border">
-                      <?php echo htmlspecialchars($sv['categoria_nome'] ?: $sv['nome']); ?>
-                    </span>
+                    <span class="svc-badge"><?php echo htmlspecialchars($sv['categoria_nome'] ?: $sv['nome']); ?></span>
                   <?php endforeach; ?>
                 </div>
 
                 <!-- Preço -->
                 <div class="mt-auto">
-                  <div class="mb-3">
-                    <?php if ($s['preco_min'] === $s['preco_max']): ?>
-                      <span class="fw-bold text-primary fs-5">R$ <?php echo number_format((float)$s['preco_min'], 2, ',', '.'); ?></span>
+                  <?php $precoMin = (float)$s['preco_min']; $precoMax = (float)$s['preco_max']; ?>
+                  <?php if ($precoMin > 0): ?>
+                    <?php if ($precoMin === $precoMax): ?>
+                      <span class="svc-price">R$ <?php echo number_format($precoMin, 2, ',', '.'); ?></span>
                     <?php else: ?>
-                      <span class="fw-bold text-primary fs-5">
-                        R$ <?php echo number_format((float)$s['preco_min'], 2, ',', '.'); ?>
-                        <span class="fs-6 fw-normal text-muted">– R$ <?php echo number_format((float)$s['preco_max'], 2, ',', '.'); ?></span>
+                      <span class="svc-price">R$ <?php echo number_format($precoMin, 2, ',', '.'); ?>
+                        <span class="svc-price-range">– R$ <?php echo number_format($precoMax, 2, ',', '.'); ?></span>
                       </span>
                     <?php endif; ?>
-                  </div>
-                  <div class="d-flex gap-2">
-                    <a href="portfolioPublico.php?id=<?php echo (int)$s['tecnico_id']; ?>"
-                       class="btn btn-sm btn-outline-secondary flex-fill">Portfólio</a>
-                    <a href="cliente/solicitar.php?prestador=<?php echo (int)$s['tecnico_id']; ?>"
-                       class="btn btn-sm btn-warning fw-semibold flex-fill">Solicitar</a>
-                  </div>
+                  <?php else: ?>
+                    <span class="svc-price-combinar">💬 A combinar</span>
+                  <?php endif; ?>
                 </div>
 
               </div>
+
+              <!-- Botões fora do body para ficarem grudados no rodapé -->
+              <div class="svc-footer">
+                <a href="portfolioPublico.php?id=<?php echo (int)$s['tecnico_id']; ?>"
+                   class="btn btn-sm btn-outline-secondary flex-fill">Portfólio</a>
+                <a href="cliente/solicitar.php?prestador=<?php echo (int)$s['tecnico_id']; ?>"
+                   class="btn btn-sm btn-warning fw-semibold flex-fill">Solicitar</a>
+              </div>
+
             </div>
           </div>
         <?php endforeach; ?>

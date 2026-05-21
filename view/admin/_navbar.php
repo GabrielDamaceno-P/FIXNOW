@@ -6,10 +6,12 @@ if (!isset($_SESSION['admin_id'])) {
     header('Location: ../login.php'); exit;
 }
 
-$adminId     = (int)$_SESSION['admin_id'];
-$adminNome   = $_SESSION['admin_nome'] ?? 'Admin';
-$isMaster    = true;
-$pdo         = Conexao::getConexao();
+$adminId          = (int)$_SESSION['admin_id'];
+$adminNome        = $_SESSION['admin_nome'] ?? 'Admin';
+$isMaster         = true;
+$pdo              = Conexao::getConexao();
+$primaryAdminId   = (int)$pdo->query("SELECT MIN(id) FROM admin")->fetchColumn();
+$isCurrentPrimary = ($adminId === $primaryAdminId);
 $paginaAtiva = $paginaAtiva ?? '';
 
 try { $naoLidas  = (int)$pdo->query("SELECT COUNT(*) FROM notificacao WHERE tipo_destinatario='admin' AND lida=0")->fetchColumn(); }

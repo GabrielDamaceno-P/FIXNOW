@@ -270,10 +270,10 @@ $stats = $stmtStats->fetch();
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
         <li class="nav-item"><a class="nav-link active" href="index.php">Início</a></li>
-        <li class="nav-item"><a class="nav-link" href="catalogo.php">Catálogo</a></li>
+        <li class="nav-item"><a class="nav-link" href="view/catalogo.php">Catálogo</a></li>
         <li class="nav-item"><a class="nav-link" href="#como-funciona">Como funciona</a></li>
         <li class="nav-item"><a class="nav-link" href="#acessos-rapidos">Acessos</a></li>
-        <li class="nav-item"><a class="nav-link" href="login.php">Entrar</a></li>
+        <li class="nav-item"><a class="nav-link" href="view/login.php">Entrar</a></li>
         <li class="nav-item"><a class="btn btn-sm btn-warning ms-lg-1 px-3 fw-semibold" href="view/cliente/solicitar.php">Pedir serviço</a></li>
       </ul>
     </div>
@@ -346,37 +346,37 @@ $stats = $stmtStats->fetch();
     </div>
     <div class="row g-3 justify-content-center">
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <a href="catalogo.php?categoria=Suporte+TI" class="card-categoria h-100">
+        <a href="view/catalogo.php?categoria=Suporte+TI" class="card-categoria h-100">
           <div class="icone-categoria">💻</div>
           <div class="rotulo-categoria">Suporte TI</div>
         </a>
       </div>
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <a href="catalogo.php?categoria=Elétrica" class="card-categoria h-100">
+        <a href="view/catalogo.php?categoria=Elétrica" class="card-categoria h-100">
           <div class="icone-categoria">⚡</div>
           <div class="rotulo-categoria">Elétrica</div>
         </a>
       </div>
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <a href="catalogo.php?categoria=Hidráulica" class="card-categoria h-100">
+        <a href="view/catalogo.php?categoria=Hidráulica" class="card-categoria h-100">
           <div class="icone-categoria">🔧</div>
           <div class="rotulo-categoria">Hidráulica</div>
         </a>
       </div>
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <a href="catalogo.php?categoria=Pintura" class="card-categoria h-100">
+        <a href="view/catalogo.php?categoria=Pintura" class="card-categoria h-100">
           <div class="icone-categoria">🎨</div>
           <div class="rotulo-categoria">Pintura</div>
         </a>
       </div>
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <a href="catalogo.php?categoria=Marcenaria" class="card-categoria h-100">
+        <a href="view/catalogo.php?categoria=Marcenaria" class="card-categoria h-100">
           <div class="icone-categoria">🪚</div>
           <div class="rotulo-categoria">Marcenaria</div>
         </a>
       </div>
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <a href="catalogo.php" class="card-categoria h-100" style="border-style:dashed;">
+        <a href="view/catalogo.php" class="card-categoria h-100" style="border-style:dashed;">
           <div class="icone-categoria">🔍</div>
           <div class="rotulo-categoria">Ver tudo</div>
         </a>
@@ -475,7 +475,7 @@ $stats = $stmtStats->fetch();
       <?php endforeach; ?>
     </div>
     <div class="text-center mt-4">
-      <a href="catalogo.php" class="btn btn-outline-warning fw-semibold px-4">Ver catálogo completo</a>
+      <a href="view/catalogo.php" class="btn btn-outline-warning fw-semibold px-4">Ver catálogo completo</a>
     </div>
   </div>
 </section>
@@ -499,7 +499,7 @@ $stats = $stmtStats->fetch();
         </a>
       </div>
       <div class="col-md-6 col-lg-3">
-        <a class="link-rapido h-100" href="login.php">
+        <a class="link-rapido h-100" href="view/login.php">
           <div class="icone-rapido">🔑</div>
           <div>
             <h6 class="mb-1 fw-bold">Sou Prestador</h6>
@@ -509,7 +509,7 @@ $stats = $stmtStats->fetch();
         </a>
       </div>
       <div class="col-md-6 col-lg-3">
-        <a class="link-rapido h-100" href="catalogo.php">
+        <a class="link-rapido h-100" href="view/catalogo.php">
           <div class="icone-rapido">📂</div>
           <div>
             <h6 class="mb-1 fw-bold">Catálogo</h6>

@@ -248,9 +248,16 @@ $isPrestador = $usuarioTipo === 'prestador';
           </div>
           <div class="col-md-6">
             <label class="form-label fw-semibold" style="font-size:.88rem">CPF</label>
-            <input type="text" class="form-control form-control-sm" readonly
-                   style="background:#f8fafc"
-                   value="<?= $cpfMascara ? htmlspecialchars($cpfMascara) : '—' ?>">
+            <?php if ($cpfMascara): ?>
+              <input type="text" class="form-control form-control-sm" readonly
+                     style="background:#f8fafc"
+                     value="<?= htmlspecialchars($cpfMascara) ?>">
+              <div class="form-text" style="font-size:.75rem">CPF não pode ser alterado após o cadastro.</div>
+            <?php else: ?>
+              <input type="text" name="cpf" class="form-control form-control-sm"
+                     maxlength="14" placeholder="000.000.000-00" autocomplete="off">
+              <div class="form-text" style="font-size:.75rem">Opcional — pode ser adicionado agora ou depois.</div>
+            <?php endif; ?>
           </div>
 
           <?php if ($isPrestador): ?>
