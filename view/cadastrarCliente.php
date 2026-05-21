@@ -28,7 +28,7 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
     /* Banner topo */
     .cad-hero {
       background: linear-gradient(135deg, #0d1b3d 0%, #1a2b63 60%, #c95e00 100%);
-      padding: 2rem 0 1.8rem;
+      padding: 3rem 0 4rem;
       position: relative;
       overflow: hidden;
     }

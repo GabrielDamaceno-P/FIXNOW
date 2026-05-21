@@ -38,6 +38,85 @@ elseif ($temParaPagar)     $dica = 'Você tem um pagamento pendente. Confirme pa
 elseif ($temAndamento)     $dica = 'Seu chamado está em andamento. Você pode reagendar o horário se necessário.';
 elseif ($temPendente)      $dica = 'Seu chamado está aguardando um prestador. Prestadores com foto e portfólio costumam responder mais rápido.';
 else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasGerais)];
+
+// Paginação (calculada aqui para servir tanto o AJAX quanto o render normal)
+$_svcPorPagina     = 4;
+$_svcPaginaAtual   = max(1, (int)($_GET['pagina'] ?? 1));
+$_svcTotal         = count($servicos);
+$_svcTotalPaginas  = max(1, (int)ceil($_svcTotal / $_svcPorPagina));
+$_svcPaginaAtual   = min($_svcPaginaAtual, $_svcTotalPaginas);
+$_svcPag           = array_slice($servicos, ($_svcPaginaAtual - 1) * $_svcPorPagina, $_svcPorPagina);
+$_svcBase          = 'dashboardCliente.php?' . ($filtroCategoria ? 'categoria=' . urlencode($filtroCategoria) . '&' : '') . ($filtroPrestadoraMulher ? 'so_mulher=1&' : '');
+
+// Resposta parcial para requisições AJAX de paginação
+if (isset($_GET['ajax'])) {
+    header('Content-Type: text/html; charset=utf-8');
+    if (!$_svcPag): ?>
+      <div class="alert alert-info">Nenhum prestador encontrado.</div>
+    <?php else: ?>
+      <div class="row g-4">
+        <?php foreach ($_svcPag as $s): ?>
+          <div class="col-6 col-md-3">
+            <div class="svc-card <?= $s['destaque'] ? 'destaque' : '' ?>">
+              <?php if ($s['destaque']): ?><div class="svc-destaque-bar"><span style="color:#fff;font-size:.75rem;font-weight:700;">⭐ Destaque Fix Now</span></div><?php endif; ?>
+              <div class="svc-card-body">
+                <div class="d-flex align-items-center gap-3">
+                  <?php if ($s['foto_perfil']): ?>
+                    <img src="../<?= htmlspecialchars($s['foto_perfil']) ?>" alt="" class="svc-avatar">
+                  <?php else: ?>
+                    <div class="svc-avatar-init"><?= htmlspecialchars(mb_strtoupper(mb_substr($s['tecnico_nome'], 0, 1))) ?></div>
+                  <?php endif; ?>
+                  <div style="min-width:0">
+                    <div class="svc-nome text-truncate"><?= htmlspecialchars($s['tecnico_nome']) ?></div>
+                    <?php if ($s['media_nota'] > 0): ?>
+                      <div class="svc-rating">★ <?= number_format((float)$s['media_nota'], 1) ?></div>
+                    <?php else: ?>
+                      <div class="svc-rating"><span class="sem-aval">Sem avaliações</span></div>
+                    <?php endif; ?>
+                  </div>
+                </div>
+                <div class="svc-divider"></div>
+                <div class="d-flex flex-wrap gap-1 mb-3">
+                  <?php foreach ($s['servicos'] as $sv): ?>
+                    <span class="svc-badge"><?= htmlspecialchars($sv['categoria_nome'] ?: $sv['nome']) ?></span>
+                  <?php endforeach; ?>
+                </div>
+                <div class="mt-auto">
+                  <?php $pm = (float)$s['preco_min']; $px = (float)$s['preco_max']; ?>
+                  <?php if ($pm > 0): ?>
+                    <span class="svc-price">R$ <?= number_format($pm, 2, ',', '.') ?>
+                      <?php if ($pm !== $px): ?><span class="svc-price-range">– R$ <?= number_format($px, 2, ',', '.') ?></span><?php endif; ?>
+                    </span>
+                  <?php else: ?>
+                    <span class="svc-price-combinar">💬 A combinar</span>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <div class="svc-footer">
+                <a href="portfolioPublico.php?id=<?= (int)$s['tecnico_id'] ?>" class="btn btn-sm btn-outline-secondary flex-fill">Portfólio</a>
+                <a href="cliente/solicitar.php?prestador=<?= (int)$s['tecnico_id'] ?>" class="btn btn-sm btn-warning fw-semibold flex-fill">Solicitar</a>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+      <?php if ($_svcTotalPaginas > 1):
+        $ini = max(1, $_svcPaginaAtual - 2); $fim = min($_svcTotalPaginas, $_svcPaginaAtual + 2); ?>
+      <nav class="mt-4 d-flex justify-content-center align-items-center gap-2 flex-wrap" id="svc-paginacao">
+        <?php if ($_svcPaginaAtual > 1): ?><a href="<?= $_svcBase ?>pagina=<?= $_svcPaginaAtual - 1 ?>" class="btn btn-sm btn-outline-secondary">‹ Anterior</a><?php else: ?><button class="btn btn-sm btn-outline-secondary" disabled>‹ Anterior</button><?php endif; ?>
+        <?php if ($ini > 1): ?><a href="<?= $_svcBase ?>pagina=1" class="btn btn-sm btn-outline-secondary">1</a><?php if ($ini > 2): ?><span class="text-muted small px-1">…</span><?php endif; ?><?php endif; ?>
+        <?php for ($p = $ini; $p <= $fim; $p++): ?>
+          <?php if ($p === $_svcPaginaAtual): ?><button class="btn btn-sm btn-warning fw-bold" disabled><?= $p ?></button>
+          <?php else: ?><a href="<?= $_svcBase ?>pagina=<?= $p ?>" class="btn btn-sm btn-outline-secondary"><?= $p ?></a><?php endif; ?>
+        <?php endfor; ?>
+        <?php if ($fim < $_svcTotalPaginas): ?><?php if ($fim < $_svcTotalPaginas - 1): ?><span class="text-muted small px-1">…</span><?php endif; ?><a href="<?= $_svcBase ?>pagina=<?= $_svcTotalPaginas ?>" class="btn btn-sm btn-outline-secondary"><?= $_svcTotalPaginas ?></a><?php endif; ?>
+        <?php if ($_svcPaginaAtual < $_svcTotalPaginas): ?><a href="<?= $_svcBase ?>pagina=<?= $_svcPaginaAtual + 1 ?>" class="btn btn-sm btn-outline-secondary">Próximo ›</a><?php else: ?><button class="btn btn-sm btn-outline-secondary" disabled>Próximo ›</button><?php endif; ?>
+        <span class="text-muted small ms-2"><?= (($_svcPaginaAtual - 1) * $_svcPorPagina) + 1 ?>–<?= min($_svcPaginaAtual * $_svcPorPagina, $_svcTotal) ?> de <?= $_svcTotal ?></span>
+      </nav>
+      <?php endif; ?>
+    <?php endif;
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -263,13 +342,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
       'Pintura'      => '🎨', 'Marcenaria'  => '🪵', 'Limpeza'    => '🧹',
       'Refrigeração' => '❄️',  'Jardinagem'  => '🌿',
     ];
-    $porPagina     = 4;
-    $paginaAtual   = max(1, (int)($_GET['pagina'] ?? 1));
-    $totalServicos = count($servicos);
-    $totalPaginas  = max(1, (int)ceil($totalServicos / $porPagina));
-    $paginaAtual   = min($paginaAtual, $totalPaginas);
-    $servicosPag   = array_slice($servicos, ($paginaAtual - 1) * $porPagina, $porPagina);
-    $paginacaoBase = 'dashboardCliente.php?' . ($filtroCategoria ? 'categoria=' . urlencode($filtroCategoria) . '&' : '') . ($filtroPrestadoraMulher ? 'so_mulher=1&' : '');
+    // Vars de paginação definidas no topo do arquivo: $_svcPorPagina, $_svcPaginaAtual, $_svcTotal, $_svcTotalPaginas, $_svcPag, $_svcBase
   ?>
   <section id="encontrar-prestador" class="mb-5">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -323,6 +396,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
     <?php else: ?>
       <div class="mb-4"></div>
     <?php endif; ?>
+    <div id="svc-resultado">
     <?php if (!$servicos): ?>
       <div class="alert alert-info">
         Nenhum prestador encontrado<?php echo $filtroCategoria ? ' para a categoria <strong>' . htmlspecialchars($filtroCategoria) . '</strong>' : ''; ?>
@@ -330,7 +404,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
       </div>
     <?php else: ?>
       <div class="row g-4">
-        <?php foreach ($servicosPag as $s): ?>
+        <?php foreach ($_svcPag as $s): ?>
           <div class="col-6 col-md-3">
             <div class="svc-card <?php echo $s['destaque'] ? 'destaque' : ''; ?>">
 
@@ -399,55 +473,31 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
         <?php endforeach; ?>
       </div>
 
-      <?php if ($totalPaginas > 1): ?>
-      <nav class="mt-4 d-flex justify-content-center align-items-center gap-2 flex-wrap" aria-label="Paginação de prestadores">
-        <!-- Anterior -->
-        <?php if ($paginaAtual > 1): ?>
-          <a href="<?= $paginacaoBase ?>pagina=<?= $paginaAtual - 1 ?>#encontrar-prestador"
-             class="btn btn-sm btn-outline-secondary">‹ Anterior</a>
+      <?php if ($_svcTotalPaginas > 1):
+        $inicio = max(1, $_svcPaginaAtual - 2); $fim = min($_svcTotalPaginas, $_svcPaginaAtual + 2); ?>
+      <nav class="mt-4 d-flex justify-content-center align-items-center gap-2 flex-wrap" id="svc-paginacao">
+        <?php if ($_svcPaginaAtual > 1): ?>
+          <a href="<?= $_svcBase ?>pagina=<?= $_svcPaginaAtual - 1 ?>" class="btn btn-sm btn-outline-secondary">‹ Anterior</a>
         <?php else: ?>
           <button class="btn btn-sm btn-outline-secondary" disabled>‹ Anterior</button>
         <?php endif; ?>
-
-        <!-- Números de página -->
-        <?php
-          $inicio = max(1, $paginaAtual - 2);
-          $fim    = min($totalPaginas, $paginaAtual + 2);
-        ?>
-        <?php if ($inicio > 1): ?>
-          <a href="<?= $paginacaoBase ?>pagina=1#encontrar-prestador" class="btn btn-sm btn-outline-secondary">1</a>
-          <?php if ($inicio > 2): ?><span class="text-muted small px-1">…</span><?php endif; ?>
-        <?php endif; ?>
-
+        <?php if ($inicio > 1): ?><a href="<?= $_svcBase ?>pagina=1" class="btn btn-sm btn-outline-secondary">1</a><?php if ($inicio > 2): ?><span class="text-muted small px-1">…</span><?php endif; ?><?php endif; ?>
         <?php for ($p = $inicio; $p <= $fim; $p++): ?>
-          <?php if ($p === $paginaAtual): ?>
-            <button class="btn btn-sm btn-warning fw-bold" disabled><?= $p ?></button>
-          <?php else: ?>
-            <a href="<?= $paginacaoBase ?>pagina=<?= $p ?>#encontrar-prestador" class="btn btn-sm btn-outline-secondary"><?= $p ?></a>
-          <?php endif; ?>
+          <?php if ($p === $_svcPaginaAtual): ?><button class="btn btn-sm btn-warning fw-bold" disabled><?= $p ?></button>
+          <?php else: ?><a href="<?= $_svcBase ?>pagina=<?= $p ?>" class="btn btn-sm btn-outline-secondary"><?= $p ?></a><?php endif; ?>
         <?php endfor; ?>
-
-        <?php if ($fim < $totalPaginas): ?>
-          <?php if ($fim < $totalPaginas - 1): ?><span class="text-muted small px-1">…</span><?php endif; ?>
-          <a href="<?= $paginacaoBase ?>pagina=<?= $totalPaginas ?>#encontrar-prestador" class="btn btn-sm btn-outline-secondary"><?= $totalPaginas ?></a>
-        <?php endif; ?>
-
-        <!-- Próximo -->
-        <?php if ($paginaAtual < $totalPaginas): ?>
-          <a href="<?= $paginacaoBase ?>pagina=<?= $paginaAtual + 1 ?>#encontrar-prestador"
-             class="btn btn-sm btn-outline-secondary">Próximo ›</a>
+        <?php if ($fim < $_svcTotalPaginas): ?><?php if ($fim < $_svcTotalPaginas - 1): ?><span class="text-muted small px-1">…</span><?php endif; ?><a href="<?= $_svcBase ?>pagina=<?= $_svcTotalPaginas ?>" class="btn btn-sm btn-outline-secondary"><?= $_svcTotalPaginas ?></a><?php endif; ?>
+        <?php if ($_svcPaginaAtual < $_svcTotalPaginas): ?>
+          <a href="<?= $_svcBase ?>pagina=<?= $_svcPaginaAtual + 1 ?>" class="btn btn-sm btn-outline-secondary">Próximo ›</a>
         <?php else: ?>
           <button class="btn btn-sm btn-outline-secondary" disabled>Próximo ›</button>
         <?php endif; ?>
-
-        <span class="text-muted small ms-2">
-          <?= (($paginaAtual - 1) * $porPagina) + 1 ?>–<?= min($paginaAtual * $porPagina, $totalServicos) ?>
-          de <?= $totalServicos ?>
-        </span>
+        <span class="text-muted small ms-2"><?= (($_svcPaginaAtual - 1) * $_svcPorPagina) + 1 ?>–<?= min($_svcPaginaAtual * $_svcPorPagina, $_svcTotal) ?> de <?= $_svcTotal ?></span>
       </nav>
       <?php endif; ?>
 
     <?php endif; ?>
+    </div><!-- #svc-resultado -->
   </section>
 
   <?php
@@ -1022,5 +1072,37 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <button id="fn-dark-toggle" title="Alternar modo escuro" aria-label="Alternar modo escuro">🌙</button>
+<script>
+(function () {
+  var resultado = document.getElementById('svc-resultado');
+  if (!resultado) return;
+
+  resultado.addEventListener('click', function (e) {
+    var link = e.target.closest('a[href*="dashboardCliente"]');
+    if (!link) return;
+    e.preventDefault();
+
+    var href = link.getAttribute('href');
+    var ajaxUrl = href + (href.includes('?') ? '&' : '?') + 'ajax=1';
+
+    resultado.style.opacity = '0.5';
+    resultado.style.pointerEvents = 'none';
+
+    fetch(ajaxUrl)
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        resultado.innerHTML = html;
+        resultado.style.opacity = '';
+        resultado.style.pointerEvents = '';
+        history.pushState(null, '', href + '#encontrar-prestador');
+        document.getElementById('encontrar-prestador')
+          .scrollIntoView({ behavior: 'smooth', block: 'start' });
+      })
+      .catch(function () {
+        window.location = link.href;
+      });
+  });
+})();
+</script>
 </body>
 </html>
