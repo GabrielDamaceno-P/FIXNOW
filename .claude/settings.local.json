@@ -16,7 +16,9 @@
       "Bash(php -r ' *)",
       "Bash(python -c ' *)",
       "Bash(grep -E \"\\\\.php$\")",
-      "Bash(grep -E \"\\\\.\\(php|html\\)$\")"
+      "Bash(grep -E \"\\\\.\\(php|html\\)$\")",
+      "Bash(php -r \"echo ini_get\\('upload_max_filesize'\\) . ' / ' . ini_get\\('post_max_size'\\) . ' / ' . ini_get\\('file_uploads'\\);\")",
+      "Bash(php -version)"
     ]
   }
 }

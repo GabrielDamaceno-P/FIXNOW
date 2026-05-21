@@ -13,7 +13,7 @@ $naoLidas           = $ctrl->naoLidas;
 $tecnicoNome        = $_SESSION['tecnico_nome'] ?? 'Prestador';
 $tecnicoFoto        = $_SESSION['tecnico_foto'] ?? '';
 
-$niveis = [['Simples','50'],['Básico','89'],['Intermediário','130'],['Avançado','200'],['Premium','280'],['Urgente','350']];
+$niveis = [['Simples','80'],['Básico','150'],['Intermediário','280'],['Avançado','450'],['Premium','700'],['Urgente','900']];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -30,12 +30,15 @@ $niveis = [['Simples','50'],['Básico','89'],['Intermediário','130'],['Avançad
     .page-header p{color:rgba(255,255,255,.72);font-size:.9rem;margin:0}
     .form-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;padding:1.5rem}
     .form-card-titulo{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:1.1rem;padding-bottom:.7rem;border-bottom:2px solid #f0f3fa;display:flex;align-items:center;gap:.5rem}
-    .nivel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:.4rem;margin-bottom:.75rem}
+    .nivel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:.4rem;margin-bottom:.5rem}
     .nivel-btn{border:1.5px solid #e8ecf3;border-radius:10px;padding:.5rem .4rem;text-align:center;cursor:pointer;transition:all .18s;background:#fff;width:100%}
     .nivel-btn:hover{border-color:#ffc107;background:#fffbf0}
     .nivel-btn.sel{border-color:#ffc107;background:#fff3cd}
     .nivel-btn .nt{font-size:.72rem;font-weight:700;color:#0d1b3d;display:block}
     .nivel-btn .np{font-size:.84rem;font-weight:800;color:#f59e0b;display:block}
+    .nivel-custom-btn{border:1.5px dashed #cbd5e1;border-radius:10px;padding:.4rem .75rem;cursor:pointer;transition:all .18s;background:transparent;font-size:.78rem;font-weight:700;color:#6b7280;display:flex;align-items:center;gap:.35rem;margin-bottom:.75rem}
+    .nivel-custom-btn:hover{border-color:#ffc107;color:#f59e0b}
+    .nivel-custom-btn.sel{border-color:#ffc107;color:#f59e0b;background:#fffbf0}
     .detalhe-card{background:#fff;border:1.5px solid #e8ecf3;border-radius:14px;overflow:hidden;margin-bottom:1.25rem}
     .detalhe-header{background:linear-gradient(135deg,#0d1b3d,#1a2b63);padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
     .detalhe-header h6{color:#fff;margin:0;font-weight:700;font-size:.92rem}
@@ -56,6 +59,8 @@ $niveis = [['Simples','50'],['Básico','89'],['Intermediário','130'],['Avançad
     [data-theme="dark"] .nivel-btn{background:#252d42;border-color:#2e3650}
     [data-theme="dark"] .nivel-btn .nt{color:#c8d0e0}
     [data-theme="dark"] .nivel-btn:hover,.nivel-btn.sel{background:#2a2010;border-color:#ffc107}
+    [data-theme="dark"] .nivel-custom-btn{border-color:#3a4560;color:#8090b0}
+    [data-theme="dark"] .nivel-custom-btn:hover,[data-theme="dark"] .nivel-custom-btn.sel{border-color:#ffc107;color:#f59e0b;background:#2a2010}
     [data-theme="dark"] .detalhe-card{background:#1e2538;border-color:#2e3650}
     [data-theme="dark"] .detalhe-body{background:#1e2538}
     [data-theme="dark"] .info-row .val{color:#c8d0e0}
@@ -131,6 +136,13 @@ $niveis = [['Simples','50'],['Básico','89'],['Intermediário','130'],['Avançad
                   <span class="np">R$ <?php echo $val; ?></span>
                 </button>
               <?php endforeach; ?>
+            </div>
+            <button type="button" class="nivel-custom-btn w-100 justify-content-center" id="btnPersonalizado">
+              ✏️ Definir valor personalizado
+            </button>
+            <div id="customValorWrap" style="display:none;" class="mt-1">
+              <input type="number" id="input-custom-valor" class="form-control" min="1" step="0.01"
+                     placeholder="Digite o valor exato (R$)" style="font-size:.9rem;">
             </div>
           </div>
 
@@ -256,6 +268,13 @@ $niveis = [['Simples','50'],['Básico','89'],['Intermediário','130'],['Avançad
                 </button>
               <?php endforeach; ?>
             </div>
+            <button type="button" class="nivel-custom-btn w-100 justify-content-center" id="modalBtnPersonalizado">
+              ✏️ Definir valor personalizado
+            </button>
+            <div id="modalCustomValorWrap" style="display:none;" class="mt-1">
+              <input type="number" id="modal-input-custom-valor" class="form-control" min="1" step="0.01"
+                     placeholder="Digite o valor exato (R$)" style="font-size:.9rem;">
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold" style="font-size:.88rem;">Novo valor (R$) <span class="text-danger">*</span></label>
@@ -319,20 +338,78 @@ if (selChamado) {
   var pre = parseInt(selChamado.value); if (pre) mostrarDetalhe(pre);
 }
 
+// --- Formulário principal ---
+var inputValor       = document.getElementById('input-valor-orcamento');
+var btnPersonalizado = document.getElementById('btnPersonalizado');
+var customWrap       = document.getElementById('customValorWrap');
+var inputCustom      = document.getElementById('input-custom-valor');
+
+function resetNivelGrid() {
+  document.querySelectorAll('#nivelGrid .nivel-btn').forEach(b => b.classList.remove('sel'));
+  btnPersonalizado.classList.remove('sel');
+}
+
 document.querySelectorAll('#nivelGrid .nivel-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    document.querySelectorAll('#nivelGrid .nivel-btn').forEach(b => b.classList.remove('sel'));
+    resetNivelGrid();
     this.classList.add('sel');
-    document.getElementById('input-valor-orcamento').value = this.dataset.valor;
+    customWrap.style.display = 'none';
+    inputValor.value = this.dataset.valor;
+    inputValor.readOnly = false;
   });
 });
+
+if (btnPersonalizado) {
+  btnPersonalizado.addEventListener('click', function() {
+    resetNivelGrid();
+    this.classList.add('sel');
+    customWrap.style.display = '';
+    inputValor.value = '';
+    inputCustom.focus();
+  });
+}
+
+if (inputCustom) {
+  inputCustom.addEventListener('input', function() {
+    inputValor.value = this.value;
+  });
+}
+
+// --- Modal Alterar ---
+var modalInputValor       = document.getElementById('modal-orc-valor');
+var modalBtnPersonalizado = document.getElementById('modalBtnPersonalizado');
+var modalCustomWrap       = document.getElementById('modalCustomValorWrap');
+var modalInputCustom      = document.getElementById('modal-input-custom-valor');
+
+function resetModalNivelGrid() {
+  document.querySelectorAll('#modalNivelGrid .nivel-btn').forEach(b => b.classList.remove('sel'));
+  if (modalBtnPersonalizado) modalBtnPersonalizado.classList.remove('sel');
+}
+
 document.querySelectorAll('#modalNivelGrid .nivel-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    document.querySelectorAll('#modalNivelGrid .nivel-btn').forEach(b => b.classList.remove('sel'));
+    resetModalNivelGrid();
     this.classList.add('sel');
-    document.getElementById('modal-orc-valor').value = this.dataset.modalValor;
+    if (modalCustomWrap) modalCustomWrap.style.display = 'none';
+    modalInputValor.value = this.dataset.modalValor;
   });
 });
+
+if (modalBtnPersonalizado) {
+  modalBtnPersonalizado.addEventListener('click', function() {
+    resetModalNivelGrid();
+    this.classList.add('sel');
+    modalCustomWrap.style.display = '';
+    modalInputValor.value = '';
+    modalInputCustom.focus();
+  });
+}
+
+if (modalInputCustom) {
+  modalInputCustom.addEventListener('input', function() {
+    modalInputValor.value = this.value;
+  });
+}
 
 var modalAlterar = document.getElementById('modalAlterarOrcamento');
 if (modalAlterar) {
@@ -342,7 +419,9 @@ if (modalAlterar) {
     document.getElementById('modal-orc-valor').value         = btn.dataset.valor;
     document.getElementById('modal-orc-descricao').value     = btn.dataset.descricao;
     document.getElementById('modal-orc-chamado').textContent = '#' + btn.dataset.chamado;
-    document.querySelectorAll('#modalNivelGrid .nivel-btn').forEach(b => b.classList.remove('sel'));
+    resetModalNivelGrid();
+    if (modalCustomWrap)  modalCustomWrap.style.display = 'none';
+    if (modalInputCustom) modalInputCustom.value = '';
   });
 }
 </script>

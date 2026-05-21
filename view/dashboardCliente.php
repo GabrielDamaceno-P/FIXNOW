@@ -530,6 +530,7 @@ if (isset($_GET['ajax'])) {
     <div class="d-flex flex-column gap-3">
     <?php foreach ($chamados as $c): ?>
       <?php if (isset($chamadosComOrcamentoPendente[$c->id])) continue; ?>
+      <?php if ($proximoChamado && $c->id === $proximoChamado->id) continue; ?>
       <?php
         $podePagar     = $c->status === 'Concluído' && $c->pagamentoId && $c->pagStatus === 'Pendente';
         $jaAvaliado    = $c->avaliacaoNota !== null;

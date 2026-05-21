@@ -469,24 +469,6 @@ $catIcons = [
           <?php endif; ?>
         </div>
 
-        <!-- Preferência feminino -->
-        <?php if ($clienteGenero === 'Feminino'): ?>
-        <div class="secao-form">
-          <div class="secao-form-titulo">
-            <div class="secao-num" style="background:linear-gradient(135deg,#e91e8c,#c2185b);">♀</div>
-            Preferência de prestador
-          </div>
-          <label class="check-prest-fem w-100 d-flex align-items-center gap-3">
-            <input class="form-check-input m-0 flex-shrink-0" type="checkbox" name="prest_feminino" value="1"
-              id="chk-prestadora-mulher" <?php echo !empty($_POST['prest_feminino']) ? 'checked' : ''; ?>>
-            <div>
-              <span class="fw-semibold d-block">Quero somente prestadoras mulheres</span>
-              <small class="text-muted">Apenas profissionais do gênero feminino serão consideradas para este chamado.</small>
-            </div>
-          </label>
-        </div>
-        <?php endif; ?>
-
         <!-- Botões -->
         <div class="d-flex flex-wrap gap-3 align-items-center pb-4">
           <button type="submit" class="btn-abrir" id="btn-abrir-chamado"
@@ -595,6 +577,9 @@ $catIcons = [
   function confirmar() { if (solTxt) solTxt.textContent = 'Local confirmado. Arraste o marcador para ajustar.'; }
   function falhou()    { if (solTxt) solTxt.textContent = 'Não foi possível localizar. Arraste o marcador para o local correto.'; }
 
+  // Padrões de logradouro estilo DF que geocodificadores não reconhecem como rua
+  var _dfPattern = /^(EQ|QI|QD|SQS|SQN|SQSW|SQNW|SHIN|SHIS|SHIG|SMPW|CLN|CLS|SCE|SIG|QR|QL|QC|SHC|SHL|SHN|SHS|SMSE|SMSN|SCES|SOF|SBN|SDN|SSE)\b/i;
+
   function limparRua(str) {
     return (str || '')
       .replace(/^Quadra\s+/i, '')
@@ -602,6 +587,11 @@ $catIcons = [
       .replace(/\s+Lote\s+.*$/i, '')
       .trim();
   }
+
+  function ehEnderecoDF(rua) {
+    return _dfPattern.test(rua);
+  }
+
   function porBairro(bairro, cidade, uf) {
     var q = [bairro, cidade, uf, 'Brasil'].filter(Boolean).join(', ');
     if (q.replace('Brasil', '').trim().length < 3) { falhou(); return; }
@@ -610,6 +600,17 @@ $catIcons = [
       .then(function (d) { if (d && d.length) { mover(parseFloat(d[0].lat), parseFloat(d[0].lon)); confirmar(); } else falhou(); })
       .catch(falhou);
   }
+
+  function porNominatimCep(bairro, cidade, uf) {
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&postalcode=' + encodeURIComponent(cepCad))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.length) { mover(parseFloat(d[0].lat), parseFloat(d[0].lon)); confirmar(); }
+        else porBairro(bairro, cidade, uf);
+      })
+      .catch(function () { porBairro(bairro, cidade, uf); });
+  }
+
   function porNominatimEstruturado(rua, bairro, cidade, uf) {
     var p = 'format=json&limit=1&countrycodes=br';
     if (rua)    p += '&street='  + encodeURIComponent(rua);
@@ -620,31 +621,41 @@ $catIcons = [
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.length) { mover(parseFloat(d[0].lat), parseFloat(d[0].lon)); confirmar(); }
-        else if (bairro) porNominatimEstruturado(rua, '', cidade, uf);
-        else porAwesome(bairro, cidade, uf);
+        else porNominatimCep(bairro, cidade, uf);
       })
-      .catch(function () { porAwesome(bairro, cidade, uf); });
+      .catch(function () { porNominatimCep(bairro, cidade, uf); });
   }
-  function porAwesome(bairro, cidade, uf) {
-    fetch('https://cep.awesomeapi.com.br/json/' + cepCad)
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (d) {
-        if (d && d.lat && d.lng && parseFloat(d.lat) !== 0) { mover(parseFloat(d.lat), parseFloat(d.lng)); confirmar(); }
-        else porBairro(bairro || (d && d.district), cidade || (d && d.city), uf || (d && d.state));
-      })
-      .catch(function () { porBairro(bairro, cidade, uf); });
-  }
-  function iniciar() {
-    if (cepCad.length !== 8) { if (endCad) porBairro('', endCad, ''); else falhou(); return; }
+
+  function geocodViaCep() {
     fetch('https://viacep.com.br/ws/' + cepCad + '/json/')
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        if (d.erro || !d.localidade) { porAwesome('', '', ''); return; }
-        var rua = limparRua(d.logradouro);
-        if (rua) porNominatimEstruturado(rua, d.bairro || '', d.localidade || '', d.uf || '');
-        else porAwesome(d.bairro || '', d.localidade || '', d.uf || '');
+        if (d.erro || !d.localidade) { falhou(); return; }
+        var rua    = limparRua(d.logradouro);
+        var bairro = d.bairro    || '';
+        var cidade = d.localidade || '';
+        var uf     = d.uf        || '';
+        // Logradouros estilo DF (EQ, QI, SHIN…) não resolvem bem no Nominatim:
+        // pula direto para postalcode → bairro
+        if (!rua || ehEnderecoDF(rua)) {
+          porNominatimCep(bairro, cidade, uf);
+        } else {
+          porNominatimEstruturado(rua, bairro, cidade, uf);
+        }
       })
-      .catch(function () { porAwesome('', '', ''); });
+      .catch(falhou);
+  }
+
+  function iniciar() {
+    if (cepCad.length !== 8) { if (endCad) porBairro('', endCad, ''); else falhou(); return; }
+    // Tenta postalcode no Nominatim primeiro — mais preciso para CEPs brasileiros atípicos
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&postalcode=' + encodeURIComponent(cepCad))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.length) { mover(parseFloat(d[0].lat), parseFloat(d[0].lon)); confirmar(); }
+        else geocodViaCep();
+      })
+      .catch(geocodViaCep);
   }
   iniciar();
 })();

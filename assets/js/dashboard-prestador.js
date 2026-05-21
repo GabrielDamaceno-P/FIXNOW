@@ -84,7 +84,9 @@
         img.src = '../../' + path;
         img.className = 'd-block w-100 fn-profile-problem-photo';
         img.alt = 'Foto ' + (i + 1);
-        img.onerror = function () { img.src = fallbackSvg('Imagem indisponível'); };
+        img.title = 'Clique para abrir em tamanho real';
+        img.onerror = function () { img.src = fallbackSvg('Imagem indisponível'); img.style.cursor = 'default'; };
+        img.addEventListener('click', function () { window.open('../../' + path, '_blank'); });
         div.appendChild(img);
         inner.appendChild(div);
       });

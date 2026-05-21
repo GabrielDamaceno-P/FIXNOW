@@ -228,12 +228,12 @@ main {
 
 .fn-profile-problem-photo {
   width: 100%;
-  height: 220px;
-  object-fit: cover;
+  max-height: 380px;
+  object-fit: contain;
   border-radius: 1rem;
-  border: 1px solid #dde6f7;
-  background: linear-gradient(145deg, #eff4ff, #e6edf9);
+  background: #0a0f1e;
   display: block;
+  cursor: zoom-in;
 }
 
 footer {

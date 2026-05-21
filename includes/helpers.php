@@ -104,9 +104,28 @@ function fixnow_upload_image(array $file, string $targetDir, string $prefix): ?s
     if (empty($file['tmp_name']) || empty($file['name'])) {
         return null;
     }
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return null;
+    }
 
-    $permitidas = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    $permitidas = [
+        'image/jpeg'  => 'jpg',
+        'image/jpg'   => 'jpg',   // alias não-padrão retornado por alguns sistemas Windows
+        'image/pjpeg' => 'jpg',   // JPEG progressivo (IE/Edge antigo)
+        'image/png'   => 'png',
+        'image/x-png' => 'png',
+        'image/webp'  => 'webp',
+    ];
     $tipo = mime_content_type($file['tmp_name']) ?: ($file['type'] ?? '');
+    // fallback: verificar pelo cabeçalho dos bytes se mime não foi reconhecido
+    if (!isset($permitidas[$tipo]) && !empty($file['tmp_name'])) {
+        $bytes = @file_get_contents($file['tmp_name'], false, null, 0, 12);
+        if ($bytes !== false) {
+            if (substr($bytes, 0, 3) === "\xFF\xD8\xFF")          $tipo = 'image/jpeg';
+            elseif (substr($bytes, 0, 8) === "\x89PNG\r\n\x1A\n") $tipo = 'image/png';
+            elseif (substr($bytes, 0, 4) === 'RIFF' && substr($bytes, 8, 4) === 'WEBP') $tipo = 'image/webp';
+        }
+    }
     if (!isset($permitidas[$tipo])) {
         return null;
     }

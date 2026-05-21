@@ -40,10 +40,16 @@ $catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pint
     .form-card-titulo{font-weight:700;font-size:.95rem;color:#0d1b3d;margin-bottom:1.1rem;padding-bottom:.7rem;border-bottom:2px solid #f0f3fa;display:flex;align-items:center;gap:.5rem}
     .upload-zone{border:2px dashed #ced4da;border-radius:10px;padding:1.3rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
     .upload-zone:hover{border-color:#ffc107;background:#fffbf0}
+    .upload-zone.tem-fotos{border-color:#198754;background:#f0fff4;border-style:solid}
     .upload-zone input[type="file"]{display:none}
     .upload-zone .ui{font-size:1.8rem;margin-bottom:.3rem}
     .upload-zone p{font-size:.85rem;font-weight:600;margin:.1rem 0 0}
     .upload-zone small{font-size:.75rem;color:#8090b0}
+    .preview-grid{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+    .preview-thumb{position:relative;width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid #198754;flex-shrink:0}
+    .preview-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .preview-thumb span{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:.55rem;text-align:center;padding:1px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    [data-theme="dark"] .upload-zone.tem-fotos{background:#0d2318;border-color:#198754}
     .tab-filtro{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.2rem}
     .tab-btn{border:1.5px solid #e8ecf3;border-radius:50px;padding:.3rem .85rem;font-size:.8rem;font-weight:600;color:#495057;background:#fff;cursor:pointer;transition:all .18s;white-space:nowrap}
     .tab-btn:hover,.tab-btn.ativo{background:#0d1b3d;border-color:#0d1b3d;color:#fff}
@@ -90,13 +96,15 @@ $catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pint
           <input type="hidden" name="foto_id" id="f_id" value="0">
 
           <div class="mb-3">
-            <label class="upload-zone w-100" for="f_foto">
-              <div class="ui">📷</div>
+            <label class="upload-zone w-100" for="f_foto" id="uploadZone">
+              <div class="ui" id="uploadIcon">📷</div>
               <p id="fotoLabel">Clique para selecionar fotos</p>
               <small id="fotoHint">JPG, PNG ou WEBP &bull; Até 10 arquivos</small>
               <input type="file" name="fotos[]" id="f_foto" multiple
-                     accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                     accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                     onchange="previewFotos(this)">
             </label>
+            <div id="previewGrid" style="display:none;margin-top:.6rem;display:none"></div>
           </div>
 
           <?php if ($categorias): ?>
@@ -200,6 +208,50 @@ $catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pint
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
 <script>
+function previewFotos(input) {
+  var zone  = document.getElementById('uploadZone');
+  var icon  = document.getElementById('uploadIcon');
+  var label = document.getElementById('fotoLabel');
+  var hint  = document.getElementById('fotoHint');
+  var grid  = document.getElementById('previewGrid');
+
+  grid.innerHTML = '';
+  grid.className = 'preview-grid';
+
+  if (!input.files || input.files.length === 0) {
+    zone.classList.remove('tem-fotos');
+    icon.textContent = '📷';
+    label.textContent = 'Clique para selecionar fotos';
+    hint.textContent  = 'JPG, PNG ou WEBP • Até 10 arquivos';
+    grid.style.display = 'none';
+    return;
+  }
+
+  var total = Math.min(input.files.length, 10);
+  zone.classList.add('tem-fotos');
+  icon.textContent = '✅';
+  label.textContent = total === 1 ? input.files[0].name : total + ' fotos selecionadas';
+  hint.textContent  = 'Clique para trocar • ' + total + (total === 1 ? ' arquivo' : ' arquivos');
+  grid.style.display = 'flex';
+
+  for (var i = 0; i < total; i++) {
+    (function(file) {
+      var thumb = document.createElement('div');
+      thumb.className = 'preview-thumb';
+      var img = document.createElement('img');
+      img.alt = file.name;
+      var reader = new FileReader();
+      reader.onload = function(e) { img.src = e.target.result; };
+      reader.readAsDataURL(file);
+      var name = document.createElement('span');
+      name.textContent = file.name;
+      thumb.appendChild(img);
+      thumb.appendChild(name);
+      grid.appendChild(thumb);
+    })(input.files[i]);
+  }
+}
+
 function editarFoto(id, titulo, desc, catId) {
   document.getElementById('f_id').value      = id;
   document.getElementById('f_acao').value    = 'editar';
@@ -210,8 +262,13 @@ function editarFoto(id, titulo, desc, catId) {
   var fotoInput = document.getElementById('f_foto');
   fotoInput.required = false;
   fotoInput.disabled = false;
-  document.getElementById('fotoLabel').textContent = 'Selecionar nova foto (opcional)';
-  document.getElementById('fotoHint').textContent  = 'Deixe em branco para manter a foto atual.';
+  document.getElementById('uploadIcon').textContent = '✏️';
+  document.getElementById('fotoLabel').textContent  = 'Selecionar nova foto (opcional)';
+  document.getElementById('fotoHint').textContent   = 'Deixe em branco para manter a foto atual.';
+  document.getElementById('uploadZone').classList.remove('tem-fotos');
+  var grid = document.getElementById('previewGrid');
+  grid.innerHTML = '';
+  grid.style.display = 'none';
   document.getElementById('formTitulo').textContent = 'Editar foto #' + id;
   document.getElementById('formPortfolio').scrollIntoView({behavior:'smooth'});
 }
@@ -222,8 +279,13 @@ function resetForm() {
   var fotoInput = document.getElementById('f_foto');
   fotoInput.required = true;
   fotoInput.disabled = false;
-  document.getElementById('fotoLabel').textContent = 'Clique para selecionar fotos';
-  document.getElementById('fotoHint').textContent  = 'JPG, PNG ou WEBP • Até 10 arquivos';
+  document.getElementById('uploadIcon').textContent = '📷';
+  document.getElementById('fotoLabel').textContent  = 'Clique para selecionar fotos';
+  document.getElementById('fotoHint').textContent   = 'JPG, PNG ou WEBP • Até 10 arquivos';
+  document.getElementById('uploadZone').classList.remove('tem-fotos');
+  var grid = document.getElementById('previewGrid');
+  grid.innerHTML = '';
+  grid.style.display = 'none';
   document.getElementById('formTitulo').textContent = 'Adicionar fotos';
 }
 
