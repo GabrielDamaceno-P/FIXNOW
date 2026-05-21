@@ -14,11 +14,14 @@ elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPresta
 elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 
 $catIcons = [
-    'Suporte TI' => '💻',
-    'Elétrica'   => '⚡',
-    'Hidráulica' => '🔧',
-    'Pintura'    => '🎨',
-    'Marcenaria' => '🪚',
+    'Suporte TI'  => '💻',
+    'Elétrica'    => '⚡',
+    'Hidráulica'  => '🔧',
+    'Pintura'     => '🎨',
+    'Marcenaria'  => '🪚',
+    'Jardinagem'  => '🌿',
+    'Limpeza'     => '🧹',
+    'Refrigeração'=> '❄️',
 ];
 ?>
 <!DOCTYPE html>
@@ -56,6 +59,7 @@ $catIcons = [
       align-items: center;
       gap: .5rem;
       max-width: 500px;
+      width: 100%;
       backdrop-filter: blur(8px);
     }
     .hero-search input {
@@ -362,7 +366,7 @@ $catIcons = [
         $estrelasCheias = floor($media);
         $totalServicos  = count($p['servicos']);
       ?>
-        <div class="col-sm-6 col-lg-4 card-prestador-item"
+        <div class="col-12 col-sm-6 col-md-6 col-lg-4 card-prestador-item"
              data-nome="<?= strtolower(htmlspecialchars($p['nome'])) ?>"
              data-especialidade="<?= strtolower(htmlspecialchars($p['especialidade'] ?? '')) ?>">
           <div class="card-prestador">

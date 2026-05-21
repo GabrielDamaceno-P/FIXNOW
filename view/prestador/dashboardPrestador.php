@@ -694,7 +694,7 @@ $catIcons = [
 
 <!-- Modal foto ampliada -->
 <div class="modal fade" id="modalFotoFixnow" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" data-fn-foto-titulo>Foto</h5>

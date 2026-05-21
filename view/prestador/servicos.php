@@ -12,7 +12,7 @@ $naoLidas   = $ctrl->naoLidas;
 $tecnicoNome = $_SESSION['tecnico_nome'] ?? 'Prestador';
 $tecnicoFoto = $_SESSION['tecnico_foto'] ?? '';
 
-$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚'];
+$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚','Jardinagem'=>'🌿','Limpeza'=>'🧹','Refrigeração'=>'❄️'];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">

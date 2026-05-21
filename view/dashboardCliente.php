@@ -834,7 +834,7 @@ if (isset($_GET['ajax'])) {
 
 <!-- Modal Reagendar -->
 <div class="modal fade" id="modalReagendarChamado" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Reagendar serviço</h5>
@@ -874,7 +874,7 @@ if (isset($_GET['ajax'])) {
 
 <!-- Modal Alterar Chamado -->
 <div class="modal fade" id="modalAlterarChamado" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Alterar agendamento</h5>
@@ -903,7 +903,7 @@ if (isset($_GET['ajax'])) {
 
 <!-- Modal Recusar Orçamento -->
 <div class="modal fade" id="modalRecusarOrcamento" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Recusar orçamento</h5>

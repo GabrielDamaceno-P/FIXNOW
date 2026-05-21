@@ -23,17 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nome   = trim($_POST['nome'] ?? '');
         $email  = trim($_POST['email'] ?? '');
         $senha  = $_POST['senha'] ?? '';
-        $tel    = trim($_POST['telefone'] ?? '');
         $genero = $_POST['genero'] ?? 'Prefiro não informar';
 
-        if ($nome === '' || $email === '' || $senha === '' || $tel === '') {
+        if ($nome === '' || $email === '' || $senha === '') {
             $erro = 'Preencha todos os campos obrigatórios.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $erro = 'E-mail inválido.';
         } elseif (mb_strlen($senha) < 6) {
             $erro = 'A senha deve ter pelo menos 6 caracteres.';
         } else {
-            if ($adminDAO->inserir($nome, $email, password_hash($senha, PASSWORD_DEFAULT), $tel, $genero)) {
+            if ($adminDAO->inserir($nome, $email, password_hash($senha, PASSWORD_DEFAULT), $genero)) {
                 $mensagem = 'Administrador criado com sucesso.';
             } else {
                 $erro = 'E-mail já cadastrado ou erro ao salvar.';
@@ -43,13 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id        = (int)($_POST['id'] ?? 0);
         $nome      = trim($_POST['nome'] ?? '');
         $email     = trim($_POST['email'] ?? '');
-        $tel       = trim($_POST['telefone'] ?? '');
         $genero    = $_POST['genero'] ?? 'Prefiro não informar';
         $novaSenha = $_POST['nova_senha'] ?? '';
 
         if ($id === $primaryAdminId && !$isCurrentPrimary) {
             $erro = 'Somente o administrador primário pode editar a própria conta.';
-        } elseif ($id <= 0 || $nome === '' || $email === '' || $tel === '') {
+        } elseif ($id <= 0 || $nome === '' || $email === '') {
             $erro = 'Preencha todos os campos obrigatórios.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $erro = 'E-mail inválido.';
@@ -57,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($novaSenha !== '' && mb_strlen($novaSenha) < 6) {
                 $erro = 'A nova senha deve ter pelo menos 6 caracteres.';
             } else {
-                if ($adminDAO->atualizar($id, $nome, $email, $tel, $genero)) {
+                if ($adminDAO->atualizar($id, $nome, $email, $genero)) {
                     if ($novaSenha !== '') $adminDAO->atualizarSenha($id, password_hash($novaSenha, PASSWORD_DEFAULT));
                     $mensagem = 'Administrador atualizado.';
                 } else {
@@ -160,11 +158,6 @@ if (isset($_GET['editar'])) {
             <input type="password" name="<?= $editando ? 'nova_senha' : 'senha' ?>" class="form-control form-control-sm"
               minlength="6" <?= $editando ? '' : 'required' ?> autocomplete="new-password" placeholder="Mínimo 6 caracteres">
           </div>
-          <div class="col-12">
-            <label class="form-label">Telefone <span class="text-danger">*</span></label>
-            <input type="text" name="telefone" class="form-control form-control-sm" maxlength="20" required
-              value="<?= htmlspecialchars($editando['telefone'] ?? '') ?>" placeholder="(11) 99999-9999">
-          </div>
           <div class="col-12 mt-2 d-flex gap-2">
             <button type="submit" class="btn btn-warning fw-bold"><?= $editando ? 'Salvar' : 'Criar admin' ?></button>
             <?php if ($editando): ?><a href="admins.php" class="btn btn-outline-secondary">Cancelar</a><?php endif; ?>
@@ -193,7 +186,7 @@ if (isset($_GET['editar'])) {
         <div class="table-responsive">
           <table class="table table-hover align-middle table-sm mb-0">
             <thead class="table-primary">
-              <tr><th></th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Desde</th><th></th></tr>
+              <tr><th></th><th>Nome</th><th>E-mail</th><th>Desde</th><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($admins as $a): ?>
@@ -213,7 +206,6 @@ if (isset($_GET['editar'])) {
                   </div>
                 </td>
                 <td style="font-size:.83rem;"><?= htmlspecialchars($a['email']) ?></td>
-                <td style="font-size:.83rem;"><?= htmlspecialchars($a['telefone']) ?></td>
                 <td class="text-muted" style="font-size:.78rem;"><?= date('d/m/Y', strtotime($a['criado_em'])) ?></td>
                 <td>
                   <div class="d-flex gap-1">

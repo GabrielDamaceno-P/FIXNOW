@@ -33,25 +33,25 @@ class AdminDAO
         return $this->pdo->query('SELECT * FROM admin ORDER BY nome ASC')->fetchAll();
     }
 
-    public function inserir(string $nome, string $email, string $senhaHash, string $telefone, string $genero): bool
+    public function inserir(string $nome, string $email, string $senhaHash, string $genero): bool
     {
         try {
             $this->pdo->prepare('
-                INSERT INTO admin (nome, email, senha, telefone, genero)
-                VALUES (?, ?, ?, ?, ?)
-            ')->execute([$nome, $email, $senhaHash, $telefone, $genero]);
+                INSERT INTO admin (nome, email, senha, genero)
+                VALUES (?, ?, ?, ?)
+            ')->execute([$nome, $email, $senhaHash, $genero]);
             return true;
         } catch (PDOException) {
             return false;
         }
     }
 
-    public function atualizar(int $id, string $nome, string $email, string $telefone, string $genero): bool
+    public function atualizar(int $id, string $nome, string $email, string $genero): bool
     {
         try {
             $this->pdo->prepare('
-                UPDATE admin SET nome=?, email=?, telefone=?, genero=? WHERE id=?
-            ')->execute([$nome, $email, $telefone, $genero, $id]);
+                UPDATE admin SET nome=?, email=?, genero=? WHERE id=?
+            ')->execute([$nome, $email, $genero, $id]);
             return true;
         } catch (PDOException) {
             return false;

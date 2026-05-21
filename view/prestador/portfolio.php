@@ -20,7 +20,7 @@ foreach ($fotos as $f) {
     else $fotosPorCat['__sem__'][] = $f;
 }
 
-$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚'];
+$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚','Jardinagem'=>'🌿','Limpeza'=>'🧹','Refrigeração'=>'❄️'];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">

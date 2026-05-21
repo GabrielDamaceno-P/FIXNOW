@@ -15,7 +15,7 @@ if (isset($_SESSION['cliente_id']))      $_urlInicio = 'dashboardCliente.php';
 elseif (isset($_SESSION['tecnico_id'])) $_urlInicio = 'prestador/dashboardPrestador.php';
 elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
 
-$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚'];
+$catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pintura'=>'🎨','Marcenaria'=>'🪚','Jardinagem'=>'🌿','Limpeza'=>'🧹','Refrigeração'=>'❄️'];
 $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia, 1) : null;
 ?>
 <!DOCTYPE html>

@@ -242,6 +242,28 @@ footer {
   background: #0b142d;
 }
 
+/* Responsividade global */
+@media (max-width: 991.98px) {
+  /* Sidebars e cards sticky viram posição normal em mobile */
+  .form-card,
+  [style*="position:sticky"],
+  [style*="position: sticky"] {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* Hero search ocupa largura total em mobile */
+  .hero-search {
+    max-width: 100% !important;
+  }
+  /* Botões lado a lado viram coluna em telas muito pequenas */
+  .d-flex.gap-2.flex-nowrap {
+    flex-wrap: wrap !important;
+  }
+}
+
 /* ================================================================
    DARK MODE
    ================================================================ */

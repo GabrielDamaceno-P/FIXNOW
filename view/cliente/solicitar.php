@@ -26,11 +26,14 @@ $mensagem        = $ctrl->mensagem;
 $erro            = $ctrl->erro;
 
 $catIcons = [
-    'Suporte TI' => '💻',
-    'Elétrica'   => '⚡',
-    'Hidráulica' => '🔧',
-    'Pintura'    => '🎨',
-    'Marcenaria' => '🪚',
+    'Suporte TI'  => '💻',
+    'Elétrica'    => '⚡',
+    'Hidráulica'  => '🔧',
+    'Pintura'     => '🎨',
+    'Marcenaria'  => '🪚',
+    'Jardinagem'  => '🌿',
+    'Limpeza'     => '🧹',
+    'Refrigeração'=> '❄️',
 ];
 ?>
 <!DOCTYPE html>
