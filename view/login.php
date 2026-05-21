@@ -220,7 +220,7 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
       <form method="post" class="js-guard-submit" novalidate>
         <div class="mb-3">
           <label class="auth-input-label">E-mail</label>
-          <input type="email" name="email" class="form-control" required autocomplete="username"
+          <input type="email" name="email" class="form-control" required autocomplete="email"
                  value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
                  placeholder="seu@email.com">
         </div>

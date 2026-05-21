@@ -67,7 +67,7 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
     .svc-price-range{font-size:.83rem;font-weight:400;color:#6b7280}
     .svc-price-combinar{font-size:.85rem;color:#9ca3af;font-style:italic}
     .svc-footer{display:flex;gap:.5rem;padding:0 1.25rem 1.25rem}
-    [data-theme="dark"] .svc-card{background:#1e2538;border-color:#2e3650}
+    [data-theme="dark"] .svc-card{background:#1e2538;border-color:#1e2538;box-shadow:0 2px 12px rgba(0,0,0,.35)}
     [data-theme="dark"] .svc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.3)}
     [data-theme="dark"] .svc-nome{color:#e4e8f4}
     [data-theme="dark"] .svc-divider{border-top-color:#2e3650}
@@ -263,6 +263,13 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
       'Pintura'      => '🎨', 'Marcenaria'  => '🪵', 'Limpeza'    => '🧹',
       'Refrigeração' => '❄️',  'Jardinagem'  => '🌿',
     ];
+    $porPagina     = 4;
+    $paginaAtual   = max(1, (int)($_GET['pagina'] ?? 1));
+    $totalServicos = count($servicos);
+    $totalPaginas  = max(1, (int)ceil($totalServicos / $porPagina));
+    $paginaAtual   = min($paginaAtual, $totalPaginas);
+    $servicosPag   = array_slice($servicos, ($paginaAtual - 1) * $porPagina, $porPagina);
+    $paginacaoBase = 'dashboardCliente.php?' . ($filtroCategoria ? 'categoria=' . urlencode($filtroCategoria) . '&' : '') . ($filtroPrestadoraMulher ? 'so_mulher=1&' : '');
   ?>
   <section id="encontrar-prestador" class="mb-5">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -323,8 +330,8 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
       </div>
     <?php else: ?>
       <div class="row g-4">
-        <?php foreach ($servicos as $s): ?>
-          <div class="col-md-6 col-lg-4">
+        <?php foreach ($servicosPag as $s): ?>
+          <div class="col-6 col-md-3">
             <div class="svc-card <?php echo $s['destaque'] ? 'destaque' : ''; ?>">
 
               <?php if ($s['destaque']): ?>
@@ -391,6 +398,55 @@ else                       $dica = $dicasGerais[$ctrl->clienteId % count($dicasG
           </div>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($totalPaginas > 1): ?>
+      <nav class="mt-4 d-flex justify-content-center align-items-center gap-2 flex-wrap" aria-label="Paginação de prestadores">
+        <!-- Anterior -->
+        <?php if ($paginaAtual > 1): ?>
+          <a href="<?= $paginacaoBase ?>pagina=<?= $paginaAtual - 1 ?>#encontrar-prestador"
+             class="btn btn-sm btn-outline-secondary">‹ Anterior</a>
+        <?php else: ?>
+          <button class="btn btn-sm btn-outline-secondary" disabled>‹ Anterior</button>
+        <?php endif; ?>
+
+        <!-- Números de página -->
+        <?php
+          $inicio = max(1, $paginaAtual - 2);
+          $fim    = min($totalPaginas, $paginaAtual + 2);
+        ?>
+        <?php if ($inicio > 1): ?>
+          <a href="<?= $paginacaoBase ?>pagina=1#encontrar-prestador" class="btn btn-sm btn-outline-secondary">1</a>
+          <?php if ($inicio > 2): ?><span class="text-muted small px-1">…</span><?php endif; ?>
+        <?php endif; ?>
+
+        <?php for ($p = $inicio; $p <= $fim; $p++): ?>
+          <?php if ($p === $paginaAtual): ?>
+            <button class="btn btn-sm btn-warning fw-bold" disabled><?= $p ?></button>
+          <?php else: ?>
+            <a href="<?= $paginacaoBase ?>pagina=<?= $p ?>#encontrar-prestador" class="btn btn-sm btn-outline-secondary"><?= $p ?></a>
+          <?php endif; ?>
+        <?php endfor; ?>
+
+        <?php if ($fim < $totalPaginas): ?>
+          <?php if ($fim < $totalPaginas - 1): ?><span class="text-muted small px-1">…</span><?php endif; ?>
+          <a href="<?= $paginacaoBase ?>pagina=<?= $totalPaginas ?>#encontrar-prestador" class="btn btn-sm btn-outline-secondary"><?= $totalPaginas ?></a>
+        <?php endif; ?>
+
+        <!-- Próximo -->
+        <?php if ($paginaAtual < $totalPaginas): ?>
+          <a href="<?= $paginacaoBase ?>pagina=<?= $paginaAtual + 1 ?>#encontrar-prestador"
+             class="btn btn-sm btn-outline-secondary">Próximo ›</a>
+        <?php else: ?>
+          <button class="btn btn-sm btn-outline-secondary" disabled>Próximo ›</button>
+        <?php endif; ?>
+
+        <span class="text-muted small ms-2">
+          <?= (($paginaAtual - 1) * $porPagina) + 1 ?>–<?= min($paginaAtual * $porPagina, $totalServicos) ?>
+          de <?= $totalServicos ?>
+        </span>
+      </nav>
+      <?php endif; ?>
+
     <?php endif; ?>
   </section>
 

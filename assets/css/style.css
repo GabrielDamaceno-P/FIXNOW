@@ -146,10 +146,25 @@ main {
 }
 
 .fn-hero {
-  border-radius: 1.35rem;
-  background: linear-gradient(120deg, #11224c, #1d458c 60%, #325ca9);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0d1b3d 0%, #1a2b63 55%, #c95e00 100%);
   color: #fff;
   box-shadow: var(--fix-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.fn-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.fn-hero .row {
+  position: relative;
+  z-index: 1;
 }
 
 .fn-hero .btn-light {
@@ -701,6 +716,14 @@ footer {
 }
 
 /* — Componentes Fix Now — */
+[data-theme="dark"] .fn-hero {
+  background: linear-gradient(135deg, #0d1b3d 0%, #1a2b63 55%, #c95e00 100%) !important;
+}
+
+[data-theme="dark"] .prest-hero {
+  background: linear-gradient(135deg, #0d1b3d 0%, #1a2b63 55%, #c95e00 100%) !important;
+}
+
 [data-theme="dark"] .fn-profile-info-card,
 [data-theme="dark"] .fn-profile-resumo {
   background: #1c2338;
@@ -797,11 +820,15 @@ footer {
   color: #8090b0 !important;
 }
 
-/* Página inicial — seções com fundo branco/light */
-[data-theme="dark"] section,
+/* Seções sem background inline ou classe própria ficam transparentes (herdam o gradiente do body) */
+[data-theme="dark"] section:not([style*="background"]):not([class*="fn-"]):not([class*="hero"]) {
+  background: transparent !important;
+}
+
+/* Classes utilitárias de fundo claro → escuro */
 [data-theme="dark"] .section-white,
 [data-theme="dark"] .bg-white {
-  background-color: #0e1117 !important;
+  background-color: var(--fix-card) !important;
   color: #dde4f0 !important;
 }
 
@@ -1046,3 +1073,93 @@ footer {
 
 [data-theme="dark"] .seta-rapida { color: #8090b0 !important; }
 [data-theme="dark"] .link-rapido:hover .seta-rapida { color: #ffc107 !important; }
+
+/* ================================================================
+   DARK MODE — INLINE STYLE BACKGROUNDS (comuns em todo o sistema)
+   ================================================================ */
+
+/* Ícones KPI / stat com fundo pastel claro */
+[data-theme="dark"] .kpi-icon,
+[data-theme="dark"] .kpi-sup-icon,
+[data-theme="dark"] .kpi-rel-icon,
+[data-theme="dark"] .stat-icon-prest,
+[data-theme="dark"] .stat-fin-icon,
+[data-theme="dark"] .feed-icon {
+  background: #1c2338 !important;
+}
+
+/* Fundos pastéis neutros (cinza claro, off-white) → superfície escura */
+[data-theme="dark"] [style*="background:#e8ecf3"],
+[data-theme="dark"] [style*="background:#f3f4f6"],
+[data-theme="dark"] [style*="background:#f8fafc"],
+[data-theme="dark"] [style*="background:#f8f9fc"],
+[data-theme="dark"] [style*="background:#f0f3fa"] {
+  background: #1c2338 !important;
+}
+
+/* Texto escuro em badges/labels neutros */
+[data-theme="dark"] [style*="background:#e8ecf3"][style*="color:#0d1b3d"],
+[data-theme="dark"] [style*="background:#f3f4f6"][style*="color:#374151"] {
+  color: #a0b0cc !important;
+}
+
+/* Fundos de KPI com tons coloridos (azul, verde, laranja, vermelho, amarelo) */
+[data-theme="dark"] [style*="background:#eff6ff"],
+[data-theme="dark"] [style*="background:#f0fdf4"],
+[data-theme="dark"] [style*="background:#fff7ed"],
+[data-theme="dark"] [style*="background:#fef2f2"],
+[data-theme="dark"] [style*="background:#fefce8"] {
+  background: #1c2338 !important;
+}
+
+/* Banner de aviso âmbar (senha temporária, destaque) */
+[data-theme="dark"] [style*="background:#fffbeb"],
+[data-theme="dark"] [style*="background:rgba(251,191,36"],
+[data-theme="dark"] [style*="background:rgba(255,193,7"] {
+  background: #2a1c00 !important;
+  border-color: #5a3c00 !important;
+}
+
+/* Badges de status com cores pastel */
+[data-theme="dark"] [style*="background:#dcfce7"] {
+  background: #0a2e1a !important;
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] [style*="background:#fee2e2"] {
+  background: #2e0a0a !important;
+  color: #fca5a5 !important;
+}
+[data-theme="dark"] [style*="background:#dbeafe"] {
+  background: #0a1e3a !important;
+  color: #93c5fd !important;
+}
+[data-theme="dark"] [style*="background:#fef9c3"],
+[data-theme="dark"] [style*="background:#fef3c7"] {
+  background: #2a1c00 !important;
+  color: #fcd34d !important;
+}
+[data-theme="dark"] [style*="background:#fff3e0"] {
+  background: #2a1400 !important;
+  color: #fdba74 !important;
+}
+[data-theme="dark"] [style*="background:#cff4fc"] {
+  background: #0b2440 !important;
+  color: #93c5fd !important;
+}
+[data-theme="dark"] [style*="background:#fff3cd"] {
+  background: #2a1c00 !important;
+  color: #fcd34d !important;
+}
+
+/* Legenda dots (calendário) */
+[data-theme="dark"] .legenda-dot[style*="background:#dcfce7"] { background: #0a2e1a !important; border-color: #1a5c36 !important; }
+[data-theme="dark"] .legenda-dot[style*="background:#fee2e2"] { background: #2e0a0a !important; border-color: #5a1a1a !important; }
+[data-theme="dark"] .legenda-dot[style*="background:#dbeafe"] { background: #0a1e3a !important; border-color: #1a3a70 !important; }
+[data-theme="dark"] .legenda-dot[style*="background:#f3f4f6"] { background: #1c2338 !important; border-color: #2c3a56 !important; }
+
+/* Linha de totais em tabelas financeiras */
+[data-theme="dark"] tr[style*="background:#f8f9fc"],
+[data-theme="dark"] tr[style*="background:#f8fafc"] {
+  background: #1c2338 !important;
+  color: #dde4f0 !important;
+}
