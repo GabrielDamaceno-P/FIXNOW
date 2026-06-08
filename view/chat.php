@@ -178,6 +178,12 @@ $statusBadge = match($chamado->status ?? '') {
           <?php endif; ?>
         </div>
         <div class="card-body p-3">
+          <?php if ($ctrl->erro): ?>
+            <div class="alert alert-danger alert-dismissible fade show mb-3">
+              <?php echo htmlspecialchars($ctrl->erro); ?>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <?php endif; ?>
           <?php if ($migracaoPendente): ?>
             <div class="alert alert-warning">
               <strong>Migração pendente.</strong> Execute o arquivo <code>migrate_chat.sql</code> no phpMyAdmin para ativar o chat.
@@ -315,6 +321,8 @@ setInterval(function () {
   if (document.hidden) return;
   var textarea = document.querySelector('textarea[name="mensagem"]');
   if (textarea && textarea.value.trim() !== '') return;
+  var fileInput = document.getElementById('chat-file-input');
+  if (fileInput && fileInput.files.length > 0) return;
   var active = document.activeElement;
   if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
   location.reload();

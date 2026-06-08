@@ -89,10 +89,14 @@ class ChatControl
                     if ($resultado) {
                         $arquivoPath = $resultado['path'];
                         $arquivoNome = $resultado['nome'];
+                    } else {
+                        $this->erro = 'Arquivo inválido ou muito grande (máx. 10 MB). Tipos aceitos: JPG, PNG, WEBP, GIF, PDF, DOC, DOCX, ZIP.';
                     }
+                } elseif (!empty($_FILES['arquivo']['name']) && $_FILES['arquivo']['error'] !== 0) {
+                    $this->erro = 'Falha ao receber o arquivo (código ' . (int)$_FILES['arquivo']['error'] . '). Verifique o tamanho máximo de upload.';
                 }
 
-                if ($texto !== '' || $arquivoPath !== null) {
+                if ($this->erro === '' && ($texto !== '' || $arquivoPath !== null)) {
                     $this->mensagemDAO->inserir($this->chamadoId, $this->usuarioTipo, $this->usuarioId, $texto, $arquivoPath, $arquivoNome);
                     if ($isPrestador && $chamadoDTO) {
                         fixnow_notificar_cliente($this->pdo, $chamadoDTO->clienteId,
@@ -101,8 +105,11 @@ class ChatControl
                         fixnow_notificar_prestador($this->pdo, $chamadoDTO->tecnicoId,
                             "Nova mensagem no chamado #{$this->chamadoId}.", $this->chamadoId);
                     }
+                    header('Location: chat.php?chamado=' . $this->chamadoId); exit;
+                } elseif ($this->erro === '') {
+                    header('Location: chat.php?chamado=' . $this->chamadoId); exit;
                 }
-                header('Location: chat.php?chamado=' . $this->chamadoId); exit;
+                // Se há erro ($this->erro !== ''), não redireciona — a view exibe o erro
             }
 
             $this->mensagens = $this->mensagemDAO->listarPorChamado($this->chamadoId);

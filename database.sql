@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS admin (
   senha       VARCHAR(255) NOT NULL,
   telefone    VARCHAR(20)  NOT NULL,
   genero      ENUM('Feminino','Masculino','Outro','Prefiro não informar') NOT NULL DEFAULT 'Prefiro não informar',
-  perfil      ENUM('Master') NOT NULL DEFAULT 'Master',
+  perfil      ENUM('Master','Operacoes','Financeiro') NOT NULL DEFAULT 'Master',
   foto_perfil VARCHAR(255) NOT NULL DEFAULT 'assets/img/perfil/default-cliente.jpg',
   criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -61,7 +61,15 @@ class OrcamentoPrestadorControl
             INNER JOIN cliente cl ON cl.id = c.cliente_id
             WHERE (
                 (c.tecnico_id = ? AND c.status IN ('Aguardando Orçamento', 'Pendente'))
-                OR (c.tecnico_id IS NULL AND c.status = 'Pendente')
+                OR (
+                    c.tecnico_id IS NULL
+                    AND c.status = 'Pendente'
+                    AND c.categoria IN (
+                        SELECT cat.nome FROM servico s
+                        INNER JOIN categoria cat ON cat.id = s.categoria_id
+                        WHERE s.tecnico_id = ? AND s.ativo = 1
+                    )
+                )
             )
             AND NOT EXISTS (
                 SELECT 1 FROM orcamento o
@@ -69,7 +77,7 @@ class OrcamentoPrestadorControl
             )
             ORDER BY _ordem DESC, c.criado_em ASC
         ");
-        $stmtDisp->execute([$this->tecnicoId, $this->tecnicoId, $this->tecnicoId]);
+        $stmtDisp->execute([$this->tecnicoId, $this->tecnicoId, $this->tecnicoId, $this->tecnicoId]);
         $rows = $stmtDisp->fetchAll();
         foreach ($rows as &$ch) {
             $fotos = $this->chamadoDAO->listarFotos((int)$ch['id']);

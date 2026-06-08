@@ -21,7 +21,9 @@ class AdminControl
     public string $mensagem     = '';
     public string $erro         = '';
     public array  $statsGerais  = [];
-    public float  $lucroEmpresa = 0.0;
+    public float  $lucroEmpresa    = 0.0;
+    public float  $totalEstornado  = 0.0;
+    public float  $lucroEstornado  = 0.0;
     public array  $prestadoresPendentes = [];
     public array  $clientes     = [];
     public array  $prestadores  = [];
@@ -179,7 +181,16 @@ class AdminControl
             WHERE p.status = 'Pago'
         ")->fetchColumn();
         $totPagos = (float)($this->pdo->query("SELECT COALESCE(SUM(valor),0) FROM pagamento WHERE status='Pago'")->fetchColumn() ?? 0);
-        $this->lucroEmpresa = (float)($lucro ?? 0);
+        $this->lucroEmpresa   = (float)($lucro ?? 0);
+        $this->totalEstornado = (float)($this->pdo->query("SELECT COALESCE(SUM(valor),0) FROM pagamento WHERE status='Estornado'")->fetchColumn() ?? 0);
+        $lucroEst = $this->pdo->query("
+            SELECT COALESCE(SUM(p.valor * CASE WHEN t.destaque = 1 THEN 0.15 ELSE 0.20 END), 0)
+            FROM pagamento p
+            INNER JOIN chamado c ON c.id = p.chamado_id
+            INNER JOIN tecnico t ON t.id = c.tecnico_id
+            WHERE p.status = 'Estornado'
+        ")->fetchColumn();
+        $this->lucroEstornado = (float)($lucroEst ?? 0);
 
         $this->statsGerais = [
             'clientes'          => (int)$this->pdo->query("SELECT COUNT(*) FROM cliente")->fetchColumn(),

@@ -73,15 +73,31 @@ function fixnow_upload_file(array $file, string $targetDir, string $prefix): ?ar
         return null;
     }
     $permitidos = [
-        'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp',
-        'image/gif'  => 'gif', 'application/pdf' => 'pdf',
-        'application/zip' => 'zip',
+        'image/jpeg'  => 'jpg', 'image/jpg'   => 'jpg', 'image/pjpeg' => 'jpg',
+        'image/png'   => 'png', 'image/x-png' => 'png',
+        'image/webp'  => 'webp',
+        'image/gif'   => 'gif',
+        'application/pdf' => 'pdf',
+        'application/zip'            => 'zip',
+        'application/x-zip'          => 'zip',
+        'application/x-zip-compressed' => 'zip',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
         'application/msword' => 'doc',
     ];
     $tipo = mime_content_type($file['tmp_name']) ?: ($file['type'] ?? '');
     if (!isset($permitidos[$tipo])) {
-        return null;
+        // fallback: magic bytes
+        $bytes = @file_get_contents($file['tmp_name'], false, null, 0, 12);
+        if ($bytes !== false) {
+            if (substr($bytes, 0, 3) === "\xFF\xD8\xFF")          $tipo = 'image/jpeg';
+            elseif (substr($bytes, 0, 8) === "\x89PNG\r\n\x1A\n") $tipo = 'image/png';
+            elseif (substr($bytes, 0, 4) === 'RIFF' && substr($bytes, 8, 4) === 'WEBP') $tipo = 'image/webp';
+            elseif (substr($bytes, 0, 4) === '%PDF')               $tipo = 'application/pdf';
+            elseif (substr($bytes, 0, 2) === 'PK')                 $tipo = 'application/zip';
+        }
+        if (!isset($permitidos[$tipo])) {
+            return null;
+        }
     }
     if ($file['size'] > 10 * 1024 * 1024) { // 10 MB máx
         return null;

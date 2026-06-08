@@ -13,6 +13,7 @@ $brutoPendente   = $ctrl->brutoPendente;
 $liquidoRecebido = $ctrl->liquidoRecebido;
 $liquidoPendente = $ctrl->liquidoPendente;
 $taxaTotal       = $ctrl->taxaTotal;
+$totalEstornado  = $ctrl->totalEstornado;
 $totalServicos   = $ctrl->totalServicos;
 $mensal          = $ctrl->mensal;
 $detalhes        = $ctrl->detalhes;
@@ -107,6 +108,7 @@ $catIcons = ['Suporte TI'=>'💻','Elétrica'=>'⚡','Hidráulica'=>'🔧','Pint
       </div>
     </div>
   </div>
+
 
   <!-- Mensal -->
   <?php if ($mensal): ?>
