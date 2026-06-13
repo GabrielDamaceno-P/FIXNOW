@@ -31,6 +31,7 @@ class PortfolioControl
             header('Location: ../login.php'); exit;
         }
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
+        fixnow_checar_ativo_prestador($this->tecnicoId, '../login.php');
     }
 
     public function processar(): void

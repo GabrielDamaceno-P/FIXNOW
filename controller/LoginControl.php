@@ -97,6 +97,11 @@ class LoginControl
         $cliente = $this->clienteDAO->buscarPorEmail($email);
         if (!$cliente || !password_verify($senha, $cliente->senha)) return false;
 
+        if (isset($cliente->ativo) && !(int)$cliente->ativo) {
+            $this->erro = 'Conta inativa. Entre em contato com o suporte.';
+            return true;
+        }
+
         session_regenerate_id(true);
         $_SESSION['cliente_id']     = $cliente->id;
         $_SESSION['cliente_nome']   = $cliente->nome;

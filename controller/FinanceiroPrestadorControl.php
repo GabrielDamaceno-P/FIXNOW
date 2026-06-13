@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../model/dao/PagamentoDAO.php';
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
+require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 class FinanceiroPrestadorControl
 {
@@ -36,6 +38,7 @@ class FinanceiroPrestadorControl
             header('Location: ../login.php'); exit;
         }
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
+        fixnow_checar_ativo_prestador($this->tecnicoId, '../login.php');
     }
 
     public function processar(): void

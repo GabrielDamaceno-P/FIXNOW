@@ -44,6 +44,7 @@ class SolicitarChamadoControl
             header('Location: ../login.php'); exit;
         }
         $this->clienteId     = (int)$_SESSION['cliente_id'];
+        fixnow_checar_ativo_cliente($this->clienteId, '../login.php');
         $this->clienteNome   = $_SESSION['cliente_nome']   ?? '';
         $this->clienteFoto   = $_SESSION['cliente_foto']   ?? '';
         $this->clienteGenero = $_SESSION['cliente_genero'] ?? '';

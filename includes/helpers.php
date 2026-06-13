@@ -161,3 +161,29 @@ function fixnow_upload_image(array $file, string $targetDir, string $prefix): ?s
     $webPath = fixnow_web_path_from_fs($dest);
     return $webPath !== '' ? $webPath : null;
 }
+
+function fixnow_checar_ativo_cliente(int $id, string $loginUrl): void
+{
+    $pdo  = Conexao::getConexao();
+    $stmt = $pdo->prepare('SELECT ativo FROM cliente WHERE id = ? LIMIT 1');
+    $stmt->execute([$id]);
+    $row  = $stmt->fetch();
+    if (!$row || !(int)$row['ativo']) {
+        session_destroy();
+        header('Location: ' . $loginUrl);
+        exit;
+    }
+}
+
+function fixnow_checar_ativo_prestador(int $id, string $loginUrl): void
+{
+    $pdo  = Conexao::getConexao();
+    $stmt = $pdo->prepare('SELECT ativo FROM tecnico WHERE id = ? LIMIT 1');
+    $stmt->execute([$id]);
+    $row  = $stmt->fetch();
+    if (!$row || !(int)$row['ativo']) {
+        session_destroy();
+        header('Location: ' . $loginUrl);
+        exit;
+    }
+}

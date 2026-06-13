@@ -37,10 +37,12 @@ class PerfilControl
             $this->usuarioTipo = 'prestador';
             $this->usuarioId   = (int)$_SESSION['tecnico_id'];
             $this->titulo      = 'Perfil do prestador';
+            fixnow_checar_ativo_prestador($this->usuarioId, '../view/login.php');
         } elseif (isset($_SESSION['cliente_id'])) {
             $this->usuarioTipo = 'cliente';
             $this->usuarioId   = (int)$_SESSION['cliente_id'];
             $this->titulo      = 'Perfil do cliente';
+            fixnow_checar_ativo_cliente($this->usuarioId, '../view/login.php');
         } else {
             header('Location: ../view/login.php'); exit;
         }

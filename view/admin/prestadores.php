@@ -37,9 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mensagem = 'Cadastro recusado.';
         } else { $erro = 'Não foi possível recusar (cadastro já processado).'; }
 
-    } elseif ($acao === 'excluir' && $isMaster && $tid > 0) {
-        $pdo->prepare('DELETE FROM tecnico WHERE id=?')->execute([$tid]);
-        $mensagem = 'Prestador excluído.';
+    } elseif ($acao === 'toggle_ativo' && $isMaster && $tid > 0) {
+        $pdo->prepare('UPDATE tecnico SET ativo = 1 - ativo WHERE id = ?')->execute([$tid]);
+        $mensagem = 'Status do prestador atualizado.';
 
     } elseif ($acao === 'cadastrar_prestador') {
         $nome          = trim($_POST['p_nome']          ?? '');
@@ -220,7 +220,7 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
           <thead class="table-primary">
             <tr>
               <th>#</th><th>Nome</th><th>E-mail</th><th>Gênero</th><th>Categorias</th>
-              <th>Telefone</th><th>Avaliação</th><th>Status</th><th>Cadastrado em</th><th></th>
+              <th>Telefone</th><th>Avaliação</th><th>Status</th><th>Situação</th><th>Cadastrado em</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -254,6 +254,13 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
               <td>
                 <span class="badge" style="font-size:.7rem;<?= $badgeSt ?>"><?= htmlspecialchars($t['status_cadastro']) ?></span>
               </td>
+              <td>
+                <?php if ($t['ativo']): ?>
+                  <span class="badge" style="font-size:.72rem;background:#dcfce7;color:#16a34a;">Ativo</span>
+                <?php else: ?>
+                  <span class="badge" style="font-size:.72rem;background:#fee2e2;color:#dc2626;">Inativo</span>
+                <?php endif; ?>
+              </td>
               <td class="text-muted" style="font-size:.78rem;"><?= date('d/m/Y', strtotime($t['criado_em'])) ?></td>
               <td>
                 <div class="d-flex gap-1 flex-wrap">
@@ -281,10 +288,14 @@ $categorias = $pdo->query("SELECT id, nome FROM categoria ORDER BY nome ASC")->f
                     </form>
                   <?php endif; ?>
                   <?php if ($isMaster): ?>
-                    <form method="post" class="d-inline" onsubmit="return confirm('Excluir este prestador e todos os seus dados?');">
-                      <input type="hidden" name="acao" value="excluir">
+                    <form method="post" class="d-inline">
+                      <input type="hidden" name="acao" value="toggle_ativo">
                       <input type="hidden" name="tecnico_id" value="<?= (int)$t['id'] ?>">
-                      <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Excluir</button>
+                      <?php if ($t['ativo']): ?>
+                        <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Desativar</button>
+                      <?php else: ?>
+                        <button class="btn btn-sm btn-outline-success" style="font-size:.78rem;">Ativar</button>
+                      <?php endif; ?>
                     </form>
                   <?php endif; ?>
                 </div>

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 class CalendarioPrestadorControl
 {
@@ -34,6 +35,7 @@ class CalendarioPrestadorControl
             header('Location: ../login.php'); exit;
         }
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
+        fixnow_checar_ativo_prestador($this->tecnicoId, '../login.php');
 
         $hoje       = new DateTime('today');
         $minSegunda = new DateTime('today');

@@ -1,6 +1,8 @@
 <?php
 
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
+require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 class NotificacoesControl
 {
@@ -29,11 +31,13 @@ class NotificacoesControl
             $this->usuarioId   = (int)$_SESSION['tecnico_id'];
             $this->usuarioNome = $_SESSION['tecnico_nome'] ?? 'Prestador';
             $this->usuarioFoto = $_SESSION['tecnico_foto'] ?? '';
+            fixnow_checar_ativo_prestador($this->usuarioId, '../view/login.php');
         } elseif (isset($_SESSION['cliente_id'])) {
             $this->usuarioTipo = 'cliente';
             $this->usuarioId   = (int)$_SESSION['cliente_id'];
             $this->usuarioNome = $_SESSION['cliente_nome'] ?? 'Cliente';
             $this->usuarioFoto = $_SESSION['cliente_foto'] ?? '';
+            fixnow_checar_ativo_cliente($this->usuarioId, '../view/login.php');
         } else {
             header('Location: ../view/login.php'); exit;
         }

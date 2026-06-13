@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 class CalendarioClienteControl
 {
@@ -27,6 +28,7 @@ class CalendarioClienteControl
             header('Location: ../login.php'); exit;
         }
         $this->clienteId = (int)$_SESSION['cliente_id'];
+        fixnow_checar_ativo_cliente($this->clienteId, '../login.php');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->processarPost();

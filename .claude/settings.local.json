@@ -20,7 +20,9 @@
       "Bash(php -r \"echo ini_get\\('upload_max_filesize'\\) . ' / ' . ini_get\\('post_max_size'\\) . ' / ' . ini_get\\('file_uploads'\\);\")",
       "Bash(php -version)",
       "Bash(python gerar_casos_uso.py)",
-      "PowerShell([Environment]::GetFolderPath\\('Desktop'\\))"
+      "PowerShell([Environment]::GetFolderPath\\('Desktop'\\))",
+      "Bash(python -c \"import docx; print\\('ok'\\)\")",
+      "Bash(python gerar_plano_contingencia.py)"
     ]
   }
 }

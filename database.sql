@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS cliente (
   cep         VARCHAR(10)  NOT NULL DEFAULT '',
   foto_perfil VARCHAR(255) NOT NULL DEFAULT 'assets/img/perfil/default-cliente.jpg',
   genero      ENUM('Feminino','Masculino','Outro','Prefiro não informar') NOT NULL DEFAULT 'Prefiro não informar',
+  ativo       TINYINT(1)   NOT NULL DEFAULT 1,
   criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

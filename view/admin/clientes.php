@@ -20,11 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($acao === 'limpar_senha_temp') {
         unset($_SESSION['admin_temp_senha_cliente']);
 
-    } elseif ($acao === 'excluir' && $isMaster) {
+    } elseif ($acao === 'toggle_ativo' && $isMaster) {
         $cid = (int)($_POST['cliente_id'] ?? 0);
         if ($cid > 0) {
-            $pdo->prepare('DELETE FROM cliente WHERE id = ?')->execute([$cid]);
-            $mensagem = 'Cliente excluído.';
+            $pdo->prepare('UPDATE cliente SET ativo = 1 - ativo WHERE id = ?')->execute([$cid]);
+            $mensagem = 'Status do cliente atualizado.';
         }
 
     } elseif ($acao === 'cadastrar_cliente') {
@@ -67,10 +67,10 @@ $tempSenhaCliente = $_SESSION['admin_temp_senha_cliente'] ?? [];
 $filtro = trim($_GET['busca'] ?? '');
 if ($filtro !== '') {
     $like = '%' . $filtro . '%';
-    $stmt = $pdo->prepare("SELECT id, nome, email, telefone, genero, endereco, cep, criado_em FROM cliente WHERE nome LIKE ? OR email LIKE ? ORDER BY nome ASC");
+    $stmt = $pdo->prepare("SELECT id, nome, email, telefone, genero, endereco, cep, ativo, criado_em FROM cliente WHERE nome LIKE ? OR email LIKE ? ORDER BY nome ASC");
     $stmt->execute([$like, $like]);
 } else {
-    $stmt = $pdo->query("SELECT id, nome, email, telefone, genero, endereco, cep, criado_em FROM cliente ORDER BY nome ASC");
+    $stmt = $pdo->query("SELECT id, nome, email, telefone, genero, endereco, cep, ativo, criado_em FROM cliente ORDER BY nome ASC");
 }
 $clientes = $stmt->fetchAll();
 ?>
@@ -162,7 +162,7 @@ $clientes = $stmt->fetchAll();
           <thead class="table-primary">
             <tr>
               <th>#</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Gênero</th>
-              <th>Endereço</th><th>CEP</th><th>Cadastrado em</th>
+              <th>Endereço</th><th>CEP</th><th>Situação</th><th>Cadastrado em</th>
               <?php if ($isMaster): ?><th></th><?php endif; ?>
             </tr>
           </thead>
@@ -185,14 +185,24 @@ $clientes = $stmt->fetchAll();
               </td>
               <td class="text-muted" style="font-size:.82rem;"><?= htmlspecialchars($cl['endereco'] ?: '—') ?></td>
               <td class="text-muted" style="font-size:.82rem;"><?= htmlspecialchars($cl['cep'] ?: '—') ?></td>
+              <td>
+                <?php if ($cl['ativo']): ?>
+                  <span class="badge" style="font-size:.72rem;background:#dcfce7;color:#16a34a;">Ativo</span>
+                <?php else: ?>
+                  <span class="badge" style="font-size:.72rem;background:#fee2e2;color:#dc2626;">Inativo</span>
+                <?php endif; ?>
+              </td>
               <td class="text-muted" style="font-size:.78rem;"><?= date('d/m/Y', strtotime($cl['criado_em'])) ?></td>
               <?php if ($isMaster): ?>
               <td>
-                <form method="post" class="d-inline"
-                      onsubmit="return confirm('Excluir este cliente e todos os seus chamados?');">
-                  <input type="hidden" name="acao" value="excluir">
+                <form method="post" class="d-inline">
+                  <input type="hidden" name="acao" value="toggle_ativo">
                   <input type="hidden" name="cliente_id" value="<?= (int)$cl['id'] ?>">
-                  <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Excluir</button>
+                  <?php if ($cl['ativo']): ?>
+                    <button class="btn btn-sm btn-outline-danger" style="font-size:.78rem;">Desativar</button>
+                  <?php else: ?>
+                    <button class="btn btn-sm btn-outline-success" style="font-size:.78rem;">Ativar</button>
+                  <?php endif; ?>
                 </form>
               </td>
               <?php endif; ?>
