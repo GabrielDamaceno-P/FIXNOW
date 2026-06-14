@@ -277,7 +277,6 @@ $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia,
   <?php endif; ?>
 
   <!-- Avaliações -->
-  <?php if ($avaliacoes): ?>
   <div class="mb-5">
     <div class="secao-titulo">
       <span>⭐</span> Avaliações dos clientes
@@ -285,8 +284,9 @@ $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia,
         <span style="font-size:.85rem;font-weight:700;color:#f59e0b;margin-left:auto;"><?php echo $mediaFormatada; ?>/5</span>
       <?php endif; ?>
     </div>
+    <?php if ($avaliacoes): ?>
     <div class="row g-3">
-      <?php foreach (array_slice($avaliacoes, 0, 6) as $av):
+      <?php foreach ($avaliacoes as $av):
         $nota = is_array($av) ? (int)$av['nota'] : (int)$av->nota;
         $comentario = is_array($av) ? ($av['comentario'] ?? '') : ($av->comentario ?? '');
         $criadoEm = is_array($av) ? $av['criado_em'] : $av->criadoEm;
@@ -302,8 +302,16 @@ $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia,
       </div>
       <?php endforeach; ?>
     </div>
+    <?php else: ?>
+    <div class="text-center py-4" style="background:#f8f9fa;border-radius:12px;border:1.5px dashed #dee2e6;">
+      <div style="font-size:2rem;margin-bottom:.4rem;">💬</div>
+      <p class="mb-0 text-muted" style="font-size:.9rem;">Este prestador ainda não possui avaliações.</p>
+      <?php if (isset($_SESSION['cliente_id'])): ?>
+        <p class="mb-0 text-muted" style="font-size:.82rem;margin-top:.3rem;">Contrate um serviço e seja o primeiro a avaliar!</p>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
   </div>
-  <?php endif; ?>
 
   <!-- Portfólio e avaliações vazios -->
   <?php if (!$portfolio && !$servicos && !$avaliacoes): ?>
