@@ -2,6 +2,8 @@
 // Arquivo central de conexão com o MySQL via PDO.
 // Reutilize este arquivo em todas as páginas com: require_once __DIR__ . '/config/db.php';
 
+date_default_timezone_set('America/Sao_Paulo');
+
 $host = 'localhost';
 $port = 3306;
 $dbname = 'tcc';

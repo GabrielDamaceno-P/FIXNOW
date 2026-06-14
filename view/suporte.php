@@ -257,7 +257,7 @@ function statusIcon(string $s): string {
               placeholder="Detalhe sua dúvida ou problema..."></textarea>
           </div>
 
-          <button type="submit" class="btn btn-warning fw-bold w-100">Abrir ticket</button>
+          <button type="submit" class="btn btn-warning fw-bold w-100">Enviar Suporte</button>
         </form>
       </div>
     </div>

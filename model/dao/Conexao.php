@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('America/Sao_Paulo');
+
 class Conexao
 {
     private static ?PDO $instancia = null;

@@ -101,7 +101,6 @@ $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia,
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navMenu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="navMenu">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="catalogo.php">Catálogo</a></li>
         <?php if (isset($_SESSION['cliente_id'])): ?>
           <li class="nav-item"><a class="nav-link" href="dashboardCliente.php">Dashboard</a></li>
         <?php elseif (isset($_SESSION['tecnico_id'])): ?>
@@ -109,6 +108,7 @@ $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia,
         <?php elseif (isset($_SESSION['admin_id'])): ?>
           <li class="nav-item"><a class="nav-link" href="admin/painelAdmin.php">Painel Admin</a></li>
         <?php else: ?>
+          <li class="nav-item"><a class="nav-link" href="catalogo.php">Catálogo</a></li>
           <li class="nav-item"><a class="nav-link" href="login.php">Entrar</a></li>
         <?php endif; ?>
       </ul>
@@ -180,7 +180,15 @@ $mediaFormatada = $tec->avaliacaoMedia > 0 ? number_format($tec->avaliacaoMedia,
 
   <!-- Botão voltar -->
   <div class="mb-4">
-    <a href="catalogo.php" class="btn btn-sm btn-outline-secondary">&larr; Voltar ao catálogo</a>
+    <?php if (isset($_SESSION['cliente_id'])): ?>
+      <a href="dashboardCliente.php" class="btn btn-sm btn-outline-secondary">&larr; Voltar ao dashboard</a>
+    <?php elseif (isset($_SESSION['tecnico_id'])): ?>
+      <a href="prestador/dashboardPrestador.php" class="btn btn-sm btn-outline-secondary">&larr; Voltar ao dashboard</a>
+    <?php elseif (isset($_SESSION['admin_id'])): ?>
+      <a href="admin/painelAdmin.php" class="btn btn-sm btn-outline-secondary">&larr; Voltar ao painel</a>
+    <?php else: ?>
+      <a href="catalogo.php" class="btn btn-sm btn-outline-secondary">&larr; Voltar ao catálogo</a>
+    <?php endif; ?>
   </div>
 
   <!-- Serviços -->
