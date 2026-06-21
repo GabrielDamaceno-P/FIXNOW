@@ -2,18 +2,18 @@
 
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/OrcamentoDAO.php';
+require_once __DIR__ . '/../model/dao/PagamentoDAO.php';
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../model/dao/AvaliacaoDAO.php';
 require_once __DIR__ . '/../model/dto/AvaliacaoDTO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class MeusChamadosControl
 {
     private ChamadoDAO     $chamadoDAO;
+    private PagamentoDAO   $pagamentoDAO;
     private AvaliacaoDAO   $avaliacaoDAO;
     private NotificacaoDAO $notifDAO;
-    private PDO            $pdo;
 
     public int    $clienteId = 0;
     public string $mensagem  = '';
@@ -26,9 +26,9 @@ class MeusChamadosControl
     public function __construct()
     {
         $this->chamadoDAO   = new ChamadoDAO();
+        $this->pagamentoDAO = new PagamentoDAO();
         $this->avaliacaoDAO = new AvaliacaoDAO();
         $this->notifDAO     = new NotificacaoDAO();
-        $this->pdo          = Conexao::getConexao();
     }
 
     public function processar(): void
@@ -66,13 +66,10 @@ class MeusChamadosControl
 
     private function processarPost(): void
     {
-        $redir = 'meusChamados.php' . ($this->filtroStatus ? '?status=' . urlencode($this->filtroStatus) : '');
-
         if (isset($_POST['cancelar_chamado_id'])) {
             $cid = (int)$_POST['cancelar_chamado_id'];
             if ($cid > 0) {
-                $up = $this->pdo->prepare("UPDATE chamado SET status='Negado' WHERE id=? AND cliente_id=? AND status='Pendente'");
-                $up->execute([$cid, $this->clienteId]);
+                $this->chamadoDAO->cancelar($cid, $this->clienteId);
                 header('Location: meusChamados.php?cancelar_ok=1'); exit;
             }
 
@@ -81,9 +78,9 @@ class MeusChamadosControl
             $descricao = trim($_POST['nova_descricao'] ?? '');
             $endereco  = trim($_POST['novo_endereco']  ?? '');
             if ($cid > 0 && $descricao && $endereco) {
-                $up = $this->pdo->prepare("UPDATE chamado SET descricao=?, endereco_servico=? WHERE id=? AND cliente_id=? AND status='Pendente'");
-                $up->execute([$descricao, $endereco, $cid, $this->clienteId]);
-                header('Location: meusChamados.php?alterado_ok=1'); exit;
+                if ($this->chamadoDAO->alterarDescricaoEndereco($this->clienteId, $cid, $descricao, $endereco)) {
+                    header('Location: meusChamados.php?alterado_ok=1'); exit;
+                }
             }
             $this->erro = 'Não foi possível alterar o chamado.';
 
@@ -91,14 +88,10 @@ class MeusChamadosControl
             $cid      = (int)$_POST['reagendar_chamado_id'];
             $novaData = trim($_POST['nova_data_agendamento'] ?? '');
             if ($cid > 0 && $novaData && strtotime($novaData) > time()) {
-                $rowTec = $this->pdo->prepare("SELECT tecnico_id FROM chamado WHERE id=? AND cliente_id=? AND status IN ('Pendente','Aguardando Orçamento','Em Andamento')");
-                $rowTec->execute([$cid, $this->clienteId]);
-                $tec = $rowTec->fetch();
-                if ($tec) {
-                    $up = $this->pdo->prepare("UPDATE chamado SET data_agendamento=?, data_agendamento_proposta=NULL, reagendamento_pendente=0 WHERE id=? AND cliente_id=?");
-                    $up->execute([$novaData, $cid, $this->clienteId]);
-                    if (!empty($tec['tecnico_id'])) {
-                        fixnow_notificar_prestador($this->pdo, (int)$tec['tecnico_id'],
+                $result = $this->chamadoDAO->reagendarPorCliente($this->clienteId, $cid, $novaData);
+                if ($result['ok']) {
+                    if ($result['tecnico_id'] !== null) {
+                        fixnow_notificar_prestador((int)$result['tecnico_id'],
                             'O cliente reagendou o chamado #' . $cid . ' para ' . date('d/m/Y H:i', strtotime($novaData)) . '.', $cid);
                     }
                     header('Location: meusChamados.php?reagendado=1'); exit;
@@ -111,14 +104,8 @@ class MeusChamadosControl
             $metodo = $_POST['metodo_pagamento'] ?? 'PIX';
             if (!in_array($metodo, ['PIX', 'Cartão', 'Dinheiro'], true)) $metodo = 'PIX';
             if ($pid > 0) {
-                $up = $this->pdo->prepare("
-                    UPDATE pagamento p
-                    INNER JOIN chamado c ON c.id = p.chamado_id AND c.cliente_id = ?
-                    SET p.status = 'Pago', p.pago_em = NOW(), p.metodo = ?
-                    WHERE p.id = ? AND p.status = 'Pendente'
-                ");
-                $up->execute([$this->clienteId, $metodo, $pid]);
-                $this->mensagem = $up->rowCount() > 0
+                $ok = $this->pagamentoDAO->confirmarPorCliente($this->clienteId, $pid, $metodo);
+                $this->mensagem = $ok
                     ? 'Pagamento registrado com sucesso (simulação).'
                     : 'Não foi possível confirmar este pagamento.';
             }
@@ -153,8 +140,7 @@ class MeusChamadosControl
 
         $statusValidos = ['Pendente', 'Aguardando Orçamento', 'Em Andamento', 'Concluído', 'Negado'];
         if ($this->filtroStatus && in_array($this->filtroStatus, $statusValidos, true)) {
-            $this->chamados = array_filter($todos, fn($c) => $c->status === $this->filtroStatus);
-            $this->chamados = array_values($this->chamados);
+            $this->chamados = array_values(array_filter($todos, fn($c) => $c->status === $this->filtroStatus));
         } else {
             $this->chamados = $todos;
         }

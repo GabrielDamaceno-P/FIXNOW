@@ -1,11 +1,15 @@
 <?php
 
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/DisponibilidadeDAO.php';
+require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class CalendarioPrestadorControl
 {
-    private PDO $pdo;
+    private DisponibilidadeDAO $dispoDAO;
+    private ChamadoDAO         $chamadoDAO;
+    private NotificacaoDAO     $notifDAO;
 
     public static array $horas = [
         '08:00','09:00','10:00','11:00','12:00',
@@ -16,7 +20,7 @@ class CalendarioPrestadorControl
     public string $mensagem       = '';
     public array  $diasSemana     = [];
     public array  $bloqueados     = [];
-    public array  $agendados      = [];  // [data][hora] => ['id', 'categoria', 'cliente']
+    public array  $agendados      = [];
     public bool   $podePrev       = false;
     public string $prevSegundaStr = '';
     public string $nextSegundaStr = '';
@@ -26,7 +30,9 @@ class CalendarioPrestadorControl
 
     public function __construct()
     {
-        $this->pdo = Conexao::getConexao();
+        $this->dispoDAO   = new DisponibilidadeDAO();
+        $this->chamadoDAO = new ChamadoDAO();
+        $this->notifDAO   = new NotificacaoDAO();
     }
 
     public function processar(): void
@@ -37,7 +43,6 @@ class CalendarioPrestadorControl
         $this->tecnicoId = (int)$_SESSION['tecnico_id'];
         fixnow_checar_ativo_prestador($this->tecnicoId, '../login.php');
 
-        $hoje       = new DateTime('today');
         $minSegunda = new DateTime('today');
         $dow        = (int)$minSegunda->format('N');
         if ($dow !== 1) $minSegunda->modify('last monday');
@@ -71,83 +76,34 @@ class CalendarioPrestadorControl
 
         $this->carregarBloqueados();
         $this->carregarAgendados();
-        $this->contarNaoLidas();
+        $this->naoLidas = $this->notifDAO->contarNaoLidasTecnico($this->tecnicoId);
     }
 
     private function salvarAgenda(): void
     {
-        $datasPost = array_map(fn($d) => $d->format('Y-m-d'), $this->diasSemana);
-        $ph        = implode(',', array_fill(0, count($datasPost), '?'));
-
-        $this->pdo->prepare("DELETE FROM disponibilidade WHERE tecnico_id=? AND data IN ($ph)")
-            ->execute(array_merge([$this->tecnicoId], $datasPost));
-
+        $datas = array_map(fn($d) => $d->format('Y-m-d'), $this->diasSemana);
         $slots = $_POST['slot'] ?? [];
-        if ($slots) {
-            $ins = $this->pdo->prepare(
-                "INSERT IGNORE INTO disponibilidade (tecnico_id, data, hora) VALUES (?,?,?)"
-            );
-            foreach ($slots as $val) {
-                [$data, $hora] = array_pad(explode('|', (string)$val), 2, '');
-                if (in_array($data, $datasPost) && in_array($hora, self::$horas)) {
-                    $ins->execute([$this->tecnicoId, $data, $hora . ':00']);
-                }
-            }
-        }
+        $this->dispoDAO->salvarSemana($this->tecnicoId, $datas, $slots, self::$horas);
         $this->mensagem = 'Agenda salva com sucesso.';
     }
 
     private function carregarBloqueados(): void
     {
-        $datasStr = array_map(fn($d) => $d->format('Y-m-d'), $this->diasSemana);
-        $ph       = implode(',', array_fill(0, count($datasStr), '?'));
-        $stmt     = $this->pdo->prepare(
-            "SELECT data, TIME_FORMAT(hora,'%H:%i') AS hora
-             FROM disponibilidade WHERE tecnico_id=? AND data IN ($ph)"
-        );
-        $stmt->execute(array_merge([$this->tecnicoId], $datasStr));
-        foreach ($stmt->fetchAll() as $s) {
-            $this->bloqueados[$s['data']][$s['hora']] = true;
-        }
+        $datas = array_map(fn($d) => $d->format('Y-m-d'), $this->diasSemana);
+        $this->bloqueados = $this->dispoDAO->buscarBloqueadosPorDatas($this->tecnicoId, $datas);
     }
 
     private function carregarAgendados(): void
     {
-        $datasStr = array_map(fn($d) => $d->format('Y-m-d'), $this->diasSemana);
-        $ph       = implode(',', array_fill(0, count($datasStr), '?'));
-        $stmt     = $this->pdo->prepare("
-            SELECT DATE(c.data_agendamento) AS data,
-                   TIME_FORMAT(c.data_agendamento,'%H:%i') AS hora,
-                   c.id, c.categoria,
-                   cl.nome AS cliente_nome
-            FROM chamado c
-            INNER JOIN cliente cl ON cl.id = c.cliente_id
-            WHERE c.tecnico_id = ?
-              AND c.status IN ('Pendente','Em Andamento')
-              AND DATE(c.data_agendamento) IN ($ph)
-        ");
-        $stmt->execute(array_merge([$this->tecnicoId], $datasStr));
-        foreach ($stmt->fetchAll() as $row) {
+        $datas = array_map(fn($d) => $d->format('Y-m-d'), $this->diasSemana);
+        $rows  = $this->chamadoDAO->listarAgendadosPorDatas($this->tecnicoId, $datas);
+        foreach ($rows as $row) {
             if (!$row['data'] || !$row['hora']) continue;
             $this->agendados[$row['data']][$row['hora']] = [
                 'id'       => $row['id'],
                 'categoria'=> $row['categoria'],
                 'cliente'  => $row['cliente_nome'],
             ];
-        }
-    }
-
-    private function contarNaoLidas(): void
-    {
-        try {
-            $stmt = $this->pdo->prepare("
-                SELECT COUNT(*) FROM notificacao
-                WHERE tecnico_id=? AND tipo_destinatario='tecnico' AND lida=0
-            ");
-            $stmt->execute([$this->tecnicoId]);
-            $this->naoLidas = (int)$stmt->fetchColumn();
-        } catch (PDOException $e) {
-            $this->naoLidas = 0;
         }
     }
 }

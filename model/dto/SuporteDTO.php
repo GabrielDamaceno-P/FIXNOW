@@ -36,7 +36,6 @@ class SuporteDTO
     public ?int    $respondidoPor = null;
     public string  $criadoEm     = '';
     public string  $atualizadoEm = '';
-    /** @var SuporteMensagemDTO[] */
     public array   $mensagens     = [];
 
     public function tipoUsuario(): string

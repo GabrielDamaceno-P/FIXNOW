@@ -3,15 +3,13 @@
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/MensagemDAO.php';
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class ChatControl
 {
-    private ChamadoDAO    $chamadoDAO;
-    private MensagemDAO   $mensagemDAO;
+    private ChamadoDAO     $chamadoDAO;
+    private MensagemDAO    $mensagemDAO;
     private NotificacaoDAO $notifDAO;
-    private PDO           $pdo;
 
     public int    $usuarioId       = 0;
     public string $usuarioTipo     = '';
@@ -30,7 +28,6 @@ class ChatControl
         $this->chamadoDAO  = new ChamadoDAO();
         $this->mensagemDAO = new MensagemDAO();
         $this->notifDAO    = new NotificacaoDAO();
-        $this->pdo         = Conexao::getConexao();
     }
 
     public function verificarSessao(): void
@@ -81,7 +78,7 @@ class ChatControl
             $this->mensagemDAO->marcarLidas($this->chamadoId, $tipoOposto);
 
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && $this->chatAtivo) {
-                $texto = trim($_POST['mensagem'] ?? '');
+                $texto       = trim($_POST['mensagem'] ?? '');
                 $arquivoPath = null;
                 $arquivoNome = null;
 
@@ -101,17 +98,16 @@ class ChatControl
                 if ($this->erro === '' && ($texto !== '' || $arquivoPath !== null)) {
                     $this->mensagemDAO->inserir($this->chamadoId, $this->usuarioTipo, $this->usuarioId, $texto, $arquivoPath, $arquivoNome);
                     if ($isPrestador && $chamadoDTO) {
-                        fixnow_notificar_cliente($this->pdo, $chamadoDTO->clienteId,
+                        fixnow_notificar_cliente($chamadoDTO->clienteId,
                             "Nova mensagem no chamado #{$this->chamadoId}.", $this->chamadoId);
                     } elseif (!$isPrestador && $chamadoDTO && $chamadoDTO->tecnicoId) {
-                        fixnow_notificar_prestador($this->pdo, $chamadoDTO->tecnicoId,
+                        fixnow_notificar_prestador($chamadoDTO->tecnicoId,
                             "Nova mensagem no chamado #{$this->chamadoId}.", $this->chamadoId);
                     }
                     header('Location: chat.php?chamado=' . $this->chamadoId); exit;
                 } elseif ($this->erro === '') {
                     header('Location: chat.php?chamado=' . $this->chamadoId); exit;
                 }
-                // Se há erro ($this->erro !== ''), não redireciona — a view exibe o erro
             }
 
             $this->mensagens = $this->mensagemDAO->listarPorChamado($this->chamadoId);

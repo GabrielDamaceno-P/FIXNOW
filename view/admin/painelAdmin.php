@@ -250,8 +250,8 @@ foreach ($faturamentoMensal as $fm) {
                 <?= $rankLabels[$i] ?? ($i+1).'º' ?>
               </div>
               <img class="top-prest-foto"
-                   src="../../<?= htmlspecialchars($tp['foto_perfil'] ?? 'assets/img/perfil/default-prestador.jpg') ?>"
-                   alt="foto" onerror="this.src='../../assets/img/perfil/default-prestador.jpg'">
+                   src="../../<?= htmlspecialchars($tp['foto_perfil'] ?: 'assets/img/perfil/default-prestador.svg') ?>"
+                   alt="foto" onerror="this.onerror=null;this.src='../../assets/img/perfil/default-prestador.svg'">
               <div class="flex-grow-1 min-w-0">
                 <div class="top-prest-nome text-truncate"><?= htmlspecialchars($tp['nome']) ?></div>
                 <div class="top-prest-esp text-truncate"><?= htmlspecialchars($tp['especialidade'] ?? '—') ?></div>

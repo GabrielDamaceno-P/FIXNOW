@@ -1,11 +1,41 @@
-/**
- * Fix Now — comportamentos globais (alertas, navegação, utilitários).
- */
-
-// Anti-flash: aplica tema salvo antes do primeiro render
 if (typeof localStorage !== 'undefined' && localStorage.getItem('fn-theme') === 'dark') {
   document.documentElement.setAttribute('data-theme', 'dark');
 }
+
+(function () {
+  var tag = document.querySelector('script[src*="main.js"]');
+  if (!tag) return;
+  var base = tag.src.replace(/\/js\/main\.js[\s\S]*$/, '/img/perfil/');
+
+  function aplicarFallback(img) {
+    if (!img || img.dataset.fnFallback) return;
+    img.dataset.fnFallback = '1';
+    var isCli = (img.src || '').indexOf('perfil_cli') !== -1;
+    img.src = base + (isCli ? 'default-cliente.svg' : 'default-prestador.svg');
+  }
+
+  document.addEventListener('error', function (e) {
+    if (e.target && e.target.tagName === 'IMG') aplicarFallback(e.target);
+  }, true);
+
+  function varrerImagens() {
+    document.querySelectorAll('img[src]').forEach(function (img) {
+      if (img.complete && img.naturalWidth === 0 && img.src && img.src !== window.location.href) {
+        aplicarFallback(img);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', varrerImagens);
+  } else {
+    varrerImagens();
+  }
+
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) varrerImagens();
+  });
+})();
 
 (function () {
   'use strict';

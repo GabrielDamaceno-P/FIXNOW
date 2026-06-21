@@ -22,7 +22,6 @@ class PortfolioDAO
                 ORDER BY pf.categoria_id ASC, pf.criado_em DESC
             ');
         } catch (Throwable $e) {
-            // Fallback se a coluna categoria_id ainda não existe (migration pendente)
             $stmt = $this->pdo->prepare('
                 SELECT *, NULL AS categoria_nome
                 FROM portfolio_foto

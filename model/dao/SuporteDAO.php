@@ -16,7 +16,6 @@ class SuporteDAO
         $this->pdo = Conexao::getConexao();
     }
 
-    /** @return int ID do ticket criado, ou 0 em caso de erro */
     public function abrir(string $tipoUsuario, int $usuarioId, string $assunto, string $categoria, string $prioridade, string $texto, ?int $chamadoId = null): int
     {
         $clienteId = $tipoUsuario === 'cliente'   ? $usuarioId : null;
@@ -41,7 +40,7 @@ class SuporteDAO
             ")->execute([$sid, $tipoUsuario, $usuarioId, $texto]);
             $this->pdo->commit();
             $chamadoInfo = $chamadoId ? " | Chamado #{$chamadoId}" : '';
-            fixnow_notificar_admin($this->pdo, "Novo ticket #{$sid} [{$categoria} / {$prioridade}]{$chamadoInfo} de {$tipoUsuario}: {$assunto}");
+            fixnow_notificar_admin("Novo ticket #{$sid} [{$categoria} / {$prioridade}]{$chamadoInfo} de {$tipoUsuario}: {$assunto}");
             return $sid;
         } catch (Exception $e) {
             $this->pdo->rollBack();
@@ -70,11 +69,10 @@ class SuporteDAO
         ")->execute([$suporteId, $tipoUsuario, $usuarioId, $texto]);
         $this->pdo->prepare("UPDATE suporte SET status='Em Andamento', atualizado_em=NOW() WHERE id=?")
             ->execute([$suporteId]);
-        fixnow_notificar_admin($this->pdo, "Nova mensagem no ticket #{$suporteId} de {$tipoUsuario}.");
+        fixnow_notificar_admin("Nova mensagem no ticket #{$suporteId} de {$tipoUsuario}.");
         return true;
     }
 
-    /** @return SuporteDTO[] */
     public function listarPorUsuario(string $tipoUsuario, int $usuarioId): array
     {
         $col  = $tipoUsuario === 'cliente' ? 'cliente_id' : 'tecnico_id';
@@ -102,7 +100,6 @@ class SuporteDAO
         }, $rows);
     }
 
-    /** @return SuporteDTO[] */
     public function listarTodos(int $limit = 50): array
     {
         $rows = $this->pdo->query("SELECT * FROM suporte ORDER BY criado_em DESC LIMIT {$limit}")->fetchAll();
@@ -144,7 +141,47 @@ class SuporteDAO
         $this->pdo->prepare(
             "INSERT INTO suporte_mensagem (suporte_id, autor_tipo, autor_id, mensagem) VALUES (?,?,?,'Ticket reaberto pelo usuário.')"
         )->execute([$suporteId, $tipoUsuario, $usuarioId]);
-        fixnow_notificar_admin($this->pdo, "Ticket #{$suporteId} foi reaberto pelo usuário.");
+        fixnow_notificar_admin("Ticket #{$suporteId} foi reaberto pelo usuário.");
         return true;
+    }
+
+    public function buscarPagamentosParaContexto(string $tipo, int $id): array
+    {
+        $col  = $tipo === 'cliente' ? 'c.cliente_id' : 'c.tecnico_id';
+        $stmt = $this->pdo->prepare("
+            SELECT p.id, p.valor, p.status, p.metodo, p.criado_em,
+                   c.id AS chamado_id, c.categoria AS chamado_categoria
+            FROM pagamento p
+            JOIN chamado c ON c.id = p.chamado_id
+            WHERE {$col} = ?
+            ORDER BY p.criado_em DESC LIMIT 10
+        ");
+        $stmt->execute([$id]);
+        return $stmt->fetchAll();
+    }
+
+    public function buscarChamadosParaContexto(string $tipo, int $id): array
+    {
+        if ($tipo === 'cliente') {
+            $stmt = $this->pdo->prepare("
+                SELECT c.id, c.categoria, c.status, c.criado_em,
+                       t.nome AS tecnico_nome
+                FROM chamado c
+                LEFT JOIN tecnico t ON t.id = c.tecnico_id
+                WHERE c.cliente_id = ? AND c.status NOT IN ('Negado')
+                ORDER BY c.criado_em DESC LIMIT 10
+            ");
+        } else {
+            $stmt = $this->pdo->prepare("
+                SELECT c.id, c.categoria, c.status, c.criado_em,
+                       cl.nome AS cliente_nome
+                FROM chamado c
+                LEFT JOIN cliente cl ON cl.id = c.cliente_id
+                WHERE c.tecnico_id = ? AND c.status NOT IN ('Negado')
+                ORDER BY c.criado_em DESC LIMIT 10
+            ");
+        }
+        $stmt->execute([$id]);
+        return $stmt->fetchAll();
     }
 }

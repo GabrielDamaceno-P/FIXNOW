@@ -1,11 +1,13 @@
 <?php
 
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class CalendarioClienteControl
 {
-    private PDO $pdo;
+    private ChamadoDAO     $chamadoDAO;
+    private NotificacaoDAO $notifDAO;
 
     public int    $clienteId      = 0;
     public string $mensagem       = '';
@@ -19,7 +21,8 @@ class CalendarioClienteControl
 
     public function __construct()
     {
-        $this->pdo = Conexao::getConexao();
+        $this->chamadoDAO = new ChamadoDAO();
+        $this->notifDAO   = new NotificacaoDAO();
     }
 
     public function processar(): void
@@ -45,7 +48,7 @@ class CalendarioClienteControl
 
         $this->calcularNavMeses();
         $this->carregarChamados();
-        $this->contarNaoLidas();
+        $this->naoLidas = $this->notifDAO->contarNaoLidasCliente($this->clienteId);
     }
 
     private function processarPost(): void
@@ -60,13 +63,7 @@ class CalendarioClienteControl
             $this->erro = 'A data deve ser futura.'; return;
         }
 
-        $up = $this->pdo->prepare("
-            UPDATE chamado SET data_agendamento=?
-            WHERE id=? AND cliente_id=? AND status IN ('Pendente','Em Andamento')
-        ");
-        $up->execute([$novaData, $cid, $this->clienteId]);
-
-        if ($up->rowCount() > 0) {
+        if ($this->chamadoDAO->reagendarDireto($this->clienteId, $cid, $novaData)) {
             $m = (int)date('n', strtotime($novaData));
             $a = (int)date('Y', strtotime($novaData));
             header("Location: calendario.php?mes={$m}&ano={$a}&reagendado=1"); exit;
@@ -88,17 +85,7 @@ class CalendarioClienteControl
 
     private function carregarChamados(): void
     {
-        $stmt = $this->pdo->prepare("
-            SELECT c.id, c.descricao, c.categoria, c.status,
-                   c.data_agendamento, c.criado_em,
-                   t.nome AS tecnico_nome
-            FROM chamado c
-            LEFT JOIN tecnico t ON t.id = c.tecnico_id
-            WHERE c.cliente_id = ?
-            ORDER BY c.data_agendamento ASC, c.criado_em ASC
-        ");
-        $stmt->execute([$this->clienteId]);
-        $todos = $stmt->fetchAll();
+        $todos = $this->chamadoDAO->listarParaCalendario($this->clienteId);
 
         foreach ($todos as $ch) {
             if ($ch['data_agendamento']) {
@@ -113,19 +100,5 @@ class CalendarioClienteControl
         $this->semAgendamento = array_values(array_filter($todos, fn($c) =>
             !$c['data_agendamento'] && in_array($c['status'], ['Pendente', 'Em Andamento'])
         ));
-    }
-
-    private function contarNaoLidas(): void
-    {
-        try {
-            $stmt = $this->pdo->prepare("
-                SELECT COUNT(*) FROM notificacao
-                WHERE cliente_id=? AND tipo_destinatario='cliente' AND lida=0
-            ");
-            $stmt->execute([$this->clienteId]);
-            $this->naoLidas = (int)$stmt->fetchColumn();
-        } catch (PDOException $e) {
-            $this->naoLidas = 0;
-        }
     }
 }

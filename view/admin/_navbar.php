@@ -21,7 +21,7 @@ try { $supAbertos = (int)$pdo->query("SELECT COUNT(*) FROM suporte WHERE status=
 catch (Exception $e) { $supAbertos = 0; }
 
 $_navInicial = htmlspecialchars(mb_strtoupper(mb_substr($adminNome, 0, 1)));
-$gestaoAtiva = in_array($paginaAtiva, ['clientes','prestadores','servicos','categorias','destaques']);
+$gestaoAtiva = in_array($paginaAtiva, ['clientes','prestadores','categorias','destaques']);
 ?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
   <div class="container-fluid px-4">
@@ -45,7 +45,6 @@ $gestaoAtiva = in_array($paginaAtiva, ['clientes','prestadores','servicos','cate
           <ul class="dropdown-menu shadow border-0">
             <li><a class="dropdown-item <?= $paginaAtiva === 'clientes' ? 'active' : '' ?>" href="clientes.php"><i class="bi bi-people me-2 text-primary"></i>Clientes</a></li>
             <li><a class="dropdown-item <?= $paginaAtiva === 'prestadores' ? 'active' : '' ?>" href="prestadores.php"><i class="bi bi-person-gear me-2 text-primary"></i>Prestadores</a></li>
-            <li><a class="dropdown-item <?= $paginaAtiva === 'servicos' ? 'active' : '' ?>" href="servicos.php"><i class="bi bi-briefcase me-2 text-primary"></i>Serviços</a></li>
             <li><a class="dropdown-item <?= $paginaAtiva === 'categorias' ? 'active' : '' ?>" href="categorias.php"><i class="bi bi-tags me-2 text-primary"></i>Categorias</a></li>
             <li><a class="dropdown-item <?= $paginaAtiva === 'destaques' ? 'active' : '' ?>" href="destaques.php"><i class="bi bi-star me-2 text-primary"></i>Destaques</a></li>
           </ul>

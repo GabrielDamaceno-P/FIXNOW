@@ -12,7 +12,6 @@ class NotificacaoDAO
         $this->pdo = Conexao::getConexao();
     }
 
-    /** @return NotificacaoDTO[] */
     public function listarPorCliente(int $clienteId, int $limit = 60): array
     {
         $stmt = $this->pdo->prepare("
@@ -24,7 +23,6 @@ class NotificacaoDAO
         return array_map([NotificacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
-    /** @return NotificacaoDTO[] */
     public function listarPorTecnico(int $tecnicoId, int $limit = 60): array
     {
         $stmt = $this->pdo->prepare("
@@ -36,7 +34,6 @@ class NotificacaoDAO
         return array_map([NotificacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
-    /** @return NotificacaoDTO[] */
     public function listarAdmin(int $limit = 60): array
     {
         return array_map(

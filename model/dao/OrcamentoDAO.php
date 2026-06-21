@@ -12,7 +12,6 @@ class OrcamentoDAO
         $this->pdo = Conexao::getConexao();
     }
 
-    /** @return OrcamentoDTO[] — orçamentos pendentes para o cliente */
     public function listarPendentesParaCliente(int $clienteId): array
     {
         $stmt = $this->pdo->prepare("
@@ -24,10 +23,9 @@ class OrcamentoDAO
             ORDER BY o.criado_em DESC
         ");
         $stmt->execute([$clienteId]);
-        return array_map([OrcamentoDTO::class, 'fromArray'], $stmt->fetchAll());
+        return $stmt->fetchAll();
     }
 
-    /** @return OrcamentoDTO[] — orçamentos enviados pelo técnico */
     public function listarPorTecnico(int $tecnicoId): array
     {
         $stmt = $this->pdo->prepare("
@@ -119,5 +117,101 @@ class OrcamentoDAO
         $stmt->execute([$id]);
         $row = $stmt->fetch();
         return $row ? OrcamentoDTO::fromArray($row) : null;
+    }
+
+    public function aceitarComTransacao(int $clienteId, int $orcamentoId): ?array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT o.id, o.valor, o.tecnico_id, o.chamado_id
+            FROM orcamento o
+            INNER JOIN chamado c ON c.id = o.chamado_id AND c.cliente_id = ?
+            WHERE o.id = ? AND o.status = 'Pendente' LIMIT 1
+        ");
+        $stmt->execute([$clienteId, $orcamentoId]);
+        $orc = $stmt->fetch();
+        if (!$orc) return null;
+
+        $this->pdo->beginTransaction();
+        $this->pdo->prepare("UPDATE orcamento SET status='Aceito' WHERE id=?")->execute([$orc['id']]);
+        $this->pdo->prepare("UPDATE orcamento SET status='Recusado' WHERE chamado_id=? AND id!=?")->execute([$orc['chamado_id'], $orc['id']]);
+        $this->pdo->prepare("UPDATE chamado SET tecnico_id=?, status='Em Andamento', preco_sugerido=? WHERE id=?")->execute([$orc['tecnico_id'], $orc['valor'], $orc['chamado_id']]);
+        $stmtPag = $this->pdo->prepare("SELECT id FROM pagamento WHERE chamado_id=?");
+        $stmtPag->execute([$orc['chamado_id']]);
+        if ($stmtPag->fetch()) {
+            $this->pdo->prepare("UPDATE pagamento SET valor=? WHERE chamado_id=?")->execute([$orc['valor'], $orc['chamado_id']]);
+        } else {
+            $this->pdo->prepare("INSERT INTO pagamento (chamado_id, metodo, valor, status) VALUES (?, 'PIX', ?, 'Pendente')")->execute([$orc['chamado_id'], $orc['valor']]);
+        }
+        $this->pdo->commit();
+
+        return [
+            'tecnico_id' => (int)$orc['tecnico_id'],
+            'chamado_id' => (int)$orc['chamado_id'],
+            'valor'      => (float)$orc['valor'],
+        ];
+    }
+
+    public function recusarRetornandoIds(int $clienteId, int $orcamentoId): ?array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT o.id, o.tecnico_id, o.chamado_id FROM orcamento o
+            INNER JOIN chamado c ON c.id = o.chamado_id AND c.cliente_id = ?
+            WHERE o.id = ? AND o.status = 'Pendente' LIMIT 1
+        ");
+        $stmt->execute([$clienteId, $orcamentoId]);
+        $orc = $stmt->fetch();
+        if (!$orc) return null;
+
+        $chamadoId = (int)$orc['chamado_id'];
+
+        $this->pdo->prepare("DELETE FROM notificacao WHERE chamado_id = ?")->execute([$chamadoId]);
+        $this->pdo->prepare("DELETE FROM mensagem_chamado WHERE chamado_id = ?")->execute([$chamadoId]);
+        $this->pdo->prepare("DELETE FROM chamado_foto WHERE chamado_id = ?")->execute([$chamadoId]);
+        $this->pdo->prepare("DELETE FROM orcamento WHERE chamado_id = ?")->execute([$chamadoId]);
+        $this->pdo->prepare("DELETE FROM chamado WHERE id = ?")->execute([$chamadoId]);
+
+        return [
+            'tecnico_id' => (int)$orc['tecnico_id'],
+            'chamado_id' => $chamadoId,
+        ];
+    }
+
+    public function listarDisponiveisParaTecnico(int $tecnicoId): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT c.*, cl.nome AS cliente_nome,
+                   CASE WHEN c.status = 'Aguardando Orçamento' THEN 2
+                        WHEN c.tecnico_id = ? THEN 1
+                        ELSE 0 END AS _ordem
+            FROM chamado c
+            INNER JOIN cliente cl ON cl.id = c.cliente_id
+            WHERE (
+                (c.tecnico_id = ? AND c.status IN ('Aguardando Orçamento', 'Pendente'))
+                OR (
+                    c.tecnico_id IS NULL
+                    AND c.status = 'Pendente'
+                    AND c.categoria IN (
+                        SELECT cat.nome FROM servico s
+                        INNER JOIN categoria cat ON cat.id = s.categoria_id
+                        WHERE s.tecnico_id = ? AND s.ativo = 1
+                    )
+                )
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM orcamento o
+                WHERE o.chamado_id = c.id AND o.tecnico_id = ? AND o.status = 'Pendente'
+            )
+            ORDER BY _ordem DESC, c.criado_em ASC
+        ");
+        $stmt->execute([$tecnicoId, $tecnicoId, $tecnicoId, $tecnicoId]);
+        return $stmt->fetchAll();
+    }
+
+    public function buscarChamadoId(int $orcamentoId, int $tecnicoId): ?int
+    {
+        $stmt = $this->pdo->prepare("SELECT chamado_id FROM orcamento WHERE id=? AND tecnico_id=?");
+        $stmt->execute([$orcamentoId, $tecnicoId]);
+        $row = $stmt->fetch();
+        return $row ? (int)$row['chamado_id'] : null;
     }
 }

@@ -48,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ->execute([$novoStatus, $adminId, $resposta, $sid]);
                 }
                 $msgNotif = 'Sua solicitação de suporte "' . mb_strimwidth($tk['assunto'], 0, 50, '…') . '" recebeu uma nova mensagem.';
-                if ($tk['cliente_id']) fixnow_notificar_cliente($pdo, (int)$tk['cliente_id'], $msgNotif);
-                if ($tk['tecnico_id']) fixnow_notificar_prestador($pdo, (int)$tk['tecnico_id'], $msgNotif);
+                if ($tk['cliente_id']) fixnow_notificar_cliente((int)$tk['cliente_id'], $msgNotif);
+                if ($tk['tecnico_id']) fixnow_notificar_prestador((int)$tk['tecnico_id'], $msgNotif);
                 $mensagem = $novoStatus === 'Fechado' ? 'Ticket fechado com resolução registrada.' : 'Mensagem enviada.';
             }
         }
@@ -77,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tk = $stk->fetch();
             if ($tk) {
                 $notif = "O chamado #{$cid} foi cancelado pela equipe de suporte.";
-                if ($tk['cliente_id']) fixnow_notificar_cliente($pdo, (int)$tk['cliente_id'], $notif);
-                if ($tk['tecnico_id']) fixnow_notificar_prestador($pdo, (int)$tk['tecnico_id'], $notif);
+                if ($tk['cliente_id']) fixnow_notificar_cliente((int)$tk['cliente_id'], $notif);
+                if ($tk['tecnico_id']) fixnow_notificar_prestador((int)$tk['tecnico_id'], $notif);
             }
             $mensagem = "Chamado #{$cid} cancelado.";
         }
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stk->execute([$sid]);
             $tk = $stk->fetch();
             if ($tk && $tk['cliente_id']) {
-                fixnow_notificar_cliente($pdo, (int)$tk['cliente_id'], "O chamado #{$cid} será reatribuído a um novo prestador em breve.");
+                fixnow_notificar_cliente((int)$tk['cliente_id'], "O chamado #{$cid} será reatribuído a um novo prestador em breve.");
             }
             $mensagem = "Chamado #{$cid} devolvido ao pool de prestadores.";
         }
@@ -131,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute([$sid, $adminId, $msg]);
 
                 $notif = 'Seu estorno de ' . $valorFmt . ' foi processado. O valor será devolvido conforme o método de pagamento original.';
-                if ($tk['cliente_id']) fixnow_notificar_cliente($pdo, (int)$tk['cliente_id'], $notif);
-                if ($tk['tecnico_id']) fixnow_notificar_prestador($pdo, (int)$tk['tecnico_id'], $notif);
+                if ($tk['cliente_id']) fixnow_notificar_cliente((int)$tk['cliente_id'], $notif);
+                if ($tk['tecnico_id']) fixnow_notificar_prestador((int)$tk['tecnico_id'], $notif);
 
                 $mensagem = 'Estorno de ' . $valorFmt . ' processado com sucesso.';
             }
@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE tecnico SET ativo=0 WHERE id=?")->execute([$tuid]);
             $pdo->prepare("INSERT INTO suporte_mensagem (suporte_id, autor_tipo, autor_id, mensagem) VALUES (?,'admin',?,?)")
                 ->execute([$sid, $adminId, '[AÇÃO] Conta do prestador bloqueada temporariamente.']);
-            fixnow_notificar_prestador($pdo, $tuid, 'Sua conta foi bloqueada temporariamente pelo suporte. Entre em contato para mais informações.');
+            fixnow_notificar_prestador($tuid, 'Sua conta foi bloqueada temporariamente pelo suporte. Entre em contato para mais informações.');
             $mensagem = 'Conta do prestador bloqueada.';
         }
 
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE tecnico SET ativo=1 WHERE id=?")->execute([$tuid]);
             $pdo->prepare("INSERT INTO suporte_mensagem (suporte_id, autor_tipo, autor_id, mensagem) VALUES (?,'admin',?,?)")
                 ->execute([$sid, $adminId, '[AÇÃO] Bloqueio da conta removido.']);
-            fixnow_notificar_prestador($pdo, $tuid, 'Seu acesso foi restaurado pelo suporte. Bem-vindo de volta!');
+            fixnow_notificar_prestador($tuid, 'Seu acesso foi restaurado pelo suporte. Bem-vindo de volta!');
             $mensagem = 'Bloqueio removido.';
         }
     }

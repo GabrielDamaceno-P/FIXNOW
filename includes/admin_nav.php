@@ -21,7 +21,6 @@ try {
         <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'painel' ? 'active' : ''; ?>" href="painel-admin.php">Painel</a></li>
         <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'clientes' ? 'active' : ''; ?>" href="clientes.php">Clientes</a></li>
         <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'prestadores' ? 'active' : ''; ?>" href="prestadores.php">Prestadores</a></li>
-        <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'servicos' ? 'active' : ''; ?>" href="servicos.php">Serviços</a></li>
         <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'categorias' ? 'active' : ''; ?>" href="categorias.php">Categorias</a></li>
         <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'destaques' ? 'active' : ''; ?>" href="destaques.php">Destaques</a></li>
         <li class="nav-item"><a class="nav-link <?php echo $paginaAtiva === 'suporte' ? 'active' : ''; ?>" href="suporte.php">Suporte</a></li>

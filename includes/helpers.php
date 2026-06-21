@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Utilitários Fix Now: CPF, notificações e caminhos públicos de upload.
- */
-
 function fixnow_only_digits(string $s): string
 {
     return preg_replace('/\D+/', '', $s);
@@ -28,21 +24,24 @@ function fixnow_validar_cpf(?string $cpf): bool
     return true;
 }
 
-function fixnow_notificar_cliente(PDO $pdo, int $clienteId, string $mensagem, ?int $chamadoId = null): void
+function fixnow_notificar_cliente(int $clienteId, string $mensagem, ?int $chamadoId = null): void
 {
-    $pdo->prepare('INSERT INTO notificacao (tipo_destinatario, cliente_id, chamado_id, mensagem) VALUES (\'cliente\', ?, ?, ?)')
+    Conexao::getConexao()
+        ->prepare('INSERT INTO notificacao (tipo_destinatario, cliente_id, chamado_id, mensagem) VALUES (\'cliente\', ?, ?, ?)')
         ->execute([$clienteId, $chamadoId, $mensagem]);
 }
 
-function fixnow_notificar_prestador(PDO $pdo, int $tecnicoId, string $mensagem, ?int $chamadoId = null): void
+function fixnow_notificar_prestador(int $tecnicoId, string $mensagem, ?int $chamadoId = null): void
 {
-    $pdo->prepare('INSERT INTO notificacao (tipo_destinatario, tecnico_id, chamado_id, mensagem) VALUES (\'prestador\', ?, ?, ?)')
+    Conexao::getConexao()
+        ->prepare('INSERT INTO notificacao (tipo_destinatario, tecnico_id, chamado_id, mensagem) VALUES (\'prestador\', ?, ?, ?)')
         ->execute([$tecnicoId, $chamadoId, $mensagem]);
 }
 
-function fixnow_notificar_admin(PDO $pdo, string $mensagem): void
+function fixnow_notificar_admin(string $mensagem): void
 {
-    $pdo->prepare('INSERT INTO notificacao (tipo_destinatario, mensagem) VALUES (\'admin\', ?)')
+    Conexao::getConexao()
+        ->prepare('INSERT INTO notificacao (tipo_destinatario, mensagem) VALUES (\'admin\', ?)')
         ->execute([$mensagem]);
 }
 
@@ -86,7 +85,6 @@ function fixnow_upload_file(array $file, string $targetDir, string $prefix): ?ar
     ];
     $tipo = mime_content_type($file['tmp_name']) ?: ($file['type'] ?? '');
     if (!isset($permitidos[$tipo])) {
-        // fallback: magic bytes
         $bytes = @file_get_contents($file['tmp_name'], false, null, 0, 12);
         if ($bytes !== false) {
             if (substr($bytes, 0, 3) === "\xFF\xD8\xFF")          $tipo = 'image/jpeg';
@@ -99,7 +97,7 @@ function fixnow_upload_file(array $file, string $targetDir, string $prefix): ?ar
             return null;
         }
     }
-    if ($file['size'] > 10 * 1024 * 1024) { // 10 MB máx
+    if ($file['size'] > 10 * 1024 * 1024) {
         return null;
     }
     if (!is_dir($targetDir)) {
@@ -126,14 +124,13 @@ function fixnow_upload_image(array $file, string $targetDir, string $prefix): ?s
 
     $permitidas = [
         'image/jpeg'  => 'jpg',
-        'image/jpg'   => 'jpg',   // alias não-padrão retornado por alguns sistemas Windows
-        'image/pjpeg' => 'jpg',   // JPEG progressivo (IE/Edge antigo)
+        'image/jpg'   => 'jpg',
+        'image/pjpeg' => 'jpg',
         'image/png'   => 'png',
         'image/x-png' => 'png',
         'image/webp'  => 'webp',
     ];
     $tipo = mime_content_type($file['tmp_name']) ?: ($file['type'] ?? '');
-    // fallback: verificar pelo cabeçalho dos bytes se mime não foi reconhecido
     if (!isset($permitidas[$tipo]) && !empty($file['tmp_name'])) {
         $bytes = @file_get_contents($file['tmp_name'], false, null, 0, 12);
         if ($bytes !== false) {

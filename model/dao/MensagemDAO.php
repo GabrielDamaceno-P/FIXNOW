@@ -22,7 +22,6 @@ class MensagemDAO
         }
     }
 
-    /** @return MensagemDTO[] */
     public function listarPorChamado(int $chamadoId): array
     {
         $stmt = $this->pdo->prepare('

@@ -260,9 +260,6 @@ elseif (isset($_SESSION['admin_id']))   $_urlInicio = 'admin/painelAdmin.php';
                          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                          onchange="document.getElementById('docLabel').textContent = this.files[0]?.name || 'Documento de identidade (RG ou CNH)'">
                 </label>
-                <div class="doc-info mt-2">
-                  🔐 Usado <strong>somente</strong> pelo administrador para verificar sua identidade e gênero antes da aprovação. Não fica visível para clientes.
-                </div>
               </div>
             </div>
           </div>

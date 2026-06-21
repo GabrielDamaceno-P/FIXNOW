@@ -100,8 +100,7 @@ class CadastroPrestadorControl
 
         $this->tecnicoDAO->inserir($dto);
 
-        $pdo = \Conexao::getConexao();
-        fixnow_notificar_admin($pdo, "Novo prestador aguardando aprovação: {$nome}");
+        fixnow_notificar_admin("Novo prestador aguardando aprovação: {$nome}");
 
         $this->mensagem = 'Cadastro realizado! Aguarde a aprovação do administrador.';
     }

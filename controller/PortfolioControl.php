@@ -95,7 +95,6 @@ class PortfolioControl
                     ];
                     $novoPath = fixnow_upload_image($fileItem, fixnow_public_upload_dir(), 'portfolio');
                     if (!$novoPath) { $this->erro = 'Arquivo inválido. Use JPG, PNG ou WEBP.'; return; }
-                    // Apaga o arquivo antigo
                     $antiga = $this->portfolioDAO->buscarPorId($fid, $this->tecnicoId);
                     if ($antiga) {
                         $fsPath = dirname(__DIR__) . '/' . $antiga['foto_path'];

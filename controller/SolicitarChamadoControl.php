@@ -3,15 +3,21 @@
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/CategoriaDAO.php';
 require_once __DIR__ . '/../model/dao/TecnicoDAO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
+require_once __DIR__ . '/../model/dao/ClienteDAO.php';
+require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
+require_once __DIR__ . '/../model/dao/DisponibilidadeDAO.php';
+require_once __DIR__ . '/../model/dao/ServicoDAO.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class SolicitarChamadoControl
 {
-    private ChamadoDAO   $chamadoDAO;
-    private CategoriaDAO $categoriaDAO;
-    private TecnicoDAO   $tecnicoDAO;
-    private PDO          $pdo;
+    private ChamadoDAO       $chamadoDAO;
+    private CategoriaDAO     $categoriaDAO;
+    private TecnicoDAO       $tecnicoDAO;
+    private ClienteDAO       $clienteDAO;
+    private NotificacaoDAO   $notifDAO;
+    private DisponibilidadeDAO $dispoDAO;
+    private ServicoDAO       $servicoDAO;
 
     public int    $clienteId          = 0;
     public string $clienteNome        = '';
@@ -35,7 +41,10 @@ class SolicitarChamadoControl
         $this->chamadoDAO   = new ChamadoDAO();
         $this->categoriaDAO = new CategoriaDAO();
         $this->tecnicoDAO   = new TecnicoDAO();
-        $this->pdo          = Conexao::getConexao();
+        $this->clienteDAO   = new ClienteDAO();
+        $this->notifDAO     = new NotificacaoDAO();
+        $this->dispoDAO     = new DisponibilidadeDAO();
+        $this->servicoDAO   = new ServicoDAO();
     }
 
     public function verificarSessao(): void
@@ -73,9 +82,7 @@ class SolicitarChamadoControl
 
     private function carregarDadosCliente(): void
     {
-        $stmt = $this->pdo->prepare("SELECT nome, foto_perfil, endereco, cep, genero FROM cliente WHERE id = ?");
-        $stmt->execute([$this->clienteId]);
-        $row = $stmt->fetch();
+        $row = $this->clienteDAO->buscarCamposBasicos($this->clienteId);
         if ($row) {
             $this->clienteNome     = $this->clienteNome     ?: ($row['nome']        ?? '');
             $this->clienteFoto     = $this->clienteFoto     ?: ($row['foto_perfil'] ?? '');
@@ -85,9 +92,7 @@ class SolicitarChamadoControl
         }
 
         try {
-            $stmt2 = $this->pdo->prepare("SELECT COUNT(*) FROM notificacao WHERE cliente_id = ? AND tipo_destinatario = 'cliente' AND lida = 0");
-            $stmt2->execute([$this->clienteId]);
-            $this->naoLidas = (int)$stmt2->fetchColumn();
+            $this->naoLidas = $this->notifDAO->contarNaoLidasCliente($this->clienteId);
         } catch (Throwable $e) {
             $this->naoLidas = 0;
         }
@@ -95,54 +100,24 @@ class SolicitarChamadoControl
 
     private function carregarTecnicoESlots(int $tecnicoId): void
     {
-        $stmt = $this->pdo->prepare("SELECT id, nome, especialidade, foto_perfil FROM tecnico WHERE id = ? AND ativo = 1 AND status_cadastro = 'Aprovado'");
-        $stmt->execute([$tecnicoId]);
-        $info = $stmt->fetch() ?: null;
+        $info = $this->tecnicoDAO->buscarInfoSimples($tecnicoId);
         if (!$info) return;
 
         $this->tecnicoInfo = $info;
 
-        // Categorias dos serviços ativos do prestador
-        $stmtCat = $this->pdo->prepare("
-            SELECT DISTINCT COALESCE(cat.nome, s.nome) AS categoria_nome
-            FROM servico s
-            LEFT JOIN categoria cat ON cat.id = s.categoria_id
-            WHERE s.tecnico_id = ? AND s.ativo = 1
-            ORDER BY categoria_nome
-        ");
-        $stmtCat->execute([$tecnicoId]);
-        $this->categoriasPrestador = $stmtCat->fetchAll(PDO::FETCH_COLUMN);
+        $this->categoriasPrestador = $this->tecnicoDAO->buscarCategoriasDoPrestador($tecnicoId);
 
-        // Auto-preenche se o prestador tem só uma categoria
         if (count($this->categoriasPrestador) === 1 && $this->categoriaPre === '') {
             $this->categoriaPre = $this->categoriasPrestador[0];
         }
 
-        // Horários manualmente bloqueados pelo prestador
-        $stmtBloq = $this->pdo->prepare("
-            SELECT data, TIME_FORMAT(hora,'%H:%i') AS hora
-            FROM disponibilidade
-            WHERE tecnico_id = ? AND data >= CURDATE() AND data <= DATE_ADD(CURDATE(), INTERVAL 28 DAY)
-        ");
-        $stmtBloq->execute([$tecnicoId]);
-        $ocupados = [];
-        foreach ($stmtBloq->fetchAll() as $b) {
-            $ocupados[$b['data']][$b['hora']] = true;
-        }
+        $bloqueados = $this->dispoDAO->buscarBloqueadosFuturos($tecnicoId);
+        $ocupados   = $this->chamadoDAO->buscarSlotsOcupadosFuturos($tecnicoId);
 
-        // Horários já reservados por chamados ativos
-        $stmtChamados = $this->pdo->prepare("
-            SELECT DATE(data_agendamento) AS data,
-                   TIME_FORMAT(data_agendamento,'%H:%i') AS hora
-            FROM chamado
-            WHERE tecnico_id = ?
-              AND status IN ('Pendente','Em Andamento')
-              AND data_agendamento >= NOW()
-              AND data_agendamento <= DATE_ADD(NOW(), INTERVAL 28 DAY)
-        ");
-        $stmtChamados->execute([$tecnicoId]);
-        foreach ($stmtChamados->fetchAll() as $c) {
-            $ocupados[$c['data']][$c['hora']] = true;
+        foreach ($ocupados as $data => $horas) {
+            foreach ($horas as $hora => $v) {
+                $bloqueados[$data][$hora] = true;
+            }
         }
 
         $horasPoss = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
@@ -154,7 +129,7 @@ class SolicitarChamadoControl
             foreach ($horasPoss as $hora) {
                 $slotDt = new DateTime($dataStr . ' ' . $hora . ':00');
                 if ($slotDt < $minDt) continue;
-                if (!isset($ocupados[$dataStr][$hora])) {
+                if (!isset($bloqueados[$dataStr][$hora])) {
                     $this->slotsDisponiveis[$dataStr][] = $hora;
                 }
             }
@@ -185,24 +160,14 @@ class SolicitarChamadoControl
             return;
         }
 
-        // slot picker (solicitação direta com horário do prestador)
         $tecnicoIdPost   = (int)($_POST['tecnico_id_selecionado'] ?? 0);
         $slotSelecionado = trim($_POST['slot_selecionado'] ?? '');
 
         if ($tecnicoIdPost > 0 && $slotSelecionado !== '') {
             [$slotData, $slotHora] = array_pad(explode('|', $slotSelecionado), 2, '');
 
-            // Verifica se o slot está bloqueado manualmente ou já reservado por outro chamado
-            $bloqueado = $this->pdo->prepare("SELECT id FROM disponibilidade WHERE tecnico_id=? AND data=? AND hora=?");
-            $bloqueado->execute([$tecnicoIdPost, $slotData, $slotHora . ':00']);
-
-            $jaReservado = $this->pdo->prepare("
-                SELECT id FROM chamado
-                WHERE tecnico_id=? AND data_agendamento=? AND status IN ('Pendente','Em Andamento')
-            ");
-            $jaReservado->execute([$tecnicoIdPost, $slotData . ' ' . $slotHora . ':00']);
-
-            if ($bloqueado->fetch() || $jaReservado->fetch()) {
+            if ($this->dispoDAO->slotEstaBloqueado($tecnicoIdPost, $slotData, $slotHora)
+                || $this->chamadoDAO->slotEstaReservado($tecnicoIdPost, $slotData, $slotHora)) {
                 $this->erro = 'Este horário não está mais disponível. Por favor, escolha outro.';
                 $this->carregarTecnicoESlots($tecnicoIdPost);
                 $this->categorias  = $this->categoriaDAO->listarAtivas();
@@ -263,20 +228,13 @@ class SolicitarChamadoControl
         ]);
 
         if ($tecnicoId) {
-            fixnow_notificar_prestador($this->pdo, $tecnicoId,
+            fixnow_notificar_prestador($tecnicoId,
                 "Você recebeu uma solicitação direta de serviço (#$chamadoId)! Um cliente escolheu você especificamente. Acesse o painel para aceitar ou recusar.",
                 $chamadoId);
         } else {
-            $stmt = $this->pdo->prepare("
-                SELECT DISTINCT s.tecnico_id FROM servico s
-                INNER JOIN categoria cat ON cat.id = s.categoria_id
-                INNER JOIN tecnico t ON t.id = s.tecnico_id
-                WHERE cat.nome = ? AND s.ativo = 1 AND t.ativo = 1
-                  AND t.status_cadastro = 'Aprovado' AND t.destaque = 1
-            ");
-            $stmt->execute([$categoria]);
-            foreach ($stmt->fetchAll() as $row) {
-                fixnow_notificar_prestador($this->pdo, (int)$row['tecnico_id'],
+            $destaques = $this->servicoDAO->buscarTecnicosDestaquesPorCategoria($categoria);
+            foreach ($destaques as $destTecnicoId) {
+                fixnow_notificar_prestador((int)$destTecnicoId,
                     "Novo chamado de {$categoria} disponível! Como prestador em destaque, você tem prioridade.", $chamadoId);
             }
         }

@@ -21,11 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $up->execute([$val, $tid]);
         if ($up->rowCount() > 0) {
             if ($acao === 'destacar') {
-                fixnow_notificar_prestador($pdo, $tid,
+                fixnow_notificar_prestador($tid,
                     'Parabens! Voce foi selecionado como Prestador em Destaque pela Fix Now. Seus servicos aparecem em primeiro lugar no catalogo e na pagina inicial para os clientes.');
                 $mensagem = 'Prestador marcado como destaque e notificado.';
             } else {
-                fixnow_notificar_prestador($pdo, $tid,
+                fixnow_notificar_prestador($tid,
                     'Seu status de Prestador em Destaque foi removido pela plataforma Fix Now.');
                 $mensagem = 'Destaque removido. Prestador foi notificado.';
             }

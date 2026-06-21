@@ -2,14 +2,12 @@
 
 require_once __DIR__ . '/../model/dao/ClienteDAO.php';
 require_once __DIR__ . '/../model/dao/TecnicoDAO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class RecuperaSenhaControl
 {
     private ClienteDAO $clienteDAO;
     private TecnicoDAO $tecnicoDAO;
-    private PDO        $pdo;
 
     public string  $mensagem   = '';
     public string  $erro       = '';
@@ -20,7 +18,6 @@ class RecuperaSenhaControl
     {
         $this->clienteDAO = new ClienteDAO();
         $this->tecnicoDAO = new TecnicoDAO();
-        $this->pdo        = Conexao::getConexao();
     }
 
     public function processar(): void
@@ -39,23 +36,10 @@ class RecuperaSenhaControl
     private function verificarIdentidade(): void
     {
         $email = trim($_POST['email'] ?? '');
-        $cpf   = fixnow_only_digits(trim($_POST['cpf'] ?? ''));
 
         if (!$email) { $this->erro = 'Informe o e-mail.'; return; }
 
-        $found = false;
-
-        $stmt = $this->pdo->prepare('SELECT id FROM cliente WHERE email=? LIMIT 1');
-        $stmt->execute([$email]);
-        if ($stmt->fetch()) $found = true;
-
-        if (!$found) {
-            $stmt = $this->pdo->prepare('SELECT id FROM tecnico WHERE email=? LIMIT 1');
-            $stmt->execute([$email]);
-            if ($stmt->fetch()) $found = true;
-        }
-
-        if (!$found) {
+        if (!$this->clienteDAO->emailExiste($email) && !$this->tecnicoDAO->emailExiste($email)) {
             $this->erro = 'E-mail não encontrado.'; return;
         }
 
@@ -69,17 +53,15 @@ class RecuperaSenhaControl
         $email = $_SESSION['recupera_email'] ?? '';
         if (!$email) { $this->etapa = 1; return; }
 
-        $chars   = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $chars     = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
         $senhaTemp = '';
         for ($i = 0; $i < 10; $i++) {
             $senhaTemp .= $chars[random_int(0, strlen($chars) - 1)];
         }
         $hash = password_hash($senhaTemp, PASSWORD_DEFAULT);
 
-        $stmt = $this->pdo->prepare('UPDATE cliente SET senha=? WHERE email=?');
-        $stmt->execute([$hash, $email]);
-        if (!$stmt->rowCount()) {
-            $this->pdo->prepare('UPDATE tecnico SET senha=? WHERE email=?')->execute([$hash, $email]);
+        if (!$this->clienteDAO->atualizarSenhaPorEmail($email, $hash)) {
+            $this->tecnicoDAO->atualizarSenhaPorEmail($email, $hash);
         }
 
         unset($_SESSION['recupera_email']);

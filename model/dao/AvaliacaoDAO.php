@@ -40,7 +40,6 @@ class AvaliacaoDAO
         ")->execute([$tecnicoId, $tecnicoId]);
     }
 
-    /** @return AvaliacaoDTO[] */
     public function listarPorTecnico(int $tecnicoId, int $limit = 30): array
     {
         $stmt = $this->pdo->prepare("
@@ -55,7 +54,6 @@ class AvaliacaoDAO
         return array_map([AvaliacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
-    /** @return AvaliacaoDTO[] */
     public function listarPorCliente(int $clienteId, int $limit = 30): array
     {
         $stmt = $this->pdo->prepare("
@@ -70,16 +68,15 @@ class AvaliacaoDAO
         return array_map([AvaliacaoDTO::class, 'fromArray'], $stmt->fetchAll());
     }
 
-    public function depoimentoAleatorio(): ?AvaliacaoDTO
+    public function depoimentoAleatorio(): ?array
     {
         $stmt = $this->pdo->query("
-            SELECT a.*, cl.nome AS cliente_nome
+            SELECT a.comentario, a.nota, cl.nome AS cliente_nome
             FROM avaliacao a
             INNER JOIN cliente cl ON cl.id = a.cliente_id
             WHERE a.comentario IS NOT NULL AND TRIM(a.comentario) != '' AND a.nota >= 4
             ORDER BY RAND() LIMIT 1
         ");
-        $row = $stmt->fetch();
-        return $row ? AvaliacaoDTO::fromArray($row) : null;
+        return $stmt->fetch() ?: null;
     }
 }

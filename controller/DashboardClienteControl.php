@@ -2,42 +2,51 @@
 
 require_once __DIR__ . '/../model/dao/ChamadoDAO.php';
 require_once __DIR__ . '/../model/dao/OrcamentoDAO.php';
+require_once __DIR__ . '/../model/dao/PagamentoDAO.php';
 require_once __DIR__ . '/../model/dao/NotificacaoDAO.php';
 require_once __DIR__ . '/../model/dao/AvaliacaoDAO.php';
+require_once __DIR__ . '/../model/dao/ClienteDAO.php';
+require_once __DIR__ . '/../model/dao/CategoriaDAO.php';
+require_once __DIR__ . '/../model/dao/ServicoDAO.php';
 require_once __DIR__ . '/../model/dto/AvaliacaoDTO.php';
-require_once __DIR__ . '/../model/dao/Conexao.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 class DashboardClienteControl
 {
     private ChamadoDAO    $chamadoDAO;
     private OrcamentoDAO  $orcamentoDAO;
+    private PagamentoDAO  $pagamentoDAO;
     private NotificacaoDAO $notifDAO;
     private AvaliacaoDAO  $avaliacaoDAO;
-    private PDO           $pdo;
+    private ClienteDAO    $clienteDAO;
+    private CategoriaDAO  $categoriaDAO;
+    private ServicoDAO    $servicoDAO;
 
-    public int    $clienteId         = 0;
-    public string $mensagem          = '';
-    public string $erro              = '';
-    public array  $chamados          = [];
-    public array  $stats             = ['total_chamados' => 0, 'concluidos' => 0];
-    public array  $orcamentosPendentes = [];
-    public array  $notificacoes      = [];
-    public array  $servicos          = [];
-    public array  $categorias        = [];
-    public ?array $depoimento        = null;
-    public string $filtroCategoria      = '';
-    public bool   $filtroPrestadoraMulher = false;
-    public string $clienteGenero       = '';
-    public int    $naoLidas            = 0;
+    public int    $clienteId            = 0;
+    public string $mensagem             = '';
+    public string $erro                 = '';
+    public array  $chamados             = [];
+    public array  $stats                = ['total_chamados' => 0, 'concluidos' => 0];
+    public array  $orcamentosPendentes  = [];
+    public array  $notificacoes         = [];
+    public array  $servicos             = [];
+    public array  $categorias           = [];
+    public ?array $depoimento           = null;
+    public string $filtroCategoria         = '';
+    public bool   $filtroPrestadoraMulher  = false;
+    public string $clienteGenero           = '';
+    public int    $naoLidas                = 0;
 
     public function __construct()
     {
         $this->chamadoDAO   = new ChamadoDAO();
         $this->orcamentoDAO = new OrcamentoDAO();
+        $this->pagamentoDAO = new PagamentoDAO();
         $this->notifDAO     = new NotificacaoDAO();
         $this->avaliacaoDAO = new AvaliacaoDAO();
-        $this->pdo          = Conexao::getConexao();
+        $this->clienteDAO   = new ClienteDAO();
+        $this->categoriaDAO = new CategoriaDAO();
+        $this->servicoDAO   = new ServicoDAO();
     }
 
     public function verificarSessao(): void
@@ -90,9 +99,7 @@ class DashboardClienteControl
         if (isset($_POST['cancelar_chamado_id'])) {
             $cid = (int)$_POST['cancelar_chamado_id'];
             if ($cid > 0) {
-                $up = $this->pdo->prepare("UPDATE chamado SET status='Negado' WHERE id=? AND cliente_id=? AND status='Pendente'");
-                $up->execute([$cid, $this->clienteId]);
-                if ($up->rowCount() > 0) {
+                if ($this->chamadoDAO->cancelar($cid, $this->clienteId)) {
                     header('Location: dashboardCliente.php?cancelar_ok=1'); exit;
                 }
                 $this->erro = 'Não foi possível cancelar (o chamado pode já ter sido aceito por um técnico).';
@@ -103,9 +110,7 @@ class DashboardClienteControl
             $descricao = trim($_POST['nova_descricao'] ?? '');
             $endereco  = trim($_POST['novo_endereco']  ?? '');
             if ($cid > 0 && $descricao !== '' && $endereco !== '') {
-                $up = $this->pdo->prepare("UPDATE chamado SET descricao=?, endereco_servico=? WHERE id=? AND cliente_id=? AND status='Pendente'");
-                $up->execute([$descricao, $endereco, $cid, $this->clienteId]);
-                if ($up->rowCount() > 0) {
+                if ($this->chamadoDAO->alterarDescricaoEndereco($this->clienteId, $cid, $descricao, $endereco)) {
                     header('Location: dashboardCliente.php?alterado_ok=1'); exit;
                 }
                 $this->erro = 'Não foi possível alterar (o chamado pode já ter sido aceito).';
@@ -114,29 +119,11 @@ class DashboardClienteControl
         } elseif (isset($_POST['aceitar_orcamento_id'])) {
             $oid = (int)$_POST['aceitar_orcamento_id'];
             if ($oid > 0) {
-                $stmtO = $this->pdo->prepare("
-                    SELECT o.id, o.valor, o.tecnico_id, o.chamado_id
-                    FROM orcamento o
-                    INNER JOIN chamado c ON c.id = o.chamado_id AND c.cliente_id = ?
-                    WHERE o.id = ? AND o.status = 'Pendente' LIMIT 1
-                ");
-                $stmtO->execute([$this->clienteId, $oid]);
-                $orc = $stmtO->fetch();
-                if ($orc) {
-                    $this->pdo->beginTransaction();
-                    $this->pdo->prepare("UPDATE orcamento SET status='Aceito' WHERE id=?")->execute([$orc['id']]);
-                    $this->pdo->prepare("UPDATE orcamento SET status='Recusado' WHERE chamado_id=? AND id!=?")->execute([$orc['chamado_id'], $orc['id']]);
-                    $this->pdo->prepare("UPDATE chamado SET tecnico_id=?, status='Em Andamento', preco_sugerido=? WHERE id=?")->execute([$orc['tecnico_id'], $orc['valor'], $orc['chamado_id']]);
-                    $stmtPagExiste = $this->pdo->prepare("SELECT id FROM pagamento WHERE chamado_id=?");
-                    $stmtPagExiste->execute([$orc['chamado_id']]);
-                    if ($stmtPagExiste->fetch()) {
-                        $this->pdo->prepare("UPDATE pagamento SET valor=? WHERE chamado_id=?")->execute([$orc['valor'], $orc['chamado_id']]);
-                    } else {
-                        $this->pdo->prepare("INSERT INTO pagamento (chamado_id, metodo, valor, status) VALUES (?, 'PIX', ?, 'Pendente')")->execute([$orc['chamado_id'], $orc['valor']]);
-                    }
-                    $this->pdo->commit();
-                    fixnow_notificar_prestador($this->pdo, (int)$orc['tecnico_id'],
-                        'Seu orçamento para o chamado #' . $orc['chamado_id'] . ' foi aceito pelo cliente! Prepare-se para o atendimento.', (int)$orc['chamado_id']);
+                $result = $this->orcamentoDAO->aceitarComTransacao($this->clienteId, $oid);
+                if ($result) {
+                    fixnow_notificar_prestador((int)$result['tecnico_id'],
+                        'Seu orçamento para o chamado #' . $result['chamado_id'] . ' foi aceito pelo cliente! Prepare-se para o atendimento.',
+                        (int)$result['chamado_id']);
                     header('Location: dashboardCliente.php?orcamento_aceito=1'); exit;
                 }
             }
@@ -145,19 +132,11 @@ class DashboardClienteControl
             $oid    = (int)$_POST['recusar_orcamento_id'];
             $motivo = trim($_POST['motivo_recusa'] ?? '');
             if ($oid > 0) {
-                $stmtO = $this->pdo->prepare("
-                    SELECT o.id, o.tecnico_id, o.chamado_id FROM orcamento o
-                    INNER JOIN chamado c ON c.id = o.chamado_id AND c.cliente_id = ?
-                    WHERE o.id = ? AND o.status = 'Pendente' LIMIT 1
-                ");
-                $stmtO->execute([$this->clienteId, $oid]);
-                $orcRec = $stmtO->fetch();
-                if ($orcRec) {
-                    $this->pdo->prepare("UPDATE orcamento SET status='Recusado', motivo_recusa=? WHERE id=?")
-                        ->execute([$motivo ?: null, $oid]);
-                    $msg = 'Seu orçamento para o chamado #' . $orcRec['chamado_id'] . ' foi recusado pelo cliente.';
+                $result = $this->orcamentoDAO->recusarRetornandoIds($this->clienteId, $oid);
+                if ($result) {
+                    $msg = 'O cliente recusou seu orçamento para o chamado #' . $result['chamado_id'] . '.';
                     if ($motivo !== '') $msg .= ' Motivo: ' . $motivo;
-                    fixnow_notificar_prestador($this->pdo, (int)$orcRec['tecnico_id'], $msg, (int)$orcRec['chamado_id']);
+                    fixnow_notificar_prestador((int)$result['tecnico_id'], $msg, null);
                     header('Location: dashboardCliente.php?orcamento_recusado=1'); exit;
                 }
             }
@@ -170,23 +149,15 @@ class DashboardClienteControl
             } elseif (strtotime($novaData) <= time()) {
                 $this->erro = 'A data deve ser futura.';
             } else {
-                $rowTec = $this->pdo->prepare("SELECT tecnico_id FROM chamado WHERE id=? AND cliente_id=? AND status IN ('Pendente','Aguardando Orçamento','Em Andamento')");
-                $rowTec->execute([$cid, $this->clienteId]);
-                $tec = $rowTec->fetch();
-
-                if ($tec === false) {
+                $result = $this->chamadoDAO->reagendarPorCliente($this->clienteId, $cid, $novaData);
+                if (!$result['ok']) {
                     $this->erro = 'Chamado não encontrado ou já finalizado.';
                 } else {
-                    $up = $this->pdo->prepare("UPDATE chamado SET data_agendamento=?, data_agendamento_proposta=NULL, reagendamento_pendente=0 WHERE id=? AND cliente_id=? AND status IN ('Pendente','Aguardando Orçamento','Em Andamento')");
-                    $up->execute([$novaData, $cid, $this->clienteId]);
-                    if ($up->rowCount() > 0) {
-                        if (!empty($tec['tecnico_id'])) {
-                            fixnow_notificar_prestador($this->pdo, (int)$tec['tecnico_id'],
-                                'O cliente reagendou o chamado #' . $cid . ' para ' . date('d/m/Y H:i', strtotime($novaData)) . '.', $cid);
-                        }
-                        header('Location: dashboardCliente.php?reagendado=1'); exit;
+                    if ($result['tecnico_id'] !== null) {
+                        fixnow_notificar_prestador($result['tecnico_id'],
+                            'O cliente reagendou o chamado #' . $cid . ' para ' . date('d/m/Y H:i', strtotime($novaData)) . '.', $cid);
                     }
-                    $this->erro = 'Não foi possível reagendar.';
+                    header('Location: dashboardCliente.php?reagendado=1'); exit;
                 }
             }
 
@@ -195,14 +166,7 @@ class DashboardClienteControl
             $metodo = $_POST['metodo_pagamento'] ?? 'PIX';
             if (!in_array($metodo, ['PIX', 'Cartão', 'Dinheiro'], true)) $metodo = 'PIX';
             if ($pid > 0) {
-                $up = $this->pdo->prepare("
-                    UPDATE pagamento p
-                    INNER JOIN chamado c ON c.id = p.chamado_id AND c.cliente_id = ?
-                    SET p.status = 'Pago', p.pago_em = NOW(), p.metodo = ?
-                    WHERE p.id = ? AND p.status = 'Pendente'
-                ");
-                $up->execute([$this->clienteId, $metodo, $pid]);
-                if ($up->rowCount() > 0) {
+                if ($this->pagamentoDAO->confirmarPorCliente($this->clienteId, $pid, $metodo)) {
                     $this->mensagem = 'Pagamento registrado com sucesso (simulação).';
                 } else {
                     $this->erro = 'Não foi possível confirmar este pagamento.';
@@ -243,101 +207,26 @@ class DashboardClienteControl
 
     private function carregarDados(): void
     {
-        $this->chamados            = $this->chamadoDAO->listarPorCliente($this->clienteId);
-        $this->stats               = $this->chamadoDAO->estatisticasCliente($this->clienteId);
+        $this->chamados           = $this->chamadoDAO->listarPorCliente($this->clienteId);
+        $this->stats              = $this->chamadoDAO->estatisticasCliente($this->clienteId);
+        $this->orcamentosPendentes = $this->orcamentoDAO->listarPendentesParaCliente($this->clienteId);
+        $this->notificacoes       = $this->notifDAO->listarPorCliente($this->clienteId, 10);
+        $this->naoLidas           = $this->notifDAO->contarNaoLidasCliente($this->clienteId);
 
-        // Orçamentos pendentes
-        $stmtO = $this->pdo->prepare("
-            SELECT o.*, t.nome AS tecnico_nome, c.descricao AS chamado_desc, c.id AS chamado_id
-            FROM orcamento o
-            INNER JOIN chamado c ON c.id = o.chamado_id AND c.cliente_id = ?
-            INNER JOIN tecnico t ON t.id = o.tecnico_id
-            WHERE o.status = 'Pendente' AND c.status IN ('Pendente','Aguardando Orçamento')
-            ORDER BY o.criado_em DESC
-        ");
-        $stmtO->execute([$this->clienteId]);
-        $this->orcamentosPendentes = $stmtO->fetchAll();
+        $row = $this->clienteDAO->buscarCamposBasicos($this->clienteId);
+        $this->clienteGenero = $row ? (string)($row['genero'] ?? '') : '';
 
-        // Notificações não lidas
-        $this->notificacoes = $this->notifDAO->listarPorCliente($this->clienteId, 10);
-        $this->naoLidas     = $this->notifDAO->contarNaoLidasCliente($this->clienteId);
-
-        // Gênero do cliente
-        $rowCli = $this->pdo->prepare("SELECT genero FROM cliente WHERE id=? LIMIT 1");
-        $rowCli->execute([$this->clienteId]);
-        $this->clienteGenero = (string)($rowCli->fetchColumn() ?? '');
-
-        // Filtros
         $this->filtroCategoria       = trim($_GET['categoria'] ?? '');
         $this->filtroPrestadoraMulher = isset($_GET['so_mulher']) && $this->clienteGenero === 'Feminino';
 
-        $where  = ['s.ativo = 1'];
-        $params = [];
+        $this->servicos  = $this->servicoDAO->listarPrestadoresComFiltro(
+            $this->filtroCategoria ?: null,
+            $this->filtroPrestadoraMulher
+        );
+        $this->categorias = $this->categoriaDAO->listarAtivas();
 
-        if ($this->filtroCategoria !== '') {
-            $where[]  = 'c.nome = ?';
-            $params[] = $this->filtroCategoria;
-        }
-        if ($this->filtroPrestadoraMulher) {
-            $where[]  = "t.genero = 'Feminino'";
-        }
-
-        $whereSQL = implode(' AND ', $where);
-
-        // Serviços / prestadores
-        $stmtSv = $this->pdo->prepare("
-            SELECT s.id AS servico_id, s.nome AS servico_nome, s.descricao, s.preco,
-                   c.nome AS categoria_nome,
-                   t.id AS tecnico_id, t.nome AS tecnico_nome, t.foto_perfil, t.destaque,
-                   COALESCE(t.avaliacao_media, 0) AS media_nota
-            FROM servico s
-            JOIN tecnico t ON t.id = s.tecnico_id AND t.ativo = 1 AND t.status_cadastro = 'Aprovado'
-            LEFT JOIN categoria c ON c.id = s.categoria_id
-            WHERE $whereSQL
-            ORDER BY t.destaque DESC, t.avaliacao_media DESC, s.nome ASC
-        ");
-        $stmtSv->execute($params);
-        $rows = $stmtSv->fetchAll();
-
-        // Agrupa por prestador: um card por prestador com lista de serviços
-        $byProvider = [];
-        foreach ($rows as $row) {
-            $tid = $row['tecnico_id'];
-            if (!isset($byProvider[$tid])) {
-                $byProvider[$tid] = [
-                    'tecnico_id'   => $tid,
-                    'tecnico_nome' => $row['tecnico_nome'],
-                    'foto_perfil'  => $row['foto_perfil'],
-                    'destaque'     => $row['destaque'],
-                    'media_nota'   => $row['media_nota'],
-                    'servicos'     => [],
-                    'preco_min'    => $row['preco'],
-                    'preco_max'    => $row['preco'],
-                ];
-            }
-            $byProvider[$tid]['servicos'][] = [
-                'nome'           => $row['servico_nome'],
-                'descricao'      => $row['descricao'],
-                'preco'          => $row['preco'],
-                'categoria_nome' => $row['categoria_nome'],
-            ];
-            $byProvider[$tid]['preco_min'] = min($byProvider[$tid]['preco_min'], (float)$row['preco']);
-            $byProvider[$tid]['preco_max'] = max($byProvider[$tid]['preco_max'], (float)$row['preco']);
-        }
-        $this->servicos = array_values($byProvider);
-
-        // Categorias
-        $this->categorias = $this->pdo->query("SELECT id, nome FROM categoria WHERE ativo=1 ORDER BY nome")->fetchAll();
-
-        // Depoimento aleatório
         try {
-            $stmtD = $this->pdo->query("
-                SELECT a.comentario, a.nota, cl.nome AS cliente_nome
-                FROM avaliacao a INNER JOIN cliente cl ON cl.id = a.cliente_id
-                WHERE a.comentario IS NOT NULL AND TRIM(a.comentario) != '' AND a.nota >= 4
-                ORDER BY RAND() LIMIT 1
-            ");
-            $this->depoimento = $stmtD->fetch() ?: null;
+            $this->depoimento = $this->avaliacaoDAO->depoimentoAleatorio();
         } catch (Exception $e) {
             $this->depoimento = null;
         }

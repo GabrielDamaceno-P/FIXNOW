@@ -71,4 +71,18 @@ class ClienteDAO
         $this->pdo->prepare('UPDATE cliente SET senha = ? WHERE id = ?')
             ->execute([$senhaHash, $id]);
     }
+
+    public function buscarCamposBasicos(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT nome, foto_perfil, endereco, cep, genero FROM cliente WHERE id = ?');
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function atualizarSenhaPorEmail(string $email, string $hash): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE cliente SET senha=? WHERE email=?');
+        $stmt->execute([$hash, $email]);
+        return $stmt->rowCount() > 0;
+    }
 }

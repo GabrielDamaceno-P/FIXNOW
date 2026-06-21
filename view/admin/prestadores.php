@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $up = $pdo->prepare("UPDATE tecnico SET ativo=1, status_cadastro='Aprovado' WHERE id=? AND status_cadastro='Pendente'");
         $up->execute([$tid]);
         if ($up->rowCount() > 0) {
-            fixnow_notificar_prestador($pdo, $tid, 'Seu cadastro foi aprovado pela Fix Now! Você já pode acessar o painel e aceitar chamados.');
+            fixnow_notificar_prestador($tid, 'Seu cadastro foi aprovado pela Fix Now! Você já pode acessar o painel e aceitar chamados.');
             $mensagem = 'Prestador aprovado.';
         } else { $erro = 'Não foi possível aprovar (cadastro já processado).'; }
 
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $up = $pdo->prepare("UPDATE tecnico SET ativo=0, status_cadastro='Recusado' WHERE id=? AND status_cadastro='Pendente'");
         $up->execute([$tid]);
         if ($up->rowCount() > 0) {
-            fixnow_notificar_prestador($pdo, $tid, 'Seu cadastro foi recusado pela Fix Now. Entre em contato com o suporte.');
+            fixnow_notificar_prestador($tid, 'Seu cadastro foi recusado pela Fix Now. Entre em contato com o suporte.');
             $mensagem = 'Cadastro recusado.';
         } else { $erro = 'Não foi possível recusar (cadastro já processado).'; }
 

@@ -36,7 +36,6 @@ class PagamentoDAO
         ")->execute([$metodo, $id]);
     }
 
-    /** Receita por técnico — retorna array com totais */
     public function resumoPorTecnico(int $tecnicoId, ?int $mes = null, ?int $ano = null): array
     {
         $where = "c.tecnico_id = ? AND p.status = 'Pago'";
@@ -59,7 +58,6 @@ class PagamentoDAO
         return $stmt->fetchAll();
     }
 
-    /** Totais brutos/pendentes/estornados por técnico (para tela financeiro) */
     public function resumoCompleto(int $tecnicoId): array
     {
         $stmt = $this->pdo->prepare("
@@ -76,7 +74,6 @@ class PagamentoDAO
         return $stmt->fetch() ?: ['total_servicos' => 0, 'bruto_recebido' => 0, 'bruto_pendente' => 0, 'total_estornado' => 0];
     }
 
-    /** Agrupamento mensal de pagamentos do técnico (últimos 12 meses) */
     public function mensalPorTecnico(int $tecnicoId): array
     {
         $stmt = $this->pdo->prepare("
@@ -96,7 +93,18 @@ class PagamentoDAO
         return $stmt->fetchAll();
     }
 
-    /** Detalhes dos pagamentos do técnico filtrados por mês/ano */
+    public function confirmarPorCliente(int $clienteId, int $pagamentoId, string $metodo): bool
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE pagamento p
+            INNER JOIN chamado c ON c.id = p.chamado_id AND c.cliente_id = ?
+            SET p.status = 'Pago', p.pago_em = NOW(), p.metodo = ?
+            WHERE p.id = ? AND p.status = 'Pendente'
+        ");
+        $stmt->execute([$clienteId, $metodo, $pagamentoId]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function detalhesPorTecnico(int $tecnicoId, ?string $filtroMes, int $filtroAno): array
     {
         $where  = "AND YEAR(COALESCE(p.pago_em, c.atualizado_em)) = ?";

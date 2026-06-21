@@ -69,7 +69,6 @@ class TecnicoDAO
         $this->pdo->prepare('UPDATE tecnico SET senha=? WHERE id=?')->execute([$hash, $id]);
     }
 
-    /** @return TecnicoDTO[] */
     public function listarAprovados(?string $categoria = null): array
     {
         $sql = "
@@ -101,5 +100,34 @@ class TecnicoDAO
                    SUM(CASE WHEN status_cadastro='Pendente' THEN 1 ELSE 0 END) AS pendentes
             FROM tecnico
         ")->fetch() ?: ['total' => 0, 'aprovados' => 0, 'pendentes' => 0];
+    }
+
+    public function atualizarSenhaPorEmail(string $email, string $hash): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE tecnico SET senha=? WHERE email=?');
+        $stmt->execute([$hash, $email]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function buscarInfoSimples(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, nome, especialidade, foto_perfil FROM tecnico WHERE id = ? AND ativo = 1 AND status_cadastro = 'Aprovado'"
+        );
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function buscarCategoriasDoPrestador(int $id): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT DISTINCT COALESCE(cat.nome, s.nome) AS categoria_nome
+            FROM servico s
+            LEFT JOIN categoria cat ON cat.id = s.categoria_id
+            WHERE s.tecnico_id = ? AND s.ativo = 1
+            ORDER BY categoria_nome
+        ");
+        $stmt->execute([$id]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 }

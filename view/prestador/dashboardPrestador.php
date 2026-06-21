@@ -610,7 +610,7 @@ $catIcons = [
               <form method="post" class="d-flex gap-1 flex-grow-1 js-guard-submit">
                 <input type="hidden" name="chamado_id" value="<?php echo (int)$c['id']; ?>">
                 <select name="novo_status" class="form-select form-select-sm" style="font-size:.8rem;">
-                  <?php foreach (['Em Andamento', 'Concluído', 'Negado'] as $opt): ?>
+                  <?php foreach (['Em Andamento', 'Concluído'] as $opt): ?>
                     <option <?php echo ($c['status'] ?? '') === $opt ? 'selected' : ''; ?>><?php echo $opt; ?></option>
                   <?php endforeach; ?>
                 </select>

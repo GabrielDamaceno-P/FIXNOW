@@ -13,7 +13,6 @@ class SuporteControl
     public string $usuarioFoto  = '';
     public string $mensagem     = '';
     public string $erro         = '';
-    /** @var SuporteDTO[] */
     public array  $tickets      = [];
     public array  $pagamentos   = [];
     public array  $chamados     = [];
@@ -94,59 +93,10 @@ class SuporteControl
         }
 
         $this->tickets = $this->suporteDAO->listarPorUsuario($this->usuarioTipo, $this->usuarioId);
-        $this->carregarContexto();
-    }
 
-    private function carregarContexto(): void
-    {
-        require_once __DIR__ . '/../model/dao/Conexao.php';
-        $pdo = Conexao::getConexao();
-
-        if ($this->usuarioTipo === 'cliente') {
-            $stmt = $pdo->prepare("
-                SELECT p.id, p.valor, p.status, p.metodo, p.criado_em,
-                       c.id AS chamado_id, c.categoria AS chamado_categoria
-                FROM pagamento p
-                JOIN chamado c ON c.id = p.chamado_id
-                WHERE c.cliente_id = ?
-                ORDER BY p.criado_em DESC LIMIT 10
-            ");
-            $stmt->execute([$this->usuarioId]);
-            $this->pagamentos = $stmt->fetchAll();
-
-            $stmt = $pdo->prepare("
-                SELECT c.id, c.categoria, c.status, c.criado_em,
-                       t.nome AS tecnico_nome
-                FROM chamado c
-                LEFT JOIN tecnico t ON t.id = c.tecnico_id
-                WHERE c.cliente_id = ? AND c.status NOT IN ('Negado')
-                ORDER BY c.criado_em DESC LIMIT 10
-            ");
-            $stmt->execute([$this->usuarioId]);
-            $this->chamados = $stmt->fetchAll();
-
-        } elseif ($this->usuarioTipo === 'prestador') {
-            $stmt = $pdo->prepare("
-                SELECT p.id, p.valor, p.status, p.metodo, p.criado_em,
-                       c.id AS chamado_id, c.categoria AS chamado_categoria
-                FROM pagamento p
-                JOIN chamado c ON c.id = p.chamado_id
-                WHERE c.tecnico_id = ?
-                ORDER BY p.criado_em DESC LIMIT 10
-            ");
-            $stmt->execute([$this->usuarioId]);
-            $this->pagamentos = $stmt->fetchAll();
-
-            $stmt = $pdo->prepare("
-                SELECT c.id, c.categoria, c.status, c.criado_em,
-                       cl.nome AS cliente_nome
-                FROM chamado c
-                LEFT JOIN cliente cl ON cl.id = c.cliente_id
-                WHERE c.tecnico_id = ? AND c.status NOT IN ('Negado')
-                ORDER BY c.criado_em DESC LIMIT 10
-            ");
-            $stmt->execute([$this->usuarioId]);
-            $this->chamados = $stmt->fetchAll();
+        if (in_array($this->usuarioTipo, ['cliente', 'prestador'], true)) {
+            $this->pagamentos = $this->suporteDAO->buscarPagamentosParaContexto($this->usuarioTipo, $this->usuarioId);
+            $this->chamados   = $this->suporteDAO->buscarChamadosParaContexto($this->usuarioTipo, $this->usuarioId);
         }
     }
 }

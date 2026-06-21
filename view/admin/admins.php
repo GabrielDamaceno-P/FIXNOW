@@ -181,10 +181,14 @@ if (isset($_GET['editar'])) {
         <div class="secao-titulo">
           <span>👥</span>
           Administradores cadastrados
-          <span class="badge ms-auto" style="background:#e8ecf3;color:#0d1b3d;font-size:.75rem;"><?= count($admins) ?></span>
+          <span class="badge ms-1" style="background:#e8ecf3;color:#0d1b3d;font-size:.75rem;" id="adminCount"><?= count($admins) ?></span>
+          <div class="ms-auto" style="min-width:210px;">
+            <input type="search" id="buscaAdmin" class="form-control form-control-sm"
+              placeholder="Buscar por nome ou e-mail…" autocomplete="off">
+          </div>
         </div>
         <div class="table-responsive">
-          <table class="table table-hover align-middle table-sm mb-0">
+          <table id="tabelaAdmins" class="table table-hover align-middle table-sm mb-0">
             <thead class="table-primary">
               <tr><th></th><th>Nome</th><th>E-mail</th><th>Desde</th><th></th></tr>
             </thead>
@@ -241,5 +245,24 @@ if (isset($_GET['editar'])) {
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/main.js"></script>
+<script>
+(function () {
+  var input  = document.getElementById('buscaAdmin');
+  var count  = document.getElementById('adminCount');
+  var rows   = document.querySelectorAll('#tabelaAdmins tbody tr');
+  if (!input) return;
+  input.addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase();
+    var vis = 0;
+    rows.forEach(function (tr) {
+      var txt = tr.textContent.toLowerCase();
+      var show = !q || txt.indexOf(q) !== -1;
+      tr.style.display = show ? '' : 'none';
+      if (show) vis++;
+    });
+    count.textContent = q ? vis + '/' + rows.length : rows.length;
+  });
+})();
+</script>
 </body>
 </html>

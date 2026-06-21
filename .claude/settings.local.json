@@ -22,7 +22,9 @@
       "Bash(python gerar_casos_uso.py)",
       "PowerShell([Environment]::GetFolderPath\\('Desktop'\\))",
       "Bash(python -c \"import docx; print\\('ok'\\)\")",
-      "Bash(python gerar_plano_contingencia.py)"
+      "Bash(python gerar_plano_contingencia.py)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root tcc)",
+      "Bash(\"C:/xampp/mysql/bin/mysql.exe\" -u root tcc -e \"SHOW CREATE TABLE cliente\\\\G\")"
     ]
   }
 }
